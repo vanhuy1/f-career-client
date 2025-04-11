@@ -1,7 +1,7 @@
 export enum LoadingState {
-  loaded = "loaded",
-  loading = "loading",
-  init = "init",
+  loaded = 'loaded',
+  loading = 'loading',
+  init = 'init',
 }
 
 export interface AppStoreState<T> {

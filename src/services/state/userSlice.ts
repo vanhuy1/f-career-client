@@ -1,48 +1,39 @@
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import type { RootState } from "@/store/store";
-import { useAppSelector, useAppDispatch } from "@/store/hooks"; // Already imported
-import { AppStoreState, LoadingState } from "../store.model";
+import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import type { RootState } from '@/store/store';
+import { useAppSelector, useAppDispatch } from '@/store/hooks';
+import { AppStoreState, LoadingState } from '../../store/store.model';
+import { User } from '@/types/User';
+import { UserProfile } from '../api/auth/auth-example';
 
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  isAuthenticated: boolean;
-}
-
-const initialState: AppStoreState<User> = {
+//temporary
+const initialState: AppStoreState<UserProfile> = {
   data: null,
   loadingState: LoadingState.init,
   errors: null,
 };
 
 const userSlice = createSlice({
-  name: "user",
+  name: 'user',
   initialState,
   reducers: {
-    loginStart(state) {
+    setUserStart(state) {
       state.loadingState = LoadingState.loading;
       state.errors = null;
     },
-    loginSuccess(state, action: PayloadAction<User>) {
+    setUserSuccess(state, action: PayloadAction<UserProfile>) {
       state.data = action.payload;
       state.loadingState = LoadingState.loaded;
       state.errors = null;
     },
-    loginFailure(state, action: PayloadAction<string>) {
+    setUserFailure(state, action: PayloadAction<string>) {
       state.loadingState = LoadingState.loaded;
       state.errors = action.payload;
-    },
-    logout(state) {
-      state.data = null;
-      state.loadingState = LoadingState.init;
-      state.errors = null;
     },
     updateUserStart(state) {
       state.loadingState = LoadingState.loading;
       state.errors = null;
     },
-    updateUserSuccess(state, action: PayloadAction<Partial<User>>) {
+    updateUserSuccess(state, action: PayloadAction<Partial<UserProfile>>) {
       if (state.data) {
         state.data = { ...state.data, ...action.payload };
       }
@@ -53,18 +44,39 @@ const userSlice = createSlice({
       state.loadingState = LoadingState.loaded;
       state.errors = action.payload;
     },
+    deleteUserStart(state) {
+      state.loadingState = LoadingState.loading;
+      state.errors = null;
+    },
+    deleteUserSuccess(state) {
+      state.data = null;
+      state.loadingState = LoadingState.loaded;
+      state.errors = null;
+    },
+    deleteUserFailure(state, action: PayloadAction<string>) {
+      state.loadingState = LoadingState.loaded;
+      state.errors = action.payload;
+    },
+    clearUser(state) {
+      state.data = null;
+      state.loadingState = LoadingState.init;
+      state.errors = null;
+    },
   },
 });
 
 // Export actions
 export const {
-  loginStart,
-  loginSuccess,
-  loginFailure,
-  logout,
   updateUserStart,
   updateUserSuccess,
   updateUserFailure,
+  deleteUserStart,
+  deleteUserSuccess,
+  deleteUserFailure,
+  setUserStart,
+  setUserSuccess,
+  setUserFailure,
+  clearUser,
 } = userSlice.actions;
 
 // Export reducer
@@ -84,13 +96,12 @@ export const useUserError = () => useAppSelector(selectUserError);
 export const useUserActions = () => {
   const dispatch = useAppDispatch();
   return {
-    loginStart: () => dispatch(loginStart()),
-    loginSuccess: (user: User) => dispatch(loginSuccess(user)),
-    loginFailure: (error: string) => dispatch(loginFailure(error)),
-    logout: () => dispatch(logout()),
     updateUserStart: () => dispatch(updateUserStart()),
-    updateUserSuccess: (user: Partial<User>) =>
+    updateUserSuccess: (user: Partial<UserProfile>) =>
       dispatch(updateUserSuccess(user)),
     updateUserFailure: (error: string) => dispatch(updateUserFailure(error)),
+    deleteUserStart: () => dispatch(deleteUserStart()),
+    deleteUserSuccess: () => dispatch(deleteUserSuccess()),
+    deleteUserFailure: (error: string) => dispatch(deleteUserFailure(error)),
   };
 };

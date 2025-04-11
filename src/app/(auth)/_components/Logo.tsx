@@ -1,14 +1,17 @@
-import ROUTES from "@/constants/navigation";
+import ROUTES from '@/constants/navigation';
+import { CheckCircle } from 'lucide-react';
+import Link from 'next/link';
 
 const Logo = () => (
-  <a href={ROUTES.HOMEPAGE.path}>
-    <div className="flex items-center mb-8 cursor-pointer">
-      <div className="h-8 w-8 rounded-full bg-indigo-600 flex items-center justify-center">
-        <span className="text-white font-bold">F</span>
+  <Link href={ROUTES.HOMEPAGE.path}>
+    <div className="mb-8 flex cursor-pointer items-center">
+      <div className="rounded-full bg-[#5e5cff] p-1.5">
+        <CheckCircle size={20} color="white" />
       </div>
-      <span className="ml-2 text-xl font-bold">FCareerConnect</span>
+      &nbsp;&nbsp;
+      <span className="text-xl font-bold">FCareerConnect</span>
     </div>
-  </a>
+  </Link>
 );
 
 export default Logo;

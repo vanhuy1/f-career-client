@@ -1,17 +1,17 @@
-import Image from "next/image";
+import Image from 'next/image';
 
 export default function CompaniesSection() {
   return (
     <section className="bg-[#1a1b26] py-16">
       <div className="container mx-auto px-4">
-        <h2 className="text-gray-400 text-xl mb-12 text-center md:text-left">
+        <h2 className="mb-12 text-center text-xl text-gray-400 md:text-left">
           Companies we helped grow
         </h2>
-        <div className="flex flex-wrap justify-center md:justify-between items-center gap-8 md:gap-4">
+        <div className="flex flex-wrap items-center justify-center gap-8 md:justify-between md:gap-4">
           {/* Vodafone Logo */}
-          <div className="w-32 h-12 relative flex items-center">
+          <div className="relative flex h-12 w-32 items-center">
             <Image
-              src="/placeholder.svg?height=48&width=128"
+              src="/Logo/vodafone.png"
               alt="Vodafone"
               width={128}
               height={48}
@@ -20,9 +20,9 @@ export default function CompaniesSection() {
           </div>
 
           {/* Intel Logo */}
-          <div className="w-32 h-12 relative flex items-center">
+          <div className="relative flex h-12 w-32 items-center">
             <Image
-              src="/placeholder.svg?height=48&width=128"
+              src="/Logo/intel.png"
               alt="Intel"
               width={128}
               height={48}
@@ -31,9 +31,9 @@ export default function CompaniesSection() {
           </div>
 
           {/* Tesla Logo */}
-          <div className="w-32 h-12 relative flex items-center">
+          <div className="relative flex h-12 w-32 items-center">
             <Image
-              src="/placeholder.svg?height=48&width=128"
+              src="/Logo/tesla.png"
               alt="Tesla"
               width={128}
               height={48}
@@ -42,9 +42,9 @@ export default function CompaniesSection() {
           </div>
 
           {/* AMD Logo */}
-          <div className="w-32 h-12 relative flex items-center">
+          <div className="relative flex h-12 w-32 items-center">
             <Image
-              src="/placeholder.svg?height=48&width=128"
+              src="/Logo/amd.webp"
               alt="AMD"
               width={128}
               height={48}
@@ -53,9 +53,9 @@ export default function CompaniesSection() {
           </div>
 
           {/* Talkit Logo */}
-          <div className="w-32 h-12 relative flex items-center">
+          <div className="relative flex h-12 w-32 items-center">
             <Image
-              src="/placeholder.svg?height=48&width=128"
+              src="/Logo/vodafone.png"
               alt="Talkit"
               width={128}
               height={48}

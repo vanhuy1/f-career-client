@@ -5,11 +5,11 @@ import {
   PatchRequestProps,
   PostRequestProps,
   PutRequestProps,
-} from "@/utils/types/api.type";
-import { ErrorMessages } from "@/utils/exception/error-messages";
-import axios, { AxiosInstance, AxiosRequestConfig, isAxiosError } from "axios";
-import { isSafeParseError } from "@/utils/validation";
-import { setupInterceptorsTo } from "./interceptors";
+} from '@/utils/types/api.type';
+import { ErrorMessages } from '@/utils/exception/error-messages';
+import axios, { AxiosInstance, AxiosRequestConfig, isAxiosError } from 'axios';
+import { isSafeParseError } from '@/utils/validation';
+import { setupInterceptorsTo } from './interceptors';
 
 interface IHttpClient {
   get<T>(props: GetRequestProps): Promise<ApiSuccessResponse<T>>;
@@ -21,23 +21,23 @@ interface IHttpClient {
 
 type ApiRequestProps<U> =
   | {
-      method: "get";
+      method: 'get';
       options: GetRequestProps;
     }
   | {
-      method: "post";
+      method: 'post';
       options: PostRequestProps<U>;
     }
   | {
-      method: "put";
+      method: 'put';
       options: PutRequestProps<U>;
     }
   | {
-      method: "patch";
+      method: 'patch';
       options: PatchRequestProps<U>;
     }
   | {
-      method: "delete";
+      method: 'delete';
       options: DeleteRequestProps;
     };
 class HttpClient implements IHttpClient {
@@ -51,21 +51,21 @@ class HttpClient implements IHttpClient {
   public static getInstance(): HttpClient {
     if (!HttpClient.instance) {
       const accessToken =
-        typeof window === "undefined"
+        typeof window === 'undefined'
           ? null
-          : localStorage?.getItem("authToken");
+          : localStorage?.getItem('accessToken');
 
       HttpClient.instance = new HttpClient(
         setupInterceptorsTo(
           axios.create({
             headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${accessToken || ""}`,
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${accessToken || ''}`,
             },
-            baseURL: process.env.NEXT_PUBLIC_API_URL,
+            baseURL: process.env.NEXT_PUBLIC_API_URL || '',
             withCredentials: true,
-          })
-        )
+          }),
+        ),
       );
     }
 
@@ -80,27 +80,40 @@ class HttpClient implements IHttpClient {
     if (Array.isArray(error) && error.length > 0) {
       /* eslint-disable  @typescript-eslint/no-explicit-any */
       return error.flatMap((error: any) =>
-        error?.errors?.field ? error?.errors : error
+        error?.errors?.field ? error?.errors : error,
       );
     }
-    return "Unknown error";
+    return 'Unknown error';
   }
 
   private handleError(error: unknown) {
     if (isAxiosError(error)) {
       const errorData = error.response?.data;
-      const errorMessage =
-        typeof errorData.error === "string"
-          ? ErrorMessages.get(errorData.error) || errorData.error
-          : this.extractErrorMessages(errorData.error);
 
-      return errorMessage || "Network error!";
+      // Updated to match ApiFailureResponse structure
+      if (errorData?.message) {
+        return Array.isArray(errorData.message)
+          ? errorData.message[0]
+          : errorData.message;
+      }
+
+      // Fallback for legacy error format
+      if (errorData?.error) {
+        const errorMessage =
+          typeof errorData.error === 'string'
+            ? ErrorMessages.get(errorData.error) || errorData.error
+            : this.extractErrorMessages(errorData.error);
+
+        return errorMessage;
+      }
+
+      return error.message || 'Network error!';
     }
-    return "Network error!";
+    return 'Network error!';
   }
 
   private async request<T, U>(
-    params: ApiRequestProps<U>
+    params: ApiRequestProps<U>,
   ): Promise<ApiSuccessResponse<T>> {
     return new Promise(async (resolve, reject) => {
       try {
@@ -112,10 +125,10 @@ class HttpClient implements IHttpClient {
 
         const response = await this.instance[method]<ApiSuccessResponse<T>>(
           options.url,
-          method === "get" || method === "delete"
+          method === 'get' || method === 'delete'
             ? requestConfig
             : options.body,
-          requestConfig
+          requestConfig,
         );
 
         const result = response.data;
@@ -125,7 +138,7 @@ class HttpClient implements IHttpClient {
           const isValid = options.typeCheck(result);
           if (isSafeParseError(isValid)) {
             throw new Error(
-              isValid?.error?.issues.map((issue) => issue.message).join("\n")
+              isValid?.error?.issues.map((issue) => issue.message).join('\n'),
             );
           }
         }
@@ -137,23 +150,23 @@ class HttpClient implements IHttpClient {
   }
 
   public get<T>(props: GetRequestProps): Promise<ApiSuccessResponse<T>> {
-    return this.request<T, unknown>({ method: "get", options: props });
+    return this.request<T, unknown>({ method: 'get', options: props });
   }
   public post<T, U>(
-    props: PostRequestProps<U>
+    props: PostRequestProps<U>,
   ): Promise<ApiSuccessResponse<T>> {
-    return this.request<T, U>({ method: "post", options: props });
+    return this.request<T, U>({ method: 'post', options: props });
   }
   public put<T, U>(props: PutRequestProps<U>): Promise<ApiSuccessResponse<T>> {
-    return this.request<T, U>({ method: "put", options: props });
+    return this.request<T, U>({ method: 'put', options: props });
   }
   public patch<T, U>(
-    props: PatchRequestProps<U>
+    props: PatchRequestProps<U>,
   ): Promise<ApiSuccessResponse<T>> {
-    return this.request<T, U>({ method: "patch", options: props });
+    return this.request<T, U>({ method: 'patch', options: props });
   }
   public delete<T>(props: DeleteRequestProps): Promise<ApiSuccessResponse<T>> {
-    return this.request<T, unknown>({ method: "delete", options: props });
+    return this.request<T, unknown>({ method: 'delete', options: props });
   }
 }
 

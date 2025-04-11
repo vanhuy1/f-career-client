@@ -18,7 +18,7 @@ export type GetRequestProps = {
   url: string;
   typeCheck?: (
     data: unknown,
-    params?: Partial<ParseParams>
+    params?: Partial<ParseParams>,
   ) => SafeParseReturnType<unknown, unknown>;
   config?: AxiosRequestConfig;
 };
@@ -27,7 +27,7 @@ export type PostRequestProps<T> = {
   url: string;
   typeCheck?: (
     data: unknown,
-    params?: Partial<ParseParams>
+    params?: Partial<ParseParams>,
   ) => SafeParseReturnType<unknown, unknown>;
   body: T;
   config?: AxiosRequestConfig;

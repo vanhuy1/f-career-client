@@ -1,10 +1,11 @@
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import ROUTES from "@/constants/navigation";
-import Logo from "../_components/Logo";
-import Navigation from "../_components/Navigation";
-import Divider from "../_components/Divider";
-import GoogleSignButton from "../_components/GoogleSignButton";
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import ROUTES from '@/constants/navigation';
+import Logo from '../_components/Logo';
+import Navigation from '../_components/Navigation';
+import Divider from '../_components/Divider';
+import GoogleSignButton from '../_components/GoogleSignButton';
+import Link from 'next/link';
 
 const SignInForm = () => (
   <div className="space-y-6">
@@ -18,7 +19,8 @@ const SignInForm = () => (
       <div>
         <label
           htmlFor="email"
-          className="block text-sm font-medium text-gray-700 mb-1">
+          className="mb-1 block text-sm font-medium text-gray-700"
+        >
           Email Address
         </label>
         <Input
@@ -32,7 +34,8 @@ const SignInForm = () => (
       <div>
         <label
           htmlFor="password"
-          className="block text-sm font-medium text-gray-700 mb-1">
+          className="mb-1 block text-sm font-medium text-gray-700"
+        >
           Password
         </label>
         <Input
@@ -44,9 +47,9 @@ const SignInForm = () => (
       </div>
 
       <div className="flex justify-end">
-        <a href="#" className="text-indigo-600 text-sm font-medium">
+        <Link href="#" className="text-sm font-medium text-indigo-600">
           Forgot Password?
-        </a>
+        </Link>
       </div>
 
       <Button className="w-full bg-indigo-600 hover:bg-indigo-700">
@@ -54,20 +57,21 @@ const SignInForm = () => (
       </Button>
 
       <div className="text-center text-sm">
-        Don’t have an account?{" "}
-        <a
+        Don’t have an account?{' '}
+        <Link
           href={ROUTES.AUTH.SIGNUP.path}
-          className="text-indigo-600 font-medium">
+          className="font-medium text-indigo-600"
+        >
           {ROUTES.AUTH.SIGNUP.name}
-        </a>
+        </Link>
       </div>
 
-      <div className="text-xs text-gray-500 text-center">
-        By signing in, you acknowledge that you have read and accept the{" "}
+      <div className="text-center text-xs text-gray-500">
+        By signing in, you acknowledge that you have read and accept the{' '}
         <a href="#" className="text-indigo-600">
           Terms of Service
-        </a>{" "}
-        and{" "}
+        </a>{' '}
+        and{' '}
         <a href="#" className="text-indigo-600">
           Privacy Policy
         </a>
@@ -79,7 +83,7 @@ const SignInForm = () => (
 
 export default function SignInPage() {
   return (
-    <div className="max-w-md mx-auto w-full">
+    <div className="mx-auto w-full max-w-md">
       <Logo />
       <Navigation />
       <SignInForm />

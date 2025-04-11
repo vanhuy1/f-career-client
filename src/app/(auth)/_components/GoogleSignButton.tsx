@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { Button } from "@/components/ui/button";
-import { FcGoogle } from "react-icons/fc";
+import { Button } from '@/components/ui/button';
+import { FcGoogle } from 'react-icons/fc';
 
 // Define props for customization (optional)
 interface GoogleSignUpButtonProps {
@@ -13,9 +13,10 @@ const GoogleSignButton = ({ text, onClick }: GoogleSignUpButtonProps) => {
   return (
     <Button
       variant="outline"
-      className="w-full flex items-center justify-center gap-2 border border-gray-300"
-      onClick={onClick}>
-      <span className="flex items-center justify-center w-5 h-5">
+      className="flex w-full items-center justify-center gap-2 border border-gray-300"
+      onClick={onClick}
+    >
+      <span className="flex h-5 w-5 items-center justify-center">
         <FcGoogle />
       </span>
       {text}
