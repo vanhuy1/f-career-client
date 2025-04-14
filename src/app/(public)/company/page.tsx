@@ -1,3 +1,4 @@
+import React from 'react';
 import CompanySearch from '../_components/company-search';
 
 export default function CompanyLayout() {

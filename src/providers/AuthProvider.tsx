@@ -31,7 +31,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     } else {
       setUserFailure('User already exists');
     }
-  }, [user]);
+  }, [user, dispatch]);
 
   return <>{children}</>;
 }

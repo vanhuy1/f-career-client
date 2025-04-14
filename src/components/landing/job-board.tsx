@@ -1,5 +1,16 @@
+import React from 'react';
 import { ArrowRight } from 'lucide-react';
 import Image from 'next/image';
+
+interface Job {
+  id: number;
+  title: string;
+  company: string;
+  location: string;
+  description: string;
+  tags: string[];
+  logo: string;
+}
 
 export default function JobBoard() {
   const jobs = [
@@ -106,7 +117,7 @@ export default function JobBoard() {
   );
 }
 
-function JobCard({ job }: { job: any }) {
+function JobCard({ job }: { job: Job }) {
   return (
     <div>
       <div className="flex h-full flex-col rounded-lg bg-white p-6">
@@ -134,7 +145,7 @@ function JobCard({ job }: { job: any }) {
         </p>
 
         <div className="mt-auto flex flex-wrap gap-2">
-          {job.tags.map((tag: any) => (
+          {job.tags.map((tag: string) => (
             <span
               key={tag}
               className={`rounded-full px-3 py-1 text-xs ${getTagColor(tag)}`}
@@ -148,7 +159,7 @@ function JobCard({ job }: { job: any }) {
   );
 }
 
-function getTagColor(tag: any) {
+function getTagColor(tag: string) {
   switch (tag) {
     case 'Marketing':
       return 'bg-amber-100 text-amber-800';

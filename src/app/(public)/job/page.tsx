@@ -1,3 +1,4 @@
+import React from 'react';
 import JobSearch from '../_components/job-search';
 
 export default function JobLayout() {

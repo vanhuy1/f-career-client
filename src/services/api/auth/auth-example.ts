@@ -46,7 +46,7 @@ class AuthService {
       });
       return data;
     } catch (error) {
-      throw new Error('Failed to fetch user profile');
+      throw new Error(error as string);
     }
   }
 

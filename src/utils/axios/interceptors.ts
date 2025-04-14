@@ -6,7 +6,8 @@ import {
   AxiosResponse,
   InternalAxiosRequestConfig,
 } from 'axios';
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
 type AdaptAxiosRequestConfig = AxiosRequestConfig &
   InternalAxiosRequestConfig<any>;
 export const onRequest = (
