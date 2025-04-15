@@ -1,6 +1,10 @@
+'use client';
+
+import { useUser } from '@/services/state/userSlice';
 import React from 'react';
 
 const CandidateProfilePage = () => {
+  const user = useUser();
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gray-100">
       <header className="w-full bg-blue-600 py-4 text-center text-white">
@@ -8,7 +12,9 @@ const CandidateProfilePage = () => {
       </header>
       <main className="mt-8 flex flex-col items-center px-4">
         <div className="w-full max-w-2xl rounded-lg bg-white p-6 shadow-md">
-          <h2 className="mb-4 text-xl font-semibold">Welcome, Candidate!</h2>
+          <h2 className="mb-4 text-xl font-semibold">
+            Welcome, {user?.data.name}
+          </h2>
           <p className="mb-6 text-gray-700">
             This is your profile landing page. Here you can manage your personal
             information, upload your resume, and explore job opportunities.

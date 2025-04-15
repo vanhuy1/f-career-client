@@ -1,6 +1,10 @@
-export interface Auth {
-  token: string | null;
-  refreshToken: string | null;
-  expiresAt: number | null;
-  isAuthenticated: boolean;
+export interface AuthResponse {
+  data: {
+    accessToken: string;
+    refreshToken: string;
+  };
+  meta: {
+    message: string;
+    statusCode: number;
+  };
 }

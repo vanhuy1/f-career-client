@@ -2,9 +2,9 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import type { RootState } from '@/store/store';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { AppStoreState, LoadingState } from '../../store/store.model';
-import { LoginResponse } from '@/schemas/Auth';
+import { AuthResponse } from '@/types/Auth';
 
-const initialState: AppStoreState<LoginResponse> = {
+const initialState: AppStoreState<AuthResponse> = {
   data: null,
   loadingState: LoadingState.init,
   errors: null,
@@ -18,7 +18,12 @@ const authSlice = createSlice({
       state.loadingState = LoadingState.loading;
       state.errors = null;
     },
-    loginSuccess(state, action: PayloadAction<LoginResponse>) {
+    loginSuccess(state, action: PayloadAction<AuthResponse>) {
+      // Store the access token and refresh token in localStorage and cookies
+      if (action.payload.data) {
+        localStorage.setItem('accessToken', action.payload.data.accessToken);
+        document.cookie = `refreshToken=${action.payload.data.refreshToken}; path=/;`;
+      }
       state.data = action.payload;
       state.loadingState = LoadingState.loaded;
       state.errors = null;
@@ -31,7 +36,7 @@ const authSlice = createSlice({
       state.loadingState = LoadingState.loading;
       state.errors = null;
     },
-    refreshTokenSuccess(state, action: PayloadAction<Partial<LoginResponse>>) {
+    refreshTokenSuccess(state, action: PayloadAction<Partial<AuthResponse>>) {
       if (state.data) {
         state.data = { ...state.data, ...action.payload };
       }
@@ -79,10 +84,10 @@ export const useAuthActions = () => {
   const dispatch = useAppDispatch();
   return {
     loginStart: () => dispatch(loginStart()),
-    loginSuccess: (auth: LoginResponse) => dispatch(loginSuccess(auth)),
+    loginSuccess: (auth: AuthResponse) => dispatch(loginSuccess(auth)),
     loginFailure: (error: string) => dispatch(loginFailure(error)),
     refreshTokenStart: () => dispatch(refreshTokenStart()),
-    refreshTokenSuccess: (auth: Partial<LoginResponse>) =>
+    refreshTokenSuccess: (auth: Partial<AuthResponse>) =>
       dispatch(refreshTokenSuccess(auth)),
     refreshTokenFailure: (error: string) =>
       dispatch(refreshTokenFailure(error)),

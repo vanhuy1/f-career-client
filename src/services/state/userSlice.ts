@@ -2,7 +2,7 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import type { RootState } from '@/store/store';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { AppStoreState, LoadingState } from '../../store/store.model';
-import { UserProfile } from '../api/auth/auth-example';
+import { UserProfile } from '@/types/User';
 
 //temporary
 const initialState: AppStoreState<UserProfile> = {
