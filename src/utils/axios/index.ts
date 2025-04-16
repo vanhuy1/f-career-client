@@ -76,28 +76,35 @@ class HttpClient implements IHttpClient {
     return this.axiosInstance;
   }
 
-  private extractErrorMessages(error: unknown) {
-    if (Array.isArray(error) && error.length > 0) {
-      /* eslint-disable  @typescript-eslint/no-explicit-any */
-      return error.flatMap((error: any) =>
-        error?.errors?.field ? error?.errors : error,
-      );
-    }
-    return 'Unknown error';
-  }
-
   private handleError(error: unknown) {
     if (isAxiosError(error)) {
       const errorData = error.response?.data;
 
-      // Updated to match ApiFailureResponse structure
+      // Handle new error format with top-level 'error' object
+      if (errorData?.error) {
+        // Check for message in error object
+        if (errorData.error.message) {
+          return Array.isArray(errorData.error.message)
+            ? errorData.error.message[0]
+            : errorData.error.message;
+        }
+
+        // Check for message in details
+        if (errorData.error.details?.message) {
+          return Array.isArray(errorData.error.details.message)
+            ? errorData.error.details.message[0]
+            : errorData.error.details.message;
+        }
+      }
+
+      // Handle top-level message
       if (errorData?.message) {
         return Array.isArray(errorData.message)
           ? errorData.message[0]
           : errorData.message;
       }
 
-      // Fallback for legacy error format
+      // Legacy error format handling
       if (errorData?.error) {
         const errorMessage =
           typeof errorData.error === 'string'
@@ -112,6 +119,22 @@ class HttpClient implements IHttpClient {
     return 'Network error!';
   }
 
+  private extractErrorMessages(error: unknown) {
+    // Handle object with message property
+    if (typeof error === 'object' && error !== null && 'message' in error) {
+      const message = error.message;
+      return Array.isArray(message) ? message[0] : message;
+    }
+
+    /* eslint-disable @typescript-eslint/no-explicit-any */
+    if (Array.isArray(error) && error.length > 0) {
+      return error.flatMap((error: any) =>
+        error?.errors?.field ? error?.errors : error,
+      );
+    }
+
+    return 'Unknown error';
+  }
   private async request<T, U>(
     params: ApiRequestProps<U>,
   ): Promise<ApiSuccessResponse<T>> {

@@ -1,3 +1,4 @@
+import LoadingScreen from '@/components/LoadingScreen';
 import { userService } from '@/services/api/auth/user-api';
 import {
   setUserFailure,
@@ -20,8 +21,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   useEffect(() => {
     const setUSer = async () => {
-      dispatch(setUserStart());
       try {
+        dispatch(setUserStart());
         const userProfile = await userService.getMe();
         dispatch(setUserSuccess(userProfile));
       } catch (error) {
@@ -37,7 +38,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, [user, dispatch]);
 
   if (isLoading === LoadingState.loading) {
-    return <div>Loading...</div>;
+    return <LoadingScreen />;
   }
 
   return <>{children}</>;

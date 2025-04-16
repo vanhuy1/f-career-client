@@ -13,25 +13,30 @@ import GoogleSignButton from '../_components/GoogleSignButton';
 import Link from 'next/link';
 import { SignUpRequest, signUpRequestSchema } from '@/schemas/Auth';
 import { authService } from '@/services/api/auth/auth-api';
+import { toast } from 'react-toastify';
 
 const SignUpForm = () => {
   const {
     register,
     handleSubmit,
+    reset,
     formState: { errors, isSubmitting },
   } = useForm<SignUpRequest>({
     resolver: zodResolver(signUpRequestSchema),
   });
 
   const onSubmit = async (data: SignUpRequest) => {
-    console.log(data);
     try {
-      const respone = await authService.signUp(data);
-      console.log('Sign up successful:', respone);
+      await authService.signUp(data);
+      toast.success('Sign up successful!', {
+        className: 'bg-green-500 text-white font-semibold',
+        onClose: () => reset(),
+      });
     } catch (error) {
-      alert('Sign up failed:', error);
+      toast.error(`${error}`, {
+        className: 'bg-red-500 text-white font-semibold',
+      });
     }
-    // Add your API call here
   };
 
   return (
