@@ -18,12 +18,15 @@ import {
   loginFailure,
   loginStart,
   loginSuccess,
+  useAuthLoading,
 } from '@/services/state/authSlice';
 import { useRouter } from 'next/navigation';
 import { setUserStart, setUserSuccess } from '@/services/state/userSlice';
 import { userService } from '@/services/api/auth/user-api';
 import { ROLES } from '@/enums/roles.enum';
 import { toast } from 'react-toastify';
+import { LoadingState } from '@/store/store.model';
+import LoadingScreen from '@/pages/LoadingScreen';
 
 const SignInForm = () => {
   const dispatch = useAppDispatch();
@@ -59,9 +62,7 @@ const SignInForm = () => {
       }
     } catch (error) {
       dispatch(loginFailure(error as string));
-      toast.error(`${error}`, {
-        className: 'bg-red-500 text-white font-semibold',
-      });
+      toast.error(`${error}`);
     }
   };
 
@@ -154,6 +155,12 @@ const SignInForm = () => {
 };
 
 export default function SignInPage() {
+  const authLoading = useAuthLoading();
+
+  if (authLoading === LoadingState.loading) {
+    return <LoadingScreen />;
+  }
+
   return (
     <div className="mx-auto w-full max-w-md">
       <Logo />

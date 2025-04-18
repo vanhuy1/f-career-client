@@ -29,13 +29,10 @@ const SignUpForm = () => {
     try {
       await authService.signUp(data);
       toast.success('Sign up successful!', {
-        className: 'bg-green-500 text-white font-semibold',
         onClose: () => reset(),
       });
     } catch (error) {
-      toast.error(`${error}`, {
-        className: 'bg-red-500 text-white font-semibold',
-      });
+      toast.error(`${error}`, {});
     }
   };
 

@@ -100,7 +100,10 @@ export default function Header() {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src={user.data?.username} alt={user.data.name} />
+                  <AvatarImage
+                    src="/logo-landing/udacity.png"
+                    alt={user.data.name}
+                  />
                   <AvatarFallback>
                     {user.data.name
                       .split(' ')
