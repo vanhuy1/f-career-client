@@ -19,6 +19,7 @@ import { useAppDispatch } from '@/store/hooks';
 import { logout, useAuthLoading } from '@/services/state/authSlice';
 import { LoadingState } from '@/store/store.model';
 import { useState } from 'react';
+import { ROLES } from '@/enums/roles.enum';
 
 export default function Header() {
   const pathname = usePathname();
@@ -29,10 +30,8 @@ export default function Header() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const handleLogout = async () => {
-    localStorage.clear();
     dispatch(logout());
     dispatch(clearUser());
-    window.location.reload();
   };
 
   if ((userLoading && authLoading) === LoadingState.loading)
@@ -72,6 +71,27 @@ export default function Header() {
           >
             {ROUTES.HOMEPAGE.COMPANY.name}
           </Link>
+          {user && (
+            <Link
+              href={
+                user?.data.roles[0] === ROLES.USER
+                  ? ROUTES.CA.HOME.path
+                  : ROUTES.CO.HOME.path
+              }
+              className={`transition hover:text-gray-300 ${
+                pathname ===
+                (user?.data.roles[0] === ROLES.USER
+                  ? ROUTES.CA.HOME.path
+                  : ROUTES.CO.HOME.path)
+                  ? 'font-bold text-blue-500'
+                  : ''
+              }`}
+            >
+              {user?.data.roles[0] === ROLES.USER
+                ? ROUTES.CA.HOME.name
+                : ROUTES.CO.HOME.name}
+            </Link>
+          )}
         </div>
 
         {/* Auth Buttons */}
@@ -80,7 +100,10 @@ export default function Header() {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src={user.data?.username} alt={user.data.name} />
+                  <AvatarImage
+                    src="/logo-landing/udacity.png"
+                    alt={user.data.name}
+                  />
                   <AvatarFallback>
                     {user.data.name
                       .split(' ')

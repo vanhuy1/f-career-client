@@ -18,12 +18,15 @@ import {
   loginFailure,
   loginStart,
   loginSuccess,
+  useAuthLoading,
 } from '@/services/state/authSlice';
 import { useRouter } from 'next/navigation';
 import { setUserStart, setUserSuccess } from '@/services/state/userSlice';
 import { userService } from '@/services/api/auth/user-api';
 import { ROLES } from '@/enums/roles.enum';
 import { toast } from 'react-toastify';
+import { LoadingState } from '@/store/store.model';
+import LoadingScreen from '@/pages/LoadingScreen';
 
 const SignInForm = () => {
   const dispatch = useAppDispatch();
@@ -47,11 +50,11 @@ const SignInForm = () => {
         if (userData) {
           dispatch(setUserSuccess(userData));
           if (userData.data.roles[0] === ROLES.USER) {
-            router.push(ROUTES.CA.Home.path);
+            router.push(ROUTES.CA.HOME.path);
           } else if (userData.data.roles[0] === ROLES.ADMIN) {
             router.push(ROUTES.ADMIN.Home.path);
           } else if (userData.data.roles[0] === ROLES.RECRUITER) {
-            router.push(ROUTES.CO.Home.path);
+            router.push(ROUTES.CO.HOME.path);
           }
         } else {
           dispatch(loginFailure('Failed to fetch user data'));
@@ -59,9 +62,7 @@ const SignInForm = () => {
       }
     } catch (error) {
       dispatch(loginFailure(error as string));
-      toast.error(`${error}`, {
-        className: 'bg-red-500 text-white font-semibold',
-      });
+      toast.error(`${error}`);
     }
   };
 
@@ -154,6 +155,12 @@ const SignInForm = () => {
 };
 
 export default function SignInPage() {
+  const authLoading = useAuthLoading();
+
+  if (authLoading === LoadingState.loading) {
+    return <LoadingScreen />;
+  }
+
   return (
     <div className="mx-auto w-full max-w-md">
       <Logo />

@@ -1,4 +1,4 @@
-import LoadingScreen from '@/components/LoadingScreen';
+import LoadingScreen from '@/pages/LoadingScreen';
 import { userService } from '@/services/api/auth/user-api';
 import {
   setUserFailure,
