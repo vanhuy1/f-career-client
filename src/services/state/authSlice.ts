@@ -48,6 +48,10 @@ const authSlice = createSlice({
       state.errors = action.payload;
     },
     logout(state) {
+      localStorage.clear();
+      document.cookie =
+        'refreshToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+      window.location.reload();
       state.data = null;
       state.loadingState = LoadingState.init;
       state.errors = null;

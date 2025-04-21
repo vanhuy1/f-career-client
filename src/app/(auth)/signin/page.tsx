@@ -47,11 +47,11 @@ const SignInForm = () => {
         if (userData) {
           dispatch(setUserSuccess(userData));
           if (userData.data.roles[0] === ROLES.USER) {
-            router.push(ROUTES.CA.Home.path);
+            router.push(ROUTES.CA.HOME.path);
           } else if (userData.data.roles[0] === ROLES.ADMIN) {
             router.push(ROUTES.ADMIN.Home.path);
           } else if (userData.data.roles[0] === ROLES.RECRUITER) {
-            router.push(ROUTES.CO.Home.path);
+            router.push(ROUTES.CO.HOME.path);
           }
         } else {
           dispatch(loginFailure('Failed to fetch user data'));
