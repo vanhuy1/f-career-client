@@ -40,17 +40,72 @@ const ROUTES = {
 
   //Candidate
   CA: {
-    Home: {
+    HOME: {
       path: '/ca',
-      name: 'HomePage',
+      name: 'DashBoard',
+
+      APPLICATIONLIST: {
+        path: '/ca/apply-list',
+        name: 'Application List',
+      },
+
+      BROWSECOMPANY: {
+        path: '/ca/browse-company',
+        name: 'Browse Company',
+      },
+
+      MESSAGE: {
+        path: '/ca/message',
+        name: 'Message',
+      },
+
+      PROFILE: {
+        path: '/ca/profile',
+        name: 'Profile',
+      },
+
+      SETTINGS: {
+        path: '/ca/settings',
+        name: 'Settings',
+      },
+
+      FINDJOB: {
+        path: '/ca/find-job',
+        name: 'Find Job',
+      },
     },
   },
 
   //Company
   CO: {
-    Home: {
+    HOME: {
       path: '/co',
-      name: 'HomePage',
+      name: 'DashBoard',
+
+      APPLICANTLIST: {
+        path: '/co/applicant-list',
+        name: 'Applicant List',
+      },
+      JOBLIST: {
+        path: '/co/job-list',
+        name: 'Job List',
+      },
+      MESSAGE: {
+        path: '/co/messages',
+        name: 'Message',
+      },
+      PROFILE: {
+        path: '/co/profile',
+        name: 'Profile',
+      },
+      SCHEDULE: {
+        path: '/co/schedule',
+        name: 'Schedule',
+      },
+      SETTINGS: {
+        path: '/co/settings',
+        name: 'Settings',
+      },
     },
   },
 };
