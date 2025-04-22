@@ -16,7 +16,7 @@ export default function JobHeader({
 }: JobHeaderProps) {
   const logoLetter = companyName.charAt(0).toUpperCase();
   return (
-    <div className="flex items-center justify-between rounded-lg border p-6">
+    <div className="mb-8 flex items-center justify-between rounded-lg border p-6">
       <div className="flex items-center">
         <div className="mr-6 flex h-20 w-20 items-center justify-center rounded-md bg-gradient-to-br from-indigo-500 to-indigo-400 text-5xl font-bold text-white">
           {logoLetter}
