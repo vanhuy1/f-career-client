@@ -32,7 +32,7 @@ export default function Header() {
       <div className="flex h-16 items-center justify-between px-6">
         <h1 className="text-2xl font-semibold">{getHeaderTitle()}</h1>
         <div className="flex items-center gap-4">
-          <Link href="/">
+          <Link href={ROUTES.HOMEPAGE.path}>
             <Button variant="outline" className="text-indigo-600">
               Back to homepage
             </Button>

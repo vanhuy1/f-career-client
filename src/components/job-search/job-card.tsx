@@ -1,9 +1,13 @@
+'use client';
+
 import { Button } from '@/components/ui/button';
+import { Company } from '@/types/Company';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 
 interface JobCardProps {
   title: string;
-  company: string;
+  company: Company;
   location: string;
   logo: string;
   tags: string[];
@@ -20,6 +24,8 @@ export default function JobCard({
   applied,
   capacity,
 }: JobCardProps) {
+  const router = useRouter();
+
   // Calculate progress percentage
   const progress = (applied / capacity) * 100;
 
@@ -31,8 +37,18 @@ export default function JobCard({
     return 'bg-red-500';
   };
 
+  const handleCardClick = () => {
+    const companySlug = company.name.toLowerCase().replace(/\s+/g, '-');
+    const jobSlug = title.toLowerCase().replace(/\s+/g, '-');
+
+    router.push(`/company/${companySlug}/${jobSlug}`);
+  };
+
   return (
-    <div className="overflow-hidden rounded-lg border">
+    <div
+      className="overflow-hidden rounded-lg border"
+      onClick={handleCardClick}
+    >
       <div className="flex items-start gap-4 p-4">
         <div className="shrink-0">
           <div className="h-14 w-14 overflow-hidden rounded bg-gray-100">
@@ -49,7 +65,7 @@ export default function JobCard({
         <div className="flex-1">
           <h3 className="text-lg font-semibold text-gray-800">{title}</h3>
           <p className="text-sm text-gray-600">
-            {company} • {location}
+            {company.name} • {location}
           </p>
 
           <div className="mt-2 flex flex-wrap gap-2">
