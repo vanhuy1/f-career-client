@@ -1,8 +1,11 @@
+import CompanySearch from '@/app/(public)/_components/company-search';
+import CompanySearchPage from '@/components/company-search/company-search-page';
+
 const BrowseCompanyPage = () => {
   return (
     <div>
-      <h1>Browse Company Page</h1>
-      {/* Add your content here */}
+      <CompanySearch />
+      <CompanySearchPage />
     </div>
   );
 };

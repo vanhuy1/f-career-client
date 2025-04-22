@@ -32,7 +32,7 @@ export default function Sidebar() {
   return (
     <div className="flex w-60 flex-col border-r bg-white">
       <div className="p-6">
-        <Link href="/co" className="flex items-center gap-2">
+        <Link href={ROUTES.HOMEPAGE.path} className="flex items-center gap-2">
           <div className="rounded-full bg-indigo-600 p-1.5 text-white">
             <Home className="h-5 w-5" />
           </div>

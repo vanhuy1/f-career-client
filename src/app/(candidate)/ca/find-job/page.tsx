@@ -1,8 +1,11 @@
+import JobSearchInterface from '@/app/(public)/_components/job-search';
+import JobListingsPage from '@/components/job-search/job-search-page';
+
 const FindJob = () => {
   return (
     <div>
-      <h1>Find Job</h1>
-      <p>Find Job</p>
+      <JobSearchInterface />
+      <JobListingsPage />
     </div>
   );
 };

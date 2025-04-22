@@ -1,5 +1,6 @@
 'use client';
 import { Button } from '@/components/ui/button';
+import ROUTES from '@/constants/navigation';
 import { Bell } from 'lucide-react';
 import Link from 'next/link';
 
@@ -12,7 +13,7 @@ export default function Header() {
           <Button variant="ghost" size="icon" className="text-muted-foreground">
             <Bell className="h-5 w-5" />
           </Button>
-          <Link href="/">
+          <Link href={ROUTES.HOMEPAGE.path}>
             <Button variant="outline" className="text-indigo-600">
               Post Job
             </Button>

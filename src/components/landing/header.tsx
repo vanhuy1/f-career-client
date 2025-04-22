@@ -126,10 +126,10 @@ export default function Header() {
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
-                <Link href="/settings">Profile</Link>
+                <Link href={ROUTES.CA.HOME.PROFILE.path}>Profile</Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link href="/settings">Settings</Link>
+                <Link href={ROUTES.CA.HOME.SETTINGS.path}>Settings</Link>
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => {
