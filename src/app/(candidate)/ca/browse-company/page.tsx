@@ -1,4 +1,4 @@
-import CompanySearch from '@/app/(public)/_components/company-search';
+import CompanySearch from '@/components/company-search/company-search-banner';
 import CompanySearchPage from '@/components/company-search/company-search-page';
 
 const BrowseCompanyPage = () => {

@@ -1,4 +1,4 @@
-import JobDetailPageComponent from '@/app/(public)/_components/job-detail-page';
+import JobDetailPageComponent from '@/components/job-search/job-detail-page';
 
 interface PageProps {
   params: Promise<{

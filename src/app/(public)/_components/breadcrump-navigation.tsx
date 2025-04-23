@@ -14,6 +14,16 @@ const BreadcrumbNavigation = ({
   company,
   jobTitle,
 }: BreadcrumbNavigationProps) => {
+  const formattedCompany = company.name
+    .split(' ')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+
+  const companyRoute = company.name
+    .split(' ')
+    .map((word) => word.toLowerCase())
+    .join('-');
+
   return (
     <nav className="mb-8">
       <ol className="flex items-center space-x-2 text-sm text-gray-500">
@@ -34,10 +44,10 @@ const BreadcrumbNavigation = ({
         <li>/</li>
         <li>
           <Link
-            href={`${ROUTES.HOMEPAGE.COMPANY.path}/${company.name}`}
+            href={`${ROUTES.HOMEPAGE.COMPANY.path}/${companyRoute}`}
             className="hover:text-gray-700"
           >
-            {company.name}
+            {formattedCompany}
           </Link>
         </li>
         {jobTitle?.title && (
