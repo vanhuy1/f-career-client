@@ -21,7 +21,7 @@ export default async function JobDetailPageComponent({
   const jobTitle = title.replace(/-/g, ' ');
   const formattedCompany = company
     .split(' ')
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .map((word) => word.charAt(0).toLowerCase() + word.slice(1))
     .join(' ');
   const formattedTitle = jobTitle
     .split(' ')

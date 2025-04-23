@@ -5,7 +5,7 @@ import { X, Smile, Paperclip } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 
 interface ApplyDialogProps {
   isOpen: boolean;
@@ -84,9 +84,9 @@ export default function ApplyDialog({
                 </div>
               </div>
               <div>
-                <h2 className="text-xl font-semibold text-gray-900">
+                <DialogTitle className="text-xl font-semibold text-gray-900">
                   {jobTitle}
-                </h2>
+                </DialogTitle>
                 <div className="mt-1 flex items-center gap-2 text-sm text-gray-600">
                   <span>{company}</span>
                   <span>•</span>
