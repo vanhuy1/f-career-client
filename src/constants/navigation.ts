@@ -45,7 +45,7 @@ const ROUTES = {
       name: 'DashBoard',
 
       APPLICATIONLIST: {
-        path: '/ca/apply-list',
+        path: '/ca/application-list',
         name: 'Application List',
       },
 
