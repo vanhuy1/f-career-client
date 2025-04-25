@@ -1,9 +1,35 @@
 import React from 'react';
 
-const Navigation = () => (
-  <div className="mb-8 flex justify-end space-x-4 text-sm">
-    <div className="font-medium text-indigo-600">Job Seeker</div>
-    <div className="text-gray-500">Company</div>
+interface NavigationProps {
+  activeTab?: 'jobseeker' | 'company';
+  onTabChange?: (tab: 'jobseeker' | 'company') => void;
+}
+
+const Navigation = ({
+  activeTab = 'jobseeker',
+  onTabChange,
+}: NavigationProps) => (
+  <div className="mb-8 flex justify-center space-x-4 text-sm">
+    <button
+      onClick={() => onTabChange?.('jobseeker')}
+      className={`rounded-full px-6 py-2 transition-all ${
+        activeTab === 'jobseeker'
+          ? 'bg-indigo-600 text-white'
+          : 'text-gray-500 hover:text-indigo-600'
+      }`}
+    >
+      Job Seeker
+    </button>
+    <button
+      onClick={() => onTabChange?.('company')}
+      className={`rounded-full px-6 py-2 transition-all ${
+        activeTab === 'company'
+          ? 'bg-indigo-600 text-white'
+          : 'text-gray-500 hover:text-indigo-600'
+      }`}
+    >
+      Company
+    </button>
   </div>
 );
 
