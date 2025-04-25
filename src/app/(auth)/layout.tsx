@@ -1,6 +1,6 @@
 import React from 'react';
 import Image from 'next/image';
-import authbg from '../../../public/Auth/authbg.jpg';
+import authbg from '../../../public/Auth/authbg.png';
 
 const BackgroundImage = () => (
   <div className="relative hidden h-screen md:block md:w-1/2">

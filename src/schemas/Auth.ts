@@ -26,3 +26,15 @@ export const signUpRequestSchema = z.object({
 
 export type SignUpRequest = z.infer<typeof signUpRequestSchema>;
 export type SignInRequest = z.infer<typeof signInRequestSchema>;
+
+export const companyInfoSchema = z.object({
+  company_name: z.string().min(2, { message: 'Company name is required' }),
+  company_website: z.string().url({ message: 'Please enter a valid URL' }),
+  tax_code: z.string().min(1, { message: 'Tax code is required' }),
+  business_license_url: z.string().optional(),
+  company_email: z
+    .string()
+    .email({ message: 'Please enter a valid email address' }),
+});
+
+export type CompanyInfoFormValues = z.infer<typeof companyInfoSchema>;
