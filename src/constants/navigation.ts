@@ -106,6 +106,10 @@ const ROUTES = {
         path: '/co/settings',
         name: 'Settings',
       },
+      POSTJOB: {
+        path: '/co/post-job',
+        name: 'Post Job',
+      },
     },
   },
 };

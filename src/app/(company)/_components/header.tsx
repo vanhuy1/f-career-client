@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Bell, ChevronDown, Plus, Menu } from 'lucide-react';
 import EditFormDialog, { type FormField } from './edit-form-dialog';
+import Link from 'next/link';
+import ROUTES from '@/constants/navigation';
 
 interface HeaderProps {
   onMenuToggle: () => void;
@@ -86,7 +88,13 @@ export default function Header({ onMenuToggle }: HeaderProps) {
             className="bg-indigo-600 text-xs text-white hover:bg-indigo-700 sm:text-sm"
           >
             <Plus className="mr-1 h-4 w-4" />
-            <span className="hidden sm:inline">Post a job</span>
+            <Link
+              href={ROUTES.CO.HOME.POSTJOB.path}
+              className="flex items-center gap-2"
+            >
+              <span className="hidden sm:inline">Post a job</span>
+            </Link>
+
             <span className="sm:hidden">Post</span>
           </Button>
         </div>
