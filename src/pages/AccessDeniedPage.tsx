@@ -1,6 +1,7 @@
-import { Loader } from 'lucide-react';
+import { ShieldX, ArrowLeft } from 'lucide-react';
+import Link from 'next/link';
 
-export default function LoadingScreen() {
+export default function AccessDeniedScreen() {
   return (
     <div className="relative flex min-h-screen w-full flex-col items-center justify-center bg-white">
       {/* Decorative elements */}
@@ -15,27 +16,33 @@ export default function LoadingScreen() {
 
       {/* Main content */}
       <div className="flex max-w-md flex-col items-center justify-center gap-6 px-4">
-        {/* Loading spinner */}
+        {/* Shield icon */}
         <div className="relative flex h-24 w-24 items-center justify-center">
           <div className="absolute inset-0 rounded-full bg-white/80 shadow-sm"></div>
-          <Loader
-            className="relative h-16 w-16 animate-spin text-[#4557a0]"
+          <ShieldX
+            className="relative h-16 w-16 text-[#a04557]"
             strokeWidth={1.5}
           />
         </div>
 
         {/* Text content */}
-        <h1 className="mt-2 text-center text-3xl font-semibold text-[#4557a0]">
-          Loading
+        <h1 className="mt-2 text-center text-3xl font-semibold text-[#a04557]">
+          Access Denied
         </h1>
 
         <p className="mb-4 text-center text-gray-700">
-          Please wait while we prepare your content...
+          You don&apos;t have permission to view this page.
         </p>
 
-        {/* Loading progress bar */}
-        <div className="h-2.5 w-full max-w-xs overflow-hidden rounded-full bg-gray-100">
-          <div className="loading-bar h-2.5 rounded-full bg-[#4557a0]"></div>
+        {/* Action buttons */}
+        <div className="flex w-full max-w-xs flex-col gap-4 sm:flex-row">
+          <Link
+            href="/"
+            className="flex flex-1 items-center justify-center gap-2 rounded-full bg-gray-100 px-6 py-3 text-center font-medium tracking-wide text-gray-800 transition-colors hover:bg-gray-200"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Go Back
+          </Link>
         </div>
       </div>
     </div>

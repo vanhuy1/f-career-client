@@ -9,6 +9,7 @@ import {
   User,
   Settings,
   LogOut,
+  X,
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -19,7 +20,11 @@ import { Button } from '@/components/ui/button';
 import { useAppDispatch } from '@/store/hooks';
 import { logout } from '@/services/state/authSlice';
 
-export default function Sidebar() {
+interface SidebarProps {
+  onClose: () => void;
+}
+
+export default function Sidebar({ onClose }: SidebarProps) {
   const pathname = usePathname();
   const user = useUser();
   const dispatch = useAppDispatch();
@@ -27,19 +32,30 @@ export default function Sidebar() {
   const handleLogout = () => {
     dispatch(logout());
     dispatch(clearUser());
+    onClose(); // Close sidebar on logout
   };
 
   return (
-    <div className="flex w-60 flex-col border-r bg-white">
-      <div className="p-6">
+    <div className="flex h-full w-full flex-col border-r bg-white">
+      {/* Sidebar Header */}
+      <div className="flex items-center justify-between p-6">
         <Link href={ROUTES.HOMEPAGE.path} className="flex items-center gap-2">
           <div className="rounded-full bg-indigo-600 p-1.5 text-white">
             <Home className="h-5 w-5" />
           </div>
           <span className="text-xl font-semibold">FCareerConnect</span>
         </Link>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="md:hidden"
+          onClick={onClose}
+        >
+          <X className="h-5 w-5 text-gray-500" />
+        </Button>
       </div>
 
+      {/* Navigation */}
       <nav className="flex-1 p-4">
         <ul className="space-y-1">
           <NavItem
@@ -47,36 +63,42 @@ export default function Sidebar() {
             icon={<Home />}
             label="Dashboard"
             active={pathname === ROUTES.CO.HOME.path}
+            onClick={onClose}
           />
           <NavItem
             href={ROUTES.CO.HOME.APPLICANTLIST.path}
             icon={<FileText />}
             label="Applicant List"
             active={pathname === ROUTES.CO.HOME.APPLICANTLIST.path}
+            onClick={onClose}
           />
           <NavItem
             href={ROUTES.CO.HOME.JOBLIST.path}
             icon={<FileText />}
             label="Job List"
             active={pathname === ROUTES.CO.HOME.JOBLIST.path}
+            onClick={onClose}
           />
           <NavItem
             href={ROUTES.CO.HOME.MESSAGE.path}
             icon={<MessageSquare />}
             label="Messages"
             active={pathname === ROUTES.CO.HOME.MESSAGE.path}
+            onClick={onClose}
           />
           <NavItem
             href={ROUTES.CO.HOME.SCHEDULE.path}
             icon={<Calendar />}
             label="Schedule"
             active={pathname === ROUTES.CO.HOME.SCHEDULE.path}
+            onClick={onClose}
           />
           <NavItem
             href={ROUTES.CO.HOME.PROFILE.path}
             icon={<User />}
             label="Profile"
             active={pathname === ROUTES.CO.HOME.PROFILE.path}
+            onClick={onClose}
           />
         </ul>
 
@@ -90,11 +112,13 @@ export default function Sidebar() {
               icon={<Settings />}
               label="Settings"
               active={pathname === ROUTES.CO.HOME.SETTINGS.path}
+              onClick={onClose}
             />
           </ul>
         </div>
       </nav>
 
+      {/* User Info and Logout */}
       <div className="border-t p-4">
         <Button
           onClick={handleLogout}
@@ -131,13 +155,15 @@ interface NavItemProps {
   icon: React.ReactNode;
   label: string;
   active?: boolean;
+  onClick?: () => void;
 }
 
-function NavItem({ href, icon, label, active }: NavItemProps) {
+function NavItem({ href, icon, label, active, onClick }: NavItemProps) {
   return (
     <li>
       <Link
         href={href}
+        onClick={onClick}
         className={`flex items-center gap-3 rounded-md px-3 py-2 ${
           active
             ? 'bg-indigo-50 text-indigo-600'
