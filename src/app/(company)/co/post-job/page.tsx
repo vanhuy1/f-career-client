@@ -10,7 +10,7 @@ import Step3 from './_components/step-three';
 import { StepProps } from '@/types/Job';
 import { jobService } from '@/services/api/jobs/job-api';
 import { useRouter } from 'next/navigation';
-import { toast } from 'sonner';
+import { toast } from 'react-toastify';
 
 export default function JobPostingForm() {
   const router = useRouter();

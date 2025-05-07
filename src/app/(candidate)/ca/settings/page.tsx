@@ -59,7 +59,7 @@ const SettingsPage = () => {
           <div className="flex flex-1 items-start gap-6">
             <div className="relative">
               <Image
-                src="/Auth/authbg.jpg"
+                src="/Auth/authbg-bear.jpg"
                 alt="Profile"
                 width={120}
                 height={120}

@@ -1,0 +1,10 @@
+{
+  "institution": "University of California",
+  "degree": "Bachelor's",
+  "field": "Computer Science",
+  "startYear": 2020,
+  "endYear": null,
+  "currentlyStudying": true,
+  "logo": "https://example.com/uc-logo.png",
+  "description": "Focused on machine learning and distributed systems."
+}

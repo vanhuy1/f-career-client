@@ -1,0 +1,12 @@
+{
+  "id": "exp-1",
+  "role": "Software Engineer",
+  "company": "Tech Company Inc.",
+  "employmentType": "Full-time",
+  "location": "San Francisco, CA",
+  "description": "Developed and maintained web applications using modern JavaScript frameworks.",
+  "startDate": "2020-01-01",
+  "logo": "https://example.com/logo.png",
+  "endDate": "2022-03-15",
+  "currentlyWorking": false
+}
