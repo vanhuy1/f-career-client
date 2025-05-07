@@ -1,14 +1,11 @@
-import Image from 'next/image';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import type { Portfolio } from '@/types/CandidateProfile';
+import { Skeleton } from '@/components/ui/skeleton';
 
-interface PortfolioSectionProps {
-  portfolios: Portfolio[];
-}
+export function PortfolioSectionSkeleton() {
+  const skeletonItems = Array.from({ length: 4 }, (_, i) => i);
 
-export function PortfolioSection({ portfolios }: PortfolioSectionProps) {
   return (
     <Card className="mb-6">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -19,18 +16,12 @@ export function PortfolioSection({ portfolios }: PortfolioSectionProps) {
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-          {portfolios.map((portfolio) => (
-            <div key={portfolio.id} className="space-y-2">
+          {skeletonItems.map((item) => (
+            <div key={item} className="space-y-2">
               <div className="aspect-square overflow-hidden rounded-lg">
-                <Image
-                  src={portfolio.image || '/placeholder.svg'}
-                  alt={portfolio.title}
-                  width={200}
-                  height={200}
-                  className="h-full w-full object-cover"
-                />
+                <Skeleton className="h-full w-full" />
               </div>
-              <p className="text-sm">{portfolio.title}</p>
+              <Skeleton className="h-4 w-3/4" />
             </div>
           ))}
         </div>

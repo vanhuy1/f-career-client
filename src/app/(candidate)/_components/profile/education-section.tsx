@@ -1,25 +1,85 @@
+'use client';
+
+import { useState } from 'react';
 import Image from 'next/image';
 import { Edit2, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import type { Education } from '@/types/UserProfile';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { EducationForm } from './education-form';
+import type { Education } from '@/types/CandidateProfile';
 
 interface EducationSectionProps {
   education: Education[];
   showMoreCount?: number;
+  onAddEducation?: (education: Education) => void;
+  onUpdateEducation?: (education: Education) => void;
 }
 
 export function EducationSection({
   education,
   showMoreCount = 0,
+  onAddEducation,
+  onUpdateEducation,
 }: EducationSectionProps) {
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [currentEducation, setCurrentEducation] = useState<Education | null>(
+    null,
+  );
+
+  const handleAddEducation = (education: Education) => {
+    if (onAddEducation) {
+      onAddEducation(education);
+    }
+    setAddDialogOpen(false);
+  };
+
+  const handleEditEducation = (education: Education) => {
+    setCurrentEducation(education);
+    setEditDialogOpen(true);
+  };
+
+  const handleUpdateEducation = (updatedEducation: Education) => {
+    if (onUpdateEducation) {
+      onUpdateEducation(updatedEducation);
+    }
+    setEditDialogOpen(false);
+    setCurrentEducation(null);
+  };
+
+  const handleCancelEdit = () => {
+    setEditDialogOpen(false);
+    setCurrentEducation(null);
+  };
+
   return (
     <Card className="mb-6">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle>Educations</CardTitle>
-        <Button variant="outline" size="icon" className="h-8 w-8">
-          <Plus className="h-4 w-4" />
-        </Button>
+        <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
+          <DialogTrigger asChild>
+            <Button variant="outline" size="icon" className="h-8 w-8">
+              <Plus className="h-4 w-4" />
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[550px]">
+            <DialogHeader>
+              <DialogTitle>Add New Education</DialogTitle>
+            </DialogHeader>
+            <EducationForm
+              mode="add"
+              onSubmit={handleAddEducation}
+              onCancel={() => setAddDialogOpen(false)}
+            />
+          </DialogContent>
+        </Dialog>
       </CardHeader>
       <CardContent>
         {education.map((edu, index) => (
@@ -31,6 +91,7 @@ export function EducationSection({
               variant="outline"
               size="icon"
               className="absolute top-0 right-0 h-8 w-8"
+              onClick={() => handleEditEducation(edu)}
             >
               <Edit2 className="h-4 w-4" />
             </Button>
@@ -50,7 +111,7 @@ export function EducationSection({
                   {edu.degree}, {edu.field}
                 </div>
                 <div className="mb-3 text-gray-500">
-                  {edu.startYear} - {edu.endYear}
+                  {edu.startYear} - {edu.endYear || 'Present'}
                 </div>
                 {edu.description && (
                   <p className="text-gray-600">{edu.description}</p>
@@ -65,6 +126,23 @@ export function EducationSection({
             Show {showMoreCount} more educations
           </button>
         )}
+
+        {/* Edit Education Dialog */}
+        <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+          <DialogContent className="sm:max-w-[550px]">
+            <DialogHeader>
+              <DialogTitle>Edit Education</DialogTitle>
+            </DialogHeader>
+            {currentEducation && (
+              <EducationForm
+                mode="edit"
+                education={currentEducation}
+                onSubmit={handleUpdateEducation}
+                onCancel={handleCancelEdit}
+              />
+            )}
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   );

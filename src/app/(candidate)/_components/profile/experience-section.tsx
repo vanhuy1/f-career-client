@@ -1,36 +1,103 @@
+'use client';
+
+import { useState } from 'react';
 import Image from 'next/image';
 import { Edit2, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import type { Experience } from '@/types/UserProfile';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { ExperienceForm } from './experience-form';
+import type { Experience } from '@/types/CandidateProfile';
 
 interface ExperienceSectionProps {
   experiences: Experience[];
-  showMoreCount?: number;
+  onAddExperience?: (experience: Experience) => void;
+  onUpdateExperience?: (experience: Experience) => void;
 }
 
 export function ExperienceSection({
   experiences,
-  showMoreCount = 0,
+  onAddExperience,
+  onUpdateExperience,
 }: ExperienceSectionProps) {
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [currentExperience, setCurrentExperience] = useState<Experience | null>(
+    null,
+  );
+  const [showAll, setShowAll] = useState(false); // State to toggle show more
+
+  const maxInitialDisplay = 2; // Maximum initial experiences to display
+
+  const handleAddExperience = (experience: Experience) => {
+    if (onAddExperience) {
+      onAddExperience(experience);
+    }
+    setAddDialogOpen(false);
+  };
+
+  const handleEditExperience = (experience: Experience) => {
+    setCurrentExperience(experience);
+    setEditDialogOpen(true);
+  };
+
+  const handleUpdateExperience = (updatedExperience: Experience) => {
+    if (onUpdateExperience) {
+      onUpdateExperience(updatedExperience);
+    }
+    setEditDialogOpen(false);
+    setCurrentExperience(null);
+  };
+
+  const handleCancelEdit = () => {
+    setEditDialogOpen(false);
+    setCurrentExperience(null);
+  };
+
+  // Determine which experiences to display
+  const displayedExperiences = showAll
+    ? experiences
+    : experiences.slice(0, maxInitialDisplay);
+
   return (
     <Card className="mb-6">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle>Experiences</CardTitle>
-        <Button variant="outline" size="icon" className="h-8 w-8">
-          <Plus className="h-4 w-4" />
-        </Button>
+        <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
+          <DialogTrigger asChild>
+            <Button variant="outline" size="icon" className="h-8 w-8">
+              <Plus className="h-4 w-4" />
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[550px]">
+            <DialogHeader>
+              <DialogTitle>Add New Experience</DialogTitle>
+            </DialogHeader>
+            <ExperienceForm
+              mode="add"
+              onSubmit={handleAddExperience}
+              onCancel={() => setAddDialogOpen(false)}
+            />
+          </DialogContent>
+        </Dialog>
       </CardHeader>
       <CardContent>
-        {experiences.map((experience, index) => (
+        {displayedExperiences.map((experience, index) => (
           <div
             key={experience.id}
-            className={`${index < experiences.length - 1 ? 'mb-8 border-b pb-8' : 'mb-4'} relative`}
+            className={`${index < displayedExperiences.length - 1 ? 'mb-8 border-b pb-8' : 'mb-4'} relative`}
           >
             <Button
               variant="outline"
               size="icon"
               className="absolute top-0 right-0 h-8 w-8"
+              onClick={() => handleEditExperience(experience)}
             >
               <Edit2 className="h-4 w-4" />
             </Button>
@@ -59,11 +126,31 @@ export function ExperienceSection({
           </div>
         ))}
 
-        {showMoreCount > 0 && (
-          <button className="font-medium text-indigo-600">
-            Show {showMoreCount} more experiences
+        {experiences.length > maxInitialDisplay && !showAll && (
+          <button
+            className="font-medium text-indigo-600"
+            onClick={() => setShowAll(true)}
+          >
+            Show more experiences
           </button>
         )}
+
+        {/* Edit Experience Dialog */}
+        <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+          <DialogContent className="sm:max-w-[550px]">
+            <DialogHeader>
+              <DialogTitle>Edit Experience</DialogTitle>
+            </DialogHeader>
+            {currentExperience && (
+              <ExperienceForm
+                mode="edit"
+                experience={currentExperience}
+                onSubmit={handleUpdateExperience}
+                onCancel={handleCancelEdit}
+              />
+            )}
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   );
