@@ -1,3 +1,4 @@
+// src/components/job-search/job-card.tsx
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -9,7 +10,8 @@ interface JobCardProps {
   title: string;
   company: Company;
   location: string;
-  logo: string;
+  typeOfEmployment: string;
+  category: { id: string; name: string };
   tags: string[];
   applied: number;
   capacity: number;
@@ -19,17 +21,16 @@ export default function JobCard({
   title,
   company,
   location,
-  logo,
+  typeOfEmployment,
+  category,
   tags,
   applied,
   capacity,
 }: JobCardProps) {
   const router = useRouter();
 
-  // Calculate progress percentage
   const progress = (applied / capacity) * 100;
 
-  // Determine color based on applications
   const getProgressColor = () => {
     if (applied === 0) return 'bg-gray-200';
     if (applied < capacity / 2) return 'bg-green-500';
@@ -37,24 +38,42 @@ export default function JobCard({
     return 'bg-red-500';
   };
 
-  const handleCardClick = () => {
-    const companySlug = company.name.toLowerCase().replace(/\s+/g, '-');
-    const jobSlug = title.toLowerCase().replace(/\s+/g, '-');
+  // map typeOfEmployment thành badge style
+  const getTypeBadge = (t: string) => {
+    switch (t.toLowerCase()) {
+      case 'fulltime':
+        return 'bg-green-100 text-green-800 border-green-200';
+      case 'parttime':
+        return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'contract':
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
 
+  // map category.name thành badge style (tạm dùng default)
+  const getCategoryBadge = () =>
+    'bg-indigo-100 text-indigo-800 border-indigo-200';
+
+  const handleCardClick = () => {
+    const companySlug = company.companyName.toLowerCase().replace(/\s+/g, '-');
+    const jobSlug = title.toLowerCase().replace(/\s+/g, '-');
     router.push(`/company/${companySlug}/${jobSlug}`);
   };
 
   return (
     <div
-      className="overflow-hidden rounded-lg border"
+      className="cursor-pointer overflow-hidden rounded-lg border"
       onClick={handleCardClick}
     >
       <div className="flex items-start gap-4 p-4">
+        {/* Logo */}
         <div className="shrink-0">
           <div className="h-14 w-14 overflow-hidden rounded bg-gray-100">
             <Image
-              src={logo || '/placeholder.svg'}
-              alt={`${company} logo`}
+              src={company.logoUrl || '/placeholder.svg'}
+              alt={`${company.companyName} logo`}
               width={56}
               height={56}
               className="object-cover"
@@ -62,17 +81,34 @@ export default function JobCard({
           </div>
         </div>
 
+        {/* Details */}
         <div className="flex-1">
           <h3 className="text-lg font-semibold text-gray-800">{title}</h3>
           <p className="text-sm text-gray-600">
-            {company.name} • {location}
+            {company.companyName} • {location}
           </p>
 
+          {/* typeOfEmployment & category as badges */}
+          <div className="mt-1 flex flex-wrap gap-2">
+            <span
+              className={`rounded-full border px-3 py-1 text-xs ${getTypeBadge(typeOfEmployment)}`}
+            >
+              {typeOfEmployment}
+            </span>
+            <div className="mt-1 text-sm text-gray-400"> | </div>
+            <span
+              className={`rounded-full border px-3 py-1 text-xs ${getCategoryBadge()}`}
+            >
+              {category.name}
+            </span>
+          </div>
+
+          {/* tags */}
           <div className="mt-2 flex flex-wrap gap-2">
-            {tags.map((tag, index) => {
-              const getTagStyle = (tag: string) => {
-                switch (tag) {
-                  case 'Full-Time':
+            {(tags ?? []).map((tag, idx) => {
+              const getTagStyle = (t: string) => {
+                switch (t) {
+                  case 'Technology':
                     return 'bg-green-100 text-green-800 border-green-200';
                   case 'Marketing':
                     return 'bg-orange-100 text-orange-800 border-orange-200';
@@ -82,10 +118,9 @@ export default function JobCard({
                     return 'bg-gray-100 text-gray-800 border-gray-200';
                 }
               };
-
               return (
                 <span
-                  key={index}
+                  key={idx}
                   className={`rounded-full border px-3 py-1 text-xs ${getTagStyle(tag)}`}
                 >
                   {tag}
@@ -95,21 +130,23 @@ export default function JobCard({
           </div>
         </div>
 
-        <div className="shrink-0">
-          <Button className="bg-indigo-600 hover:bg-indigo-700">Apply</Button>
-        </div>
-      </div>
-
-      <div className="px-4 pb-3">
-        <div className="mb-1 flex items-center justify-between text-xs text-gray-500">
-          <span>{applied} applied</span>
-          <span>of {capacity} capacity</span>
-        </div>
-        <div className="h-1.5 w-full rounded-full bg-gray-100">
-          <div
-            className={`h-1.5 rounded-full ${getProgressColor()}`}
-            style={{ width: `${progress}%` }}
-          ></div>
+        {/* Apply button + Progress */}
+        <div className="flex shrink-0 flex-col items-center justify-between">
+          <Button className="w-28 bg-indigo-600 hover:bg-indigo-700">
+            Apply
+          </Button>
+          <div className="mt-4 w-full">
+            <div className="mb-1 flex items-center justify-between text-xs text-gray-500">
+              {/* <span>{applied} applied</span> */}
+              <span>{capacity} capacity</span>
+            </div>
+            <div className="h-1.5 w-full rounded-full bg-gray-100">
+              <div
+                className={`h-1.5 rounded-full ${getProgressColor()}`}
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+          </div>
         </div>
       </div>
     </div>

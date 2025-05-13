@@ -48,7 +48,7 @@ export default async function JobDetailPageComponent({
   return (
     <div className="mx-auto max-w-screen-xl px-4 py-8">
       <BreadcrumbNavigation
-        company={{ name: formattedCompany }}
+        company={{ companyName: formattedCompany }}
         jobTitle={{ title: formattedTitle }}
       />
       <JobHeader
