@@ -3,7 +3,7 @@ import Link from 'next/link';
 
 interface BreadcrumbNavigationProps {
   company: {
-    name: string;
+    companyName: string;
   };
   jobTitle?: {
     title: string;
@@ -14,12 +14,12 @@ const BreadcrumbNavigation = ({
   company,
   jobTitle,
 }: BreadcrumbNavigationProps) => {
-  const formattedCompany = company.name
+  const formattedCompany = company.companyName
     .split(' ')
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(' ');
 
-  const companyRoute = company.name
+  const companyRoute = company.companyName
     .split(' ')
     .map((word) => word.toLowerCase())
     .join('-');

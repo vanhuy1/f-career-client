@@ -1,24 +1,57 @@
+'use client';
+import React, { useEffect, useState } from 'react';
 import { ChevronDown, Grid, List } from 'lucide-react';
 import JobCard from '@/components/job-search/job-card';
 import Pagination from '@/components/job-search/pagination';
 import JobFilterSidebar from '@/components/job-search/filter-sidebar';
-import { jobData } from '@/data/Job';
+import { Job } from '@/types/Job';
+import { jobService } from '@/services/api/jobs/job-api';
 
 export default function JobListingsPage() {
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [count, setCount] = useState(0);
+  const [page, setPage] = useState(1);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
+  const limit = 10;
+
+  useEffect(() => {
+    let mounted = true;
+    async function fetchJobs() {
+      try {
+        const res = await jobService.findAll(limit, (page - 1) * limit);
+        if (!mounted) return;
+        setJobs(res.data);
+        console.log(res.data, 'locdep');
+        setCount(res.meta.count);
+      } catch (error) {
+        console.error('Lỗi khi fetch jobs', error);
+      }
+    }
+    setPage(1);
+    fetchJobs();
+    return () => {
+      mounted = false;
+    };
+  }, [page, limit]);
+
+  const totalPages = Math.ceil(count / limit);
+
   return (
     <div className="max-w-8xl container mx-auto p-4">
       <div className="flex flex-col gap-6 md:flex-row">
+        {/* Sidebar */}
         <div className="w-full shrink-0 md:w-64">
           <JobFilterSidebar />
         </div>
 
+        {/* Main */}
         <div className="flex-1">
+          {/* Header */}
           <div className="mb-4 flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-gray-800">All Jobs</h1>
-              <p className="text-sm text-gray-500">Showing 73 results</p>
+              <p className="text-sm text-gray-500">Showing {count} results</p>
             </div>
-
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
                 <span className="text-sm text-gray-600">Sort by:</span>
@@ -27,35 +60,69 @@ export default function JobListingsPage() {
                   <ChevronDown className="h-4 w-4" />
                 </div>
               </div>
-
               <div className="flex rounded border">
-                <button className="border-r p-2">
-                  <Grid className="h-4 w-4 text-gray-400" />
+                <button
+                  onClick={() => setViewMode('grid')}
+                  className={`border-r p-2 ${
+                    viewMode === 'grid' ? 'text-indigo-600' : 'text-gray-400'
+                  }`}
+                >
+                  <Grid className="h-4 w-4" />
                 </button>
-                <button className="p-2">
-                  <List className="h-4 w-4 text-indigo-600" />
+                <button
+                  onClick={() => setViewMode('list')}
+                  className={`p-2 ${
+                    viewMode === 'list' ? 'text-indigo-600' : 'text-gray-400'
+                  }`}
+                >
+                  <List className="h-4 w-4" />
                 </button>
               </div>
             </div>
           </div>
 
-          <div className="space-y-4">
-            {jobData.map((job, index) => (
-              <JobCard
-                key={index}
-                title={job.title}
-                company={job.company}
-                location={job.location}
-                logo={job.logo}
-                tags={job.tags}
-                applied={job.applied}
-                capacity={job.capacity}
-              />
-            ))}
-          </div>
+          {/* Job cards */}
+          {viewMode === 'grid' ? (
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+              {jobs.map((job) => (
+                <JobCard
+                  key={job.id}
+                  title={job.title}
+                  company={job.company}
+                  location={job.location}
+                  typeOfEmployment={job.typeOfEmployment}
+                  category={job.category}
+                  tags={job.tags ?? []}
+                  applied={job.applied ?? 0}
+                  capacity={job.capacity ?? 0}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {jobs.map((job) => (
+                <JobCard
+                  key={job.id}
+                  title={job.title}
+                  company={job.company}
+                  location={job.location}
+                  typeOfEmployment={job.typeOfEmployment}
+                  category={job.category}
+                  tags={job.tags ?? []}
+                  applied={job.applied ?? 0}
+                  capacity={job.capacity ?? 0}
+                />
+              ))}
+            </div>
+          )}
 
+          {/* Pagination */}
           <div className="mt-8 flex justify-center">
-            <Pagination totalPages={33} currentPage={1} />
+            <Pagination
+              currentPage={page}
+              totalPages={totalPages}
+              // onPageChange={newPage => setPage(newPage)}
+            />
           </div>
         </div>
       </div>
