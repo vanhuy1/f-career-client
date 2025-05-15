@@ -8,8 +8,12 @@ import Step1 from './_components/step-one';
 import Step2 from './_components/step-two';
 import Step3 from './_components/step-three';
 import { StepProps } from '@/types/Job';
+import { jobService } from '@/services/api/jobs/job-api';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 
 export default function JobPostingForm() {
+  const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
   const [skills, setSkills] = useState<string[]>([
     'Graphic Design',
@@ -42,6 +46,19 @@ export default function JobPostingForm() {
     },
   ]);
 
+  // Thêm state cho các thông tin job
+  const [jobTitle, setJobTitle] = useState('');
+  const [jobDescription, setJobDescription] = useState('');
+  const [responsibilities, setResponsibilities] = useState('');
+  const [whoYouAre, setWhoYouAre] = useState('');
+  const [niceToHaves, setNiceToHaves] = useState('');
+  const [employmentType, setEmploymentType] = useState<string[]>([]);
+  const [categoryId, setCategoryId] = useState('');
+  const [location, setLocation] = useState('');
+  const [isVip, setIsVip] = useState(false);
+  const [deadline, setDeadline] = useState('');
+  const [experienceYears, setExperienceYears] = useState(0);
+
   const handleAddSkill = () => {
     if (newSkill && !skills.includes(newSkill)) {
       setSkills([...skills, newSkill]);
@@ -65,6 +82,43 @@ export default function JobPostingForm() {
     }
   };
 
+  const handleSubmit = async () => {
+    try {
+      // Chuẩn bị dữ liệu để gửi lên BE
+      const jobData = {
+        title: jobTitle,
+        description: jobDescription,
+        categoryId: categoryId || '1', // Default value nếu chưa chọn
+        companyId: '1', // Default value, có thể lấy từ context hoặc state
+        responsibility: responsibilities
+          .split('\n')
+          .filter((item) => item.trim() !== ''),
+        jobFitAttributes: whoYouAre
+          .split('\n')
+          .filter((item) => item.trim() !== ''),
+        niceToHave: niceToHaves
+          .split('\n')
+          .filter((item) => item.trim() !== ''),
+        location: location || 'New York', // Default value
+        salaryMin: salaryRange[0],
+        salaryMax: salaryRange[1],
+        experienceYears: experienceYears,
+        isVip: isVip,
+        deadline: deadline || '2024-12-31T00:00:00.000Z', // Default value
+        typeOfEmployment: employmentType[0] || 'FullTime', // Lấy loại đầu tiên hoặc default
+      };
+
+      // Gọi API tạo job
+      await jobService.create(jobData);
+
+      toast.success('Job created successfully!');
+      router.push('/job'); // Chuyển hướng về trang danh sách job
+    } catch (error) {
+      console.error('Error creating job:', error);
+      toast.error('Failed to create job. Please try again.');
+    }
+  };
+
   const stepProps: StepProps = {
     skills,
     newSkill,
@@ -76,6 +130,28 @@ export default function JobPostingForm() {
     setBenefits,
     handleAddSkill,
     handleRemoveSkill,
+    jobTitle,
+    setJobTitle,
+    jobDescription,
+    setJobDescription,
+    responsibilities,
+    setResponsibilities,
+    whoYouAre,
+    setWhoYouAre,
+    niceToHaves,
+    setNiceToHaves,
+    employmentType,
+    setEmploymentType,
+    categoryId,
+    setCategoryId,
+    location,
+    setLocation,
+    isVip,
+    setIsVip,
+    deadline,
+    setDeadline,
+    experienceYears,
+    setExperienceYears,
   };
 
   return (
@@ -151,7 +227,9 @@ export default function JobPostingForm() {
             Next Step
           </Button>
         ) : (
-          <Button className="w-full sm:w-auto">Do a Review</Button>
+          <Button onClick={handleSubmit} className="w-full sm:w-auto">
+            Do a Review
+          </Button>
         )}
       </div>
     </div>
