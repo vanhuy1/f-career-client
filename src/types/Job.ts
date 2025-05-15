@@ -59,6 +59,15 @@ export interface CreateJobReq {
   capacity?: number;
   /** nếu cần set status ngay lúc tạo */
   status?: JobStatus;
+  description?: string;
+  responsibility?: string[];
+  jobFitAttributes?: string[];
+  niceToHave?: string[];
+  salaryMin?: number;
+  salaryMax?: number;
+  experienceYears?: number;
+  isVip?: boolean;
+  deadline?: string;
 }
 
 /** payload khi cập nhật job */
@@ -90,4 +99,26 @@ export interface StepProps {
   setBenefits: (benefits: Benefit[]) => void;
   handleAddSkill: () => void;
   handleRemoveSkill: (skill: string) => void;
+  jobTitle: string;
+  setJobTitle: (title: string) => void;
+  jobDescription: string;
+  setJobDescription: (description: string) => void;
+  responsibilities: string;
+  setResponsibilities: (responsibilities: string) => void;
+  whoYouAre: string;
+  setWhoYouAre: (whoYouAre: string) => void;
+  niceToHaves: string;
+  setNiceToHaves: (niceToHaves: string) => void;
+  employmentType: string[];
+  setEmploymentType: (type: string[]) => void;
+  categoryId: string;
+  setCategoryId: (id: string) => void;
+  location: string;
+  setLocation: (location: string) => void;
+  isVip: boolean;
+  setIsVip: (isVip: boolean) => void;
+  deadline: string;
+  setDeadline: (deadline: string) => void;
+  experienceYears: number;
+  setExperienceYears: (years: number) => void;
 }
