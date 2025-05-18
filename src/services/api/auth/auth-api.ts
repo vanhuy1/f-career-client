@@ -66,6 +66,33 @@ class AuthService {
     });
     return response;
   }
+
+  async registerCompany(data: SignUpRequest): Promise<{ message: string }> {
+    const url = this.requestBuilder.buildUrl('register-company');
+    const response = await httpClient.post<{ message: string }, SignUpRequest>({
+      url,
+      body: data,
+      typeCheck: (data) => ({
+        success: true,
+        data: data as { message: string },
+      }),
+    });
+    return response;
+  }
+
+  async verifyCompany(code: string): Promise<{ message: string }> {
+    const url = this.requestBuilder.buildUrl(
+      `verify-company?code=${encodeURIComponent(code)}`,
+    );
+    const response = await httpClient.get<{ message: string }>({
+      url,
+      typeCheck: (data) => ({
+        success: true,
+        data: data as { message: string },
+      }),
+    });
+    return response;
+  }
 }
 
 export const authService = new AuthService();
