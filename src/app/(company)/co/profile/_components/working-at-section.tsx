@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import EditButton from './edit-button';
 import {
   Dialog,
@@ -17,16 +17,39 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import type { FormField } from '../../../_components/edit-form-dialog';
 
-export default function WorkingAtNomadSection() {
+interface WorkingAtNomadSectionProps {
+  workImageUrl?: string[];
+}
+
+export default function WorkingAtNomadSection({
+  workImageUrl = [],
+}: WorkingAtNomadSectionProps) {
   const [workCulture, setWorkCulture] = useState(
     'Our work culture is focused on collaboration and innovation.',
   );
 
-  const [images, setImages] = useState([
-    { id: 1, src: '/team-meeting.jpg', alt: 'Office space' },
-    { id: 2, src: '/team-meeting.jpg', alt: 'Team collaboration' },
-    { id: 3, src: '/team-meeting.jpg', alt: 'Team event' },
-  ]);
+  // Initialize with provided URLs or defaults
+  const [images, setImages] = useState(
+    workImageUrl.length > 0
+      ? workImageUrl.map((url, index) => ({
+          id: index,
+          src: url,
+          alt: `Team image ${index + 1}`,
+        }))
+      : [
+          { id: 1, src: '/team-meeting.jpg', alt: 'Team meeting' },
+          {
+            id: 2,
+            src: '/team-meeting.jpg',
+            alt: 'Team collaboration',
+          },
+          {
+            id: 3,
+            src: '/team-meeting.jpg',
+            alt: 'Office space',
+          },
+        ],
+  );
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingImage, setEditingImage] = useState<{
@@ -34,6 +57,9 @@ export default function WorkingAtNomadSection() {
     src: string;
     alt: string;
   }>({ id: null, src: '', alt: '' });
+
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const sliderRef = useRef<HTMLDivElement>(null);
 
   const workCultureFields: FormField[] = [
     {
@@ -60,7 +86,7 @@ export default function WorkingAtNomadSection() {
   };
 
   const handleSaveImage = () => {
-    if (editingImage.id) {
+    if (editingImage.id !== null) {
       // Edit existing
       setImages((prev) =>
         prev.map((img) =>
@@ -75,6 +101,29 @@ export default function WorkingAtNomadSection() {
     }
     setDialogOpen(false);
   };
+
+  const nextSlide = () => {
+    setCurrentSlide((prev) => (prev === images.length - 1 ? 0 : prev + 1));
+  };
+
+  const prevSlide = () => {
+    setCurrentSlide((prev) => (prev === 0 ? images.length - 1 : prev - 1));
+  };
+
+  const goToSlide = (index: number) => {
+    setCurrentSlide(index);
+  };
+
+  // Scroll to current slide when it changes
+  useEffect(() => {
+    if (sliderRef.current) {
+      const scrollPosition = currentSlide * sliderRef.current.offsetWidth;
+      sliderRef.current.scrollTo({
+        left: scrollPosition,
+        behavior: 'smooth',
+      });
+    }
+  }, [currentSlide]);
 
   return (
     <div className="mb-8">
@@ -100,36 +149,71 @@ export default function WorkingAtNomadSection() {
         </div>
       </div>
 
-      {/* Images Grid */}
-      <div className="grid grid-cols-2 gap-3">
-        {images.map((image, index) => (
-          <div
-            key={image.id}
-            className={`relative overflow-hidden rounded-md ${
-              index === 0
-                ? 'aspect-1 row-span-2'
-                : index === 1
-                  ? 'aspect-[3/2]'
-                  : 'aspect-square'
-            }`}
-            onClick={() => handleEditImage(image)}
-          >
-            <Image
-              src={image.src}
-              alt={image.alt}
-              fill
-              className="cursor-pointer object-cover"
+      {/* Image Slider */}
+      <div className="relative">
+        <div
+          ref={sliderRef}
+          className="flex overflow-x-hidden rounded-lg"
+          style={{ scrollSnapType: 'x mandatory' }}
+        >
+          {images.map((image, index) => (
+            <div
+              key={index}
+              className="scroll-snap-align-start relative h-64 min-w-full flex-shrink-0 md:h-80"
+              style={{ scrollSnapAlign: 'start' }}
+            >
+              <Image
+                src={image.src || '/placeholder.svg'}
+                alt={image.alt}
+                fill
+                className="object-cover"
+                onClick={() => handleEditImage(image)}
+              />
+            </div>
+          ))}
+        </div>
+
+        {/* Navigation Buttons */}
+        <Button
+          variant="secondary"
+          size="icon"
+          className="absolute top-1/2 left-2 -translate-y-1/2 rounded-full bg-white/80 hover:bg-white/90"
+          onClick={prevSlide}
+        >
+          <ChevronLeft className="h-5 w-5" />
+        </Button>
+
+        <Button
+          variant="secondary"
+          size="icon"
+          className="absolute top-1/2 right-2 -translate-y-1/2 rounded-full bg-white/80 hover:bg-white/90"
+          onClick={nextSlide}
+        >
+          <ChevronRight className="h-5 w-5" />
+        </Button>
+
+        {/* Indicators */}
+        <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 gap-2">
+          {images.map((_, index) => (
+            <button
+              key={index}
+              className={`h-2 w-2 rounded-full ${currentSlide === index ? 'bg-white' : 'bg-white/50'}`}
+              onClick={() => goToSlide(index)}
+              aria-label={`Go to slide ${index + 1}`}
             />
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
+
+      {/* Work Culture Text */}
+      <p className="mt-4 text-sm text-gray-600">{workCulture}</p>
 
       {/* Dialog for Add/Edit Image */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {editingImage.id ? 'Edit Image' : 'Add Image'}
+              {editingImage.id !== null ? 'Edit Image' : 'Add Image'}
             </DialogTitle>
             <DialogDescription>
               Provide image URL and description.
@@ -148,6 +232,7 @@ export default function WorkingAtNomadSection() {
                   setEditingImage({ ...editingImage, src: e.target.value })
                 }
                 className="col-span-3"
+                placeholder="https://example.com/image.jpg"
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
@@ -161,6 +246,7 @@ export default function WorkingAtNomadSection() {
                   setEditingImage({ ...editingImage, alt: e.target.value })
                 }
                 className="col-span-3"
+                placeholder="Description of the image"
               />
             </div>
           </div>

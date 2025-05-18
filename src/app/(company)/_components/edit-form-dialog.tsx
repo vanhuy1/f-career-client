@@ -19,7 +19,7 @@ import { Label } from '@/components/ui/label';
 export type FormField = {
   id: string;
   label: string;
-  type: 'text' | 'textarea' | 'email' | 'url';
+  type: 'text' | 'textarea' | 'email' | 'url' | 'date';
   placeholder?: string;
   defaultValue?: string;
 };

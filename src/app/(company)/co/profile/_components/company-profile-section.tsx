@@ -1,13 +1,38 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import EditButton from './edit-button';
 import type { FormField } from '../../../_components/edit-form-dialog';
+import { Company } from '@/types/Company';
+import { toast } from 'react-toastify';
+import { CreateCompanyReq } from '@/types/Company';
 
-export default function CompanyProfileSection() {
-  const [profile, setProfile] = useState(
-    "Nomad is a software platform for starting and running internet businesses. Millions of businesses rely on Stripe's software tools to accept payments, expand globally, and manage their businesses online. Stripe has been at the forefront of expanding internet commerce, powering new business models, and supporting the latest platforms, from marketplaces to mobile commerce sites. We believe that growing the GDP of the internet is a problem rooted in code and design, not finance. Stripe is built for developers, makers, and creators. We work on solving the hard technical problems necessary to build global economic infrastructure—from designing highly reliable systems to developing advanced machine learning algorithms to prevent fraud.",
+interface CompanyProfileSectionProps {
+  company: Company;
+  onUpdateCompany: (data: Partial<CreateCompanyReq>) => Promise<void>;
+  description?: string | null;
+  industry?: string;
+  foundedAt?: string;
+  employees?: number;
+}
+
+export default function CompanyProfileSection({
+  company,
+  onUpdateCompany,
+  description,
+}: CompanyProfileSectionProps) {
+  // Sử dụng thông tin từ database hoặc dữ liệu mẫu nếu không có
+  const [profile, setProfile] = useState<string>(
+    description ||
+      "(default) Nomad is a software platform for starting and running internet businesses. Millions of businesses rely on Stripe's software tools to accept payments, expand globally, and manage their businesses online. Stripe has been at the forefront of expanding internet commerce, powering new business models, and supporting the latest platforms, from marketplaces to mobile commerce sites. We believe that growing the GDP of the internet is a problem rooted in code and design, not finance. Stripe is built for developers, makers, and creators. We work on solving the hard technical problems necessary to build global economic infrastructure—from designing highly reliable systems to developing advanced machine learning algorithms to prevent fraud.",
   );
+
+  // Cập nhật profile khi company thay đổi
+  useEffect(() => {
+    if (description) {
+      setProfile(description);
+    }
+  }, [description]);
 
   const companyProfileFields: FormField[] = [
     {
@@ -19,8 +44,25 @@ export default function CompanyProfileSection() {
     },
   ];
 
-  const handleCompanyProfileSubmit = (data: Record<string, string>) => {
-    setProfile(data.profile);
+  const handleCompanyProfileSubmit = async (data: Record<string, string>) => {
+    if (!company) return;
+
+    try {
+      // Sử dụng hàm onUpdateCompany để cập nhật
+      await onUpdateCompany({
+        description: data.profile,
+      });
+
+      // Cập nhật state local
+      setProfile(data.profile);
+
+      // Hiển thị thông báo thành công
+      toast.success('Description updated successfully');
+    } catch (error) {
+      console.error('Failed to update description:', error);
+      // Hiển thị thông báo lỗi
+      toast.error('Failed to update description');
+    }
   };
 
   return (

@@ -14,7 +14,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import type { StepProps } from '@/types/Job';
+import type { EmploymentType, StepProps } from '@/types/Job';
 import { useEffect, useState } from 'react';
 import { Category } from '@/types/Category';
 import { categoryService } from '@/services/api/category/category-api';
@@ -30,8 +30,8 @@ export default function Step1({
   handleRemoveSkill,
   jobTitle,
   setJobTitle,
-  employmentType,
-  setEmploymentType,
+  typeOfEmployment,
+  setTypeOfEmployment,
   categoryId,
   setCategoryId,
   location,
@@ -68,8 +68,8 @@ export default function Step1({
   }, []);
 
   // Cập nhật handler để chỉ cho phép chọn một loại
-  const handleEmploymentTypeChange = (type: string) => {
-    setEmploymentType([type]);
+  const handleEmploymentTypeChange = (type: EmploymentType) => {
+    setTypeOfEmployment(type);
   };
 
   return (
@@ -110,7 +110,7 @@ export default function Step1({
           </div>
           <div className="w-full space-y-2 md:col-span-2 md:w-[70%]">
             <RadioGroup
-              value={employmentType[0] || ''}
+              value={typeOfEmployment || ''}
               onValueChange={handleEmploymentTypeChange}
               className="space-y-3"
             >

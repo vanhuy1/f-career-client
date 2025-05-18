@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -30,17 +30,55 @@ import {
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import ROUTES from '@/constants/navigation';
+import { Company } from '@/types/Company';
+import Image from 'next/image';
+import { toast } from 'react-toastify';
+import { CreateCompanyReq } from '@/types/Company';
 
-export default function CompanyHeaderSection() {
+interface CompanyHeaderSectionProps {
+  company: Company;
+  onUpdateCompany: (data: Partial<CreateCompanyReq>) => Promise<void>;
+  logoUrl?: string | null;
+  companyName: string;
+  industry?: string;
+  foundedAt?: string;
+  employees?: number;
+}
+
+export default function CompanyHeaderSection({
+  company,
+  onUpdateCompany,
+  logoUrl,
+  companyName,
+}: CompanyHeaderSectionProps) {
   const router = useRouter();
   const [companyDetails, setCompanyDetails] = useState<CompanyDetails>({
-    name: 'Nomad',
-    website: 'https://nomad.com',
-    founded: new Date('2011-07-31'),
-    employees: '4000+',
-    location: '20 countries',
-    industry: 'Social & Non-Profit',
+    name: company?.companyName || 'Nomad default',
+    website: company?.website || 'https://nomad.com (default)',
+    founded: new Date(company?.foundedAt || '2011-07-31 (default)'),
+    employees: company?.employees
+      ? company.employees.toString()
+      : '4000+ (default)',
+    location: company?.address?.[0] || '20 countries (default) ',
+    industry: company?.industry || 'Social & Non-Profit (default)',
   });
+
+  // Cập nhật khi company data thay đổi
+  useEffect(() => {
+    if (company) {
+      setCompanyDetails({
+        ...companyDetails,
+        name: company.companyName,
+        website: company.website || companyDetails.website,
+        founded: new Date(company.foundedAt || company.createdAt || Date.now()),
+        employees: company.employees
+          ? company.employees.toString()
+          : companyDetails.employees,
+        location: company.address?.[0] || companyDetails.location,
+        industry: company.industry || companyDetails.industry,
+      });
+    }
+  }, [company]);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -48,6 +86,7 @@ export default function CompanyHeaderSection() {
     register,
     handleSubmit,
     formState: { errors },
+    reset,
   } = useForm<CompanyDetailsInput>({
     resolver: zodResolver(companyDetailsSchemaInput),
     defaultValues: {
@@ -56,22 +95,77 @@ export default function CompanyHeaderSection() {
     },
   });
 
-  const onSubmit: SubmitHandler<CompanyDetailsInput> = (data) => {
-    const transformedData = companyDetailsSchema.parse(data) as CompanyDetails;
-    setCompanyDetails(transformedData);
-    setIsModalOpen(false);
+  // Cập nhật form khi companyDetails thay đổi
+  useEffect(() => {
+    reset({
+      ...companyDetails,
+      founded: companyDetails.founded.toISOString().split('T')[0],
+    });
+  }, [companyDetails, reset]);
+
+  const onSubmit: SubmitHandler<CompanyDetailsInput> = async (data) => {
+    if (!company) return;
+
+    try {
+      // Tạo mảng address mới, chỉ thay đổi phần tử đầu tiên (HQ)
+      const newAddresses =
+        company.address && Array.isArray(company.address)
+          ? [data.location, ...company.address.slice(1)]
+          : [data.location];
+
+      await onUpdateCompany({
+        companyName: data.name,
+        website: data.website,
+        foundedAt: new Date(data.founded).toISOString(),
+        employees: parseInt(data.employees),
+        address: newAddresses,
+        industry: data.industry,
+      });
+
+      // Cập nhật state local
+      const transformedData = companyDetailsSchema.parse(
+        data,
+      ) as CompanyDetails;
+      setCompanyDetails(transformedData);
+      setIsModalOpen(false);
+
+      // Hiển thị thông báo thành công
+      toast.success('Company information updated successfully');
+    } catch (error) {
+      console.error('Failed to update company details:', error);
+      toast.error('Failed to update company information');
+    }
   };
 
   return (
     <>
       <div className="mb-8 flex items-start gap-6">
         <div className="flex h-24 w-24 items-center justify-center rounded-lg bg-emerald-100">
-          <Building className="h-16 w-16 text-emerald-600" />
+          {logoUrl ? (
+            <Image
+              src={logoUrl}
+              alt={companyName}
+              width={96}
+              height={96}
+              className="h-full w-full rounded-lg object-cover"
+            />
+          ) : (
+            <Building className="h-16 w-16 text-emerald-600" />
+          )}
         </div>
         <div className="flex-1">
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold">{companyDetails.name}</h1>
             <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-sm text-indigo-700"
+                onClick={() => setIsModalOpen(true)}
+              >
+                <Settings className="mr-2 h-4 w-4" />
+                Edit Company Info
+              </Button>
               <div className="flex items-center gap-1.5 border-none text-sm font-bold text-indigo-700">
                 <Eye className="h-4 w-4" />
                 Public View
@@ -249,21 +343,8 @@ export default function CompanyHeaderSection() {
               )}
             </div>
 
-            {/* Form Actions */}
             <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsModalOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                className="bg-indigo-600 text-white hover:bg-indigo-700"
-              >
-                Save
-              </Button>
+              <Button type="submit">Save changes</Button>
             </DialogFooter>
           </form>
         </DialogContent>

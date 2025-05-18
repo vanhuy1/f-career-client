@@ -20,6 +20,7 @@ export interface UserProfile {
     isAccountDisabled: boolean;
     createdAt: string | Date;
     updatedAt: string | Date;
+    companyId: string;
   };
   meta: {
     message: string;

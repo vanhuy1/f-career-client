@@ -50,6 +50,8 @@ export const SignInForm = () => {
             router.push(ROUTES.ADMIN.Home.path);
           } else if (userData.data.roles[0] === ROLES.RECRUITER) {
             router.push(ROUTES.CO.HOME.path);
+          } else if (userData.data.roles[0] === ROLES.ADMIN_RECRUITER) {
+            router.push(ROUTES.CO.HOME.path);
           }
         } else {
           dispatch(loginFailure('Failed to fetch user data'));
