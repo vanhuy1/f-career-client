@@ -2,19 +2,16 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { Company } from '@/types/Company';
+import { CompanyInfo } from '@/types/Job';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 
 interface JobCardProps {
   title: string;
-  company: Company;
+  company: CompanyInfo;
   location: string;
   typeOfEmployment: string;
   category: { id: string; name: string };
-  tags: string[];
-  applied: number;
-  capacity: number;
 }
 
 export default function JobCard({
@@ -23,20 +20,8 @@ export default function JobCard({
   location,
   typeOfEmployment,
   category,
-  tags,
-  applied,
-  capacity,
 }: JobCardProps) {
   const router = useRouter();
-
-  const progress = (applied / capacity) * 100;
-
-  const getProgressColor = () => {
-    if (applied === 0) return 'bg-gray-200';
-    if (applied < capacity / 2) return 'bg-green-500';
-    if (applied < capacity) return 'bg-yellow-500';
-    return 'bg-red-500';
-  };
 
   // map typeOfEmployment thành badge style
   const getTypeBadge = (t: string) => {
@@ -104,7 +89,7 @@ export default function JobCard({
           </div>
 
           {/* tags */}
-          <div className="mt-2 flex flex-wrap gap-2">
+          {/* <div className="mt-2 flex flex-wrap gap-2">
             {(tags ?? []).map((tag, idx) => {
               const getTagStyle = (t: string) => {
                 switch (t) {
@@ -127,7 +112,7 @@ export default function JobCard({
                 </span>
               );
             })}
-          </div>
+          </div> */}
         </div>
 
         {/* Apply button + Progress */}
@@ -135,18 +120,6 @@ export default function JobCard({
           <Button className="w-28 bg-indigo-600 hover:bg-indigo-700">
             Apply
           </Button>
-          <div className="mt-4 w-full">
-            <div className="mb-1 flex items-center justify-between text-xs text-gray-500">
-              {/* <span>{applied} applied</span> */}
-              <span>{capacity} capacity</span>
-            </div>
-            <div className="h-1.5 w-full rounded-full bg-gray-100">
-              <div
-                className={`h-1.5 rounded-full ${getProgressColor()}`}
-                style={{ width: `${progress}%` }}
-              />
-            </div>
-          </div>
         </div>
       </div>
     </div>

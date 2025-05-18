@@ -92,9 +92,6 @@ export default function JobListingsPage() {
                   location={job.location}
                   typeOfEmployment={job.typeOfEmployment}
                   category={job.category}
-                  tags={job.tags ?? []}
-                  applied={job.applied ?? 0}
-                  capacity={job.capacity ?? 0}
                 />
               ))}
             </div>
@@ -108,9 +105,6 @@ export default function JobListingsPage() {
                   location={job.location}
                   typeOfEmployment={job.typeOfEmployment}
                   category={job.category}
-                  tags={job.tags ?? []}
-                  applied={job.applied ?? 0}
-                  capacity={job.capacity ?? 0}
                 />
               ))}
             </div>

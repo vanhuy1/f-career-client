@@ -11,6 +11,8 @@ import { StepProps } from '@/types/Job';
 import { jobService } from '@/services/api/jobs/job-api';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
+import { JobStatus, EmploymentType } from '@/types/Job';
+import { useUser } from '@/services/state/userSlice';
 
 export default function JobPostingForm() {
   const router = useRouter();
@@ -52,12 +54,16 @@ export default function JobPostingForm() {
   const [responsibilities, setResponsibilities] = useState('');
   const [whoYouAre, setWhoYouAre] = useState('');
   const [niceToHaves, setNiceToHaves] = useState('');
-  const [employmentType, setEmploymentType] = useState<string[]>([]);
+  const [benefit, setBenefit] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [location, setLocation] = useState('');
   const [isVip, setIsVip] = useState(false);
   const [deadline, setDeadline] = useState('');
   const [experienceYears, setExperienceYears] = useState(0);
+  const [jobStatus] = useState<JobStatus>('OPEN');
+  const [typeOfEmployment, setTypeOfEmployment] =
+    useState<EmploymentType>('FullTime');
+  const user = useUser();
 
   const handleAddSkill = () => {
     if (newSkill && !skills.includes(newSkill)) {
@@ -88,8 +94,8 @@ export default function JobPostingForm() {
       const jobData = {
         title: jobTitle,
         description: jobDescription,
-        categoryId: categoryId || '1', // Default value nếu chưa chọn
-        companyId: '1', // Default value, có thể lấy từ context hoặc state
+        categoryId: categoryId || '1',
+        companyId: user?.data?.companyId || '1',
         responsibility: responsibilities
           .split('\n')
           .filter((item) => item.trim() !== ''),
@@ -99,13 +105,15 @@ export default function JobPostingForm() {
         niceToHave: niceToHaves
           .split('\n')
           .filter((item) => item.trim() !== ''),
+        benefit: benefit.split('\n').filter((item) => item.trim() !== ''),
         location: location || 'New York', // Default value
         salaryMin: salaryRange[0],
         salaryMax: salaryRange[1],
         experienceYears: experienceYears,
         isVip: isVip,
+        status: jobStatus,
         deadline: deadline || '2024-12-31T00:00:00.000Z', // Default value
-        typeOfEmployment: employmentType[0] || 'FullTime', // Lấy loại đầu tiên hoặc default
+        typeOfEmployment: typeOfEmployment, // Lấy loại đầu tiên hoặc default
       };
 
       // Gọi API tạo job
@@ -140,8 +148,10 @@ export default function JobPostingForm() {
     setWhoYouAre,
     niceToHaves,
     setNiceToHaves,
-    employmentType,
-    setEmploymentType,
+    benefit,
+    setBenefit,
+    typeOfEmployment,
+    setTypeOfEmployment,
     categoryId,
     setCategoryId,
     location,

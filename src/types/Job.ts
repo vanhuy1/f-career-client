@@ -1,51 +1,66 @@
 // src/types/Job.ts
 
-import { Company } from './Company';
-
 export interface Category {
   id: string;
   name: string;
+}
+
+export interface CompanyInfo {
+  id: string;
+  companyName: string;
+  logoUrl: string;
+  address: string;
 }
 
 export type EmploymentType =
   | 'FullTime'
   | 'PartTime'
   | 'Contract'
-  | 'Internship'
-  | string;
-export type JobStatus = 'OPEN' | 'CLOSED' | string;
+  | 'Internship';
+export type JobStatus = 'OPEN' | 'CLOSED' | 'DRAFT';
 
 export interface Job {
-  id: string;
+  id?: string;
   title: string;
   category: Category;
-  company: Company;
+  company: CompanyInfo;
+  responsibility: string[];
+  jobFitAttributes: string[];
+  niceToHave: string[];
+  description: string;
   location: string;
+  salaryMin: number;
+  salaryMax: number;
+  experienceYears: number;
   status: JobStatus;
-  typeOfEmployment: EmploymentType;
   isVip: boolean;
-  createdAt: string; // ISO date
-  updatedAt: string; // ISO date
-
-  /** nếu backend có description mô tả chi tiết công việc thì để optional */
-  description?: string;
-  /** giữ lại logoUrl nếu bạn muốn override company.logoUrl */
-  logoUrl?: string;
-
-  /** những field phía client sử dụng trước đó */
-  tags?: string[];
-  applied?: number;
-  capacity?: number;
+  deadline: string;
+  typeOfEmployment: EmploymentType;
+  benefit: string[];
+  createdAt?: string;
+  updatedAt?: string;
 }
 
-export interface Meta {
-  count: number;
-  page: number;
+export interface OpenPositionsJob {
+  id: number;
+  title: string;
+  category: {
+    id: string;
+    name: string;
+  };
+  location: string;
+  typeOfEmployment: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface JobListResponse {
   data: Job[];
-  meta: Meta;
+  meta: {
+    count: number;
+    page: number;
+  };
 }
 
 /** payload khi tạo job */
@@ -53,21 +68,19 @@ export interface CreateJobReq {
   title: string;
   categoryId: string;
   companyId: string;
+  responsibility: string[];
+  jobFitAttributes: string[];
+  niceToHave: string[];
+  description: string;
   location: string;
+  salaryMin: number;
+  salaryMax: number;
+  experienceYears: number;
+  status: JobStatus;
+  isVip: boolean;
+  deadline: string;
   typeOfEmployment: EmploymentType;
-  tags?: string[];
-  capacity?: number;
-  /** nếu cần set status ngay lúc tạo */
-  status?: JobStatus;
-  description?: string;
-  responsibility?: string[];
-  jobFitAttributes?: string[];
-  niceToHave?: string[];
-  salaryMin?: number;
-  salaryMax?: number;
-  experienceYears?: number;
-  isVip?: boolean;
-  deadline?: string;
+  benefit: string[];
 }
 
 /** payload khi cập nhật job */
@@ -109,8 +122,10 @@ export interface StepProps {
   setWhoYouAre: (whoYouAre: string) => void;
   niceToHaves: string;
   setNiceToHaves: (niceToHaves: string) => void;
-  employmentType: string[];
-  setEmploymentType: (type: string[]) => void;
+  benefit: string;
+  setBenefit: (benefit: string) => void;
+  typeOfEmployment: EmploymentType;
+  setTypeOfEmployment: (type: EmploymentType) => void;
   categoryId: string;
   setCategoryId: (id: string) => void;
   location: string;
@@ -121,4 +136,27 @@ export interface StepProps {
   setDeadline: (deadline: string) => void;
   experienceYears: number;
   setExperienceYears: (years: number) => void;
+}
+
+export interface JobCategory {
+  id: string;
+  name: string;
+}
+
+export interface JobFormData {
+  title: string;
+  category: Category;
+  responsibility: string[];
+  jobFitAttributes: string[];
+  niceToHave: string[];
+  description: string;
+  location: string;
+  salaryMin: number;
+  salaryMax: number;
+  experienceYears: number;
+  status: JobStatus;
+  isVip: boolean;
+  deadline: string;
+  typeOfEmployment: EmploymentType;
+  benefit: string[];
 }
