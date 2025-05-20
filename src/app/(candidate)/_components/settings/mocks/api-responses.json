@@ -1,0 +1,16 @@
+{
+  "updateEmail": {
+    "success": true,
+    "email": "newemail@example.com",
+    "isEmailVerified": false,
+    "message": "Email updated successfully. Please verify your new email address."
+  },
+  "changePassword": {
+    "success": true,
+    "message": "Password updated successfully."
+  },
+  "error": {
+    "success": false,
+    "error": "An error occurred. Please try again."
+  }
+}

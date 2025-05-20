@@ -33,6 +33,7 @@ export function SocialSection({
               <a
                 href={`https://${instagram}`}
                 className="text-indigo-600 hover:underline"
+                target="_blank"
               >
                 {instagram}
               </a>
@@ -48,6 +49,7 @@ export function SocialSection({
               <a
                 href={`https://${twitter}`}
                 className="text-indigo-600 hover:underline"
+                target="_blank"
               >
                 {twitter}
               </a>
@@ -63,6 +65,7 @@ export function SocialSection({
               <a
                 href={`https://${website}`}
                 className="text-indigo-600 hover:underline"
+                target="_blank"
               >
                 {website}
               </a>

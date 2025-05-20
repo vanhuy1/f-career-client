@@ -143,6 +143,7 @@ export function ExperienceForm({
         const createDto = experienceData as CreateExperienceDto;
         dispatch(updateCaProfileStart());
         result = await candidateExperienceService.CreateExperience(createDto);
+        toast.success('Experience added successfully');
         dispatch(updateCaProfileSuccess());
       } else {
         // Type assertion for UpdateExperienceDto, including the id from the original experience
@@ -153,6 +154,7 @@ export function ExperienceForm({
         dispatch(updateCaProfileStart());
         result = await candidateExperienceService.UpdateExperience(updateDto);
         dispatch(updateCaProfileSuccess());
+        toast.success('Experience updated successfully');
       }
 
       onSubmit(result);
@@ -269,7 +271,6 @@ export function ExperienceForm({
                       mode="single"
                       selected={field.value}
                       onSelect={field.onChange}
-                      initialFocus
                     />
                   </PopoverContent>
                 </Popover>
@@ -318,7 +319,6 @@ export function ExperienceForm({
                         mode="single"
                         selected={field.value || undefined}
                         onSelect={field.onChange}
-                        initialFocus
                         disabled={isCurrentlyWorking}
                       />
                     </PopoverContent>

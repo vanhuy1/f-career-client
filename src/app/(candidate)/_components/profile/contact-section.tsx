@@ -50,7 +50,8 @@ export function ContactSection({
             </div>
             <div>
               <p className="mb-1 text-gray-500">Languages</p>
-              <p>{languages.join(', ')}</p>
+              {/* <p>{languages.join(', ') }</p> */}
+              <p>{languages}</p>
             </div>
           </div>
         </div>
