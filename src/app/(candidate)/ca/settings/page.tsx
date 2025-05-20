@@ -1,5 +1,12 @@
 'use client';
 
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import { useState } from 'react';
+import type { z } from 'zod';
+import { Calendar, ImageIcon, Loader2 } from 'lucide-react';
+import Image from 'next/image';
+
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,29 +18,57 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Calendar, ImageIcon } from 'lucide-react';
-import Image from 'next/image';
-import { useState } from 'react';
+import { toast } from 'react-toastify';
+import { updateProfile } from '@/app/(candidate)/_components/settings/user-info/api';
+import { ProfileFormSchema } from '@/schemas/CandidateSettings';
+import type { ProfileUpdateRequest } from '@/types/CandidateSettings';
 
-const SettingsPage = () => {
-  const [profileData, setProfileData] = useState({
-    fullName: 'Jake Gyll',
-    phoneNumber: '+44 1245 572 135',
-    email: 'Jakegyll@gmail.com',
-    dateOfBirth: '09/08/1997',
-    gender: 'Male',
-    accountType: 'jobSeeker',
+export default function SettingsPage() {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Define form with react-hook-form and zod validation
+  const form = useForm<z.infer<typeof ProfileFormSchema>>({
+    resolver: zodResolver(ProfileFormSchema),
+    defaultValues: {
+      fullName: 'Jake Gyll',
+      phoneNumber: '+44 1245 572 135',
+      email: 'Jakegyll@gmail.com',
+      dateOfBirth: '09/08/1997',
+      gender: 'Male',
+      accountType: 'jobSeeker',
+    },
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Handle form submission
-    console.log('Profile data saved:', profileData);
-    // You would typically send this data to your backend here
+  const onSubmit = async (data: z.infer<typeof ProfileFormSchema>) => {
+    try {
+      setIsSubmitting(true);
+
+      // Create request DTO from form data
+      const requestData: ProfileUpdateRequest = {
+        fullName: data.fullName,
+        phoneNumber: data.phoneNumber,
+        email: data.email,
+        dateOfBirth: data.dateOfBirth,
+        gender: data.gender,
+        accountType: data.accountType,
+      };
+
+      // Call API to update profile
+      const response = await updateProfile(requestData);
+
+      toast.success('Success', {});
+
+      console.log('Profile updated:', response);
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast.error('Error failed', {});
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form onSubmit={form.handleSubmit(onSubmit)}>
       <section className="py-6">
         <h2 className="text-xl font-semibold text-gray-900">
           Basic Information
@@ -94,13 +129,14 @@ const SettingsPage = () => {
             </Label>
             <Input
               id="fullName"
-              value={profileData.fullName}
-              onChange={(e) =>
-                setProfileData({ ...profileData, fullName: e.target.value })
-              }
+              {...form.register('fullName')}
               className="mt-1"
-              required
             />
+            {form.formState.errors.fullName && (
+              <p className="mt-1 text-sm text-red-500">
+                {form.formState.errors.fullName.message}
+              </p>
+            )}
           </div>
 
           <div className="col-span-1"></div>
@@ -114,13 +150,14 @@ const SettingsPage = () => {
             </Label>
             <Input
               id="phoneNumber"
-              value={profileData.phoneNumber}
-              onChange={(e) =>
-                setProfileData({ ...profileData, phoneNumber: e.target.value })
-              }
+              {...form.register('phoneNumber')}
               className="mt-1"
-              required
             />
+            {form.formState.errors.phoneNumber && (
+              <p className="mt-1 text-sm text-red-500">
+                {form.formState.errors.phoneNumber.message}
+              </p>
+            )}
           </div>
 
           <div className="col-span-1">
@@ -133,13 +170,14 @@ const SettingsPage = () => {
             <Input
               id="email"
               type="email"
-              value={profileData.email}
-              onChange={(e) =>
-                setProfileData({ ...profileData, email: e.target.value })
-              }
+              {...form.register('email')}
               className="mt-1"
-              required
             />
+            {form.formState.errors.email && (
+              <p className="mt-1 text-sm text-red-500">
+                {form.formState.errors.email.message}
+              </p>
+            )}
           </div>
 
           <div className="col-span-1">
@@ -152,20 +190,18 @@ const SettingsPage = () => {
             <div className="relative mt-1">
               <Input
                 id="dateOfBirth"
-                value={profileData.dateOfBirth}
-                onChange={(e) =>
-                  setProfileData({
-                    ...profileData,
-                    dateOfBirth: e.target.value,
-                  })
-                }
+                {...form.register('dateOfBirth')}
                 className="pr-10"
-                required
               />
               <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
                 <Calendar className="h-5 w-5 text-gray-400" />
               </div>
             </div>
+            {form.formState.errors.dateOfBirth && (
+              <p className="mt-1 text-sm text-red-500">
+                {form.formState.errors.dateOfBirth.message}
+              </p>
+            )}
           </div>
 
           <div className="col-span-1">
@@ -176,10 +212,8 @@ const SettingsPage = () => {
               Gender
             </Label>
             <Select
-              value={profileData.gender}
-              onValueChange={(value) =>
-                setProfileData({ ...profileData, gender: value })
-              }
+              value={form.watch('gender')}
+              onValueChange={(value) => form.setValue('gender', value)}
             >
               <SelectTrigger className="mt-1 w-full">
                 <SelectValue placeholder="Select gender" />
@@ -193,6 +227,11 @@ const SettingsPage = () => {
                 </SelectItem>
               </SelectContent>
             </Select>
+            {form.formState.errors.gender && (
+              <p className="mt-1 text-sm text-red-500">
+                {form.formState.errors.gender.message}
+              </p>
+            )}
           </div>
         </div>
         <div className="mt-8 border-t border-gray-200"></div>
@@ -208,9 +247,12 @@ const SettingsPage = () => {
           </div>
           <div className="flex-1">
             <RadioGroup
-              value={profileData.accountType}
+              value={form.watch('accountType')}
               onValueChange={(value) =>
-                setProfileData({ ...profileData, accountType: value })
+                form.setValue(
+                  'accountType',
+                  value === 'jobSeeker' ? 'jobSeeker' : 'employer',
+                )
               }
               className="space-y-6"
             >
@@ -250,6 +292,11 @@ const SettingsPage = () => {
                 </div>
               </div>
             </RadioGroup>
+            {form.formState.errors.accountType && (
+              <p className="mt-1 text-sm text-red-500">
+                {form.formState.errors.accountType.message}
+              </p>
+            )}
           </div>
         </div>
       </section>
@@ -258,12 +305,18 @@ const SettingsPage = () => {
         <Button
           type="submit"
           className="bg-indigo-600 px-8 text-white hover:bg-indigo-700"
+          disabled={isSubmitting}
         >
-          Save Profile
+          {isSubmitting ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Saving...
+            </>
+          ) : (
+            'Save Profile'
+          )}
         </Button>
       </div>
     </form>
   );
-};
-
-export default SettingsPage;
+}

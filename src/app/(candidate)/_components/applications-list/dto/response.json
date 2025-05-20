@@ -1,0 +1,82 @@
+{
+  "applications": [
+    {
+      "id": 1,
+      "company": {
+        "id": 101,
+        "name": "Nomad",
+        "logo": "/companies/nomad.png",
+        "website": "https://nomad.com",
+        "industry": "Technology"
+      },
+      "role": "Social Media Assistant",
+      "dateApplied": "2021-07-24",
+      "status": "IN_REVIEW",
+      "notes": "Applied through company website",
+      "hasFollowedUp": false
+    },
+    {
+      "id": 2,
+      "company": {
+        "id": 102,
+        "name": "Udacity",
+        "logo": "/companies/udacity.png",
+        "website": "https://udacity.com",
+        "industry": "Education"
+      },
+      "role": "Social Media Assistant",
+      "dateApplied": "2021-07-20",
+      "status": "SHORTLISTED",
+      "notes": "Referred by John",
+      "hasFollowedUp": false
+    },
+    {
+      "id": 3,
+      "company": {
+        "id": 103,
+        "name": "Packer",
+        "logo": "/logo-landing/nomad.png",
+        "website": "https://packer.io",
+        "industry": "Technology"
+      },
+      "role": "Social Media Assistant",
+      "dateApplied": "2021-07-16",
+      "status": "OFFERED",
+      "notes": "Final interview scheduled for next week",
+      "hasFollowedUp": true
+    },
+    {
+      "id": 4,
+      "company": {
+        "id": 104,
+        "name": "Divvy",
+        "logo": "/companies/divvy.png",
+        "website": "https://divvy.com",
+        "industry": "Finance"
+      },
+      "role": "Social Media Assistant",
+      "dateApplied": "2021-07-14",
+      "status": "INTERVIEWING",
+      "notes": "First round completed",
+      "hasFollowedUp": true
+    },
+    {
+      "id": 5,
+      "company": {
+        "id": 105,
+        "name": "DigitalOcean",
+        "logo": "/companies/digitalocean.png",
+        "website": "https://digitalocean.com",
+        "industry": "Technology"
+      },
+      "role": "Social Media Assistant",
+      "dateApplied": "2021-07-10",
+      "status": "UNSUITABLE",
+      "notes": "Position requires 5+ years of experience",
+      "hasFollowedUp": false
+    }
+  ],
+  "total": 45,
+  "page": 1,
+  "limit": 5
+}

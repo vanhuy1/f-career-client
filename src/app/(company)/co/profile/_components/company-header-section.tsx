@@ -78,7 +78,7 @@ export default function CompanyHeaderSection({
         industry: company.industry || companyDetails.industry,
       });
     }
-  }, [company]);
+  }, [company, companyDetails]);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
 

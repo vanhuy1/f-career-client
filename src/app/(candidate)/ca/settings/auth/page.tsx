@@ -1,41 +1,101 @@
 'use client';
 
-import type React from 'react';
-
 import { useState } from 'react';
-import { CheckCircle, AlertCircle } from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import {
+  updateEmailSchema,
+  changePasswordSchema,
+  type UpdateEmailFormValues,
+  type ChangePasswordFormValues,
+} from '@/schemas/CandidateSettings';
+import { userApi } from '@/app/(candidate)/_components/settings/api';
+import type { UserProfile } from '@/types/CandidateSettings';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { toast } from 'react-toastify';
 
 export default function LoginDetailsPage() {
-  const [email, setEmail] = useState('jakegyll@email.com');
-  const [newEmail, setNewEmail] = useState('');
-  const [oldPassword, setOldPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [isEmailVerified, setIsEmailVerified] = useState(true);
+  // User profile state
+  const [userProfile, setUserProfile] = useState<UserProfile>({
+    email: 'jakegyll@email.com',
+    isEmailVerified: true,
+  });
 
-  const handleUpdateEmail = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newEmail) {
-      setEmail(newEmail);
-      setNewEmail('');
-      setIsEmailVerified(false);
-      // In a real app, you would send verification email here
+  // Loading states
+  const [isUpdatingEmail, setIsUpdatingEmail] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+
+  // Email update form
+  const emailForm = useForm<UpdateEmailFormValues>({
+    resolver: zodResolver(updateEmailSchema),
+    defaultValues: {
+      newEmail: '',
+    },
+  });
+
+  // Password change form
+  const passwordForm = useForm<ChangePasswordFormValues>({
+    resolver: zodResolver(changePasswordSchema),
+    defaultValues: {
+      oldPassword: '',
+      newPassword: '',
+    },
+  });
+
+  // Handle email update submission
+  const handleUpdateEmail = async (data: UpdateEmailFormValues) => {
+    try {
+      setIsUpdatingEmail(true);
+      const response = await userApi.updateEmail(data);
+
+      if (response.success && response.data) {
+        setUserProfile({
+          email: response.data.email,
+          isEmailVerified: response.data.isEmailVerified,
+        });
+        emailForm.reset();
+        toast.success('Success', {});
+      } else {
+        toast.error('Error', {});
+      }
+    } catch (error) {
+      toast.error(error as string, {});
+    } finally {
+      setIsUpdatingEmail(false);
     }
   };
 
-  const handleChangePassword = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (oldPassword && newPassword && newPassword.length >= 8) {
-      // In a real app, you would verify old password and update to new password
-      setOldPassword('');
-      setNewPassword('');
-      alert('Password updated successfully');
+  // Handle password change submission
+  const handleChangePassword = async (data: ChangePasswordFormValues) => {
+    try {
+      setIsChangingPassword(true);
+      const response = await userApi.changePassword(data);
+
+      if (response.success && response.data) {
+        passwordForm.reset();
+        toast.success('Success', {});
+      } else {
+        toast.error('Error', {});
+      }
+    } catch (error) {
+      toast.error(error as string, {});
+    } finally {
+      setIsChangingPassword(false);
     }
   };
 
   return (
-    <div className="py-6">
+    <div>
       <section className="py-6">
         <h2 className="text-xl font-semibold text-gray-900">
           Basic Information
@@ -58,35 +118,53 @@ export default function LoginDetailsPage() {
           </div>
           <div className="flex-1">
             <div className="mb-4 flex items-center gap-2">
-              <span className="text-gray-900">{email}</span>
-              {isEmailVerified && (
+              <span className="text-gray-900">{userProfile.email}</span>
+              {userProfile.isEmailVerified && (
                 <CheckCircle className="h-5 w-5 text-green-500" />
               )}
             </div>
             <p className="mb-4 text-sm text-gray-500">
-              {isEmailVerified
+              {userProfile.isEmailVerified
                 ? 'Your email address is verified.'
                 : 'Please verify your email address.'}
             </p>
 
-            <form onSubmit={handleUpdateEmail}>
-              <h4 className="mb-2 text-base font-medium text-gray-700">
-                Update Email
-              </h4>
-              <Input
-                placeholder="Enter your new email"
-                type="email"
-                value={newEmail}
-                onChange={(e) => setNewEmail(e.target.value)}
-                className="mb-4"
-              />
-              <Button
-                type="submit"
-                className="bg-indigo-600 text-white hover:bg-indigo-700"
+            <Form {...emailForm}>
+              <form
+                onSubmit={emailForm.handleSubmit(handleUpdateEmail)}
+                className="space-y-4"
               >
-                Update Email
-              </Button>
-            </form>
+                <FormField
+                  control={emailForm.control}
+                  name="newEmail"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-base font-medium text-gray-700">
+                        Update Email
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Enter your new email"
+                          type="email"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button
+                  type="submit"
+                  className="bg-indigo-600 text-white hover:bg-indigo-700"
+                  disabled={isUpdatingEmail}
+                >
+                  {isUpdatingEmail && (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
+                  Update Email
+                </Button>
+              </form>
+            </Form>
           </div>
         </div>
         <div className="mt-6 border-t border-gray-200"></div>
@@ -103,42 +181,69 @@ export default function LoginDetailsPage() {
             </p>
           </div>
           <div className="flex-1">
-            <form onSubmit={handleChangePassword}>
-              <div className="mb-6">
-                <h4 className="mb-2 text-base font-medium text-gray-700">
-                  Old Password
-                </h4>
-                <Input
-                  placeholder="Enter your old password"
-                  type="password"
-                  value={oldPassword}
-                  onChange={(e) => setOldPassword(e.target.value)}
-                  className="mb-1"
-                />
-                <p className="text-xs text-gray-500">Minimum 8 characters</p>
-              </div>
-
-              <div className="mb-6">
-                <h4 className="mb-2 text-base font-medium text-gray-700">
-                  New Password
-                </h4>
-                <Input
-                  placeholder="Enter your new password"
-                  type="password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  className="mb-1"
-                />
-                <p className="text-xs text-gray-500">Minimum 8 characters</p>
-              </div>
-
-              <Button
-                type="submit"
-                className="bg-indigo-600 text-white hover:bg-indigo-700"
+            <Form {...passwordForm}>
+              <form
+                onSubmit={passwordForm.handleSubmit(handleChangePassword)}
+                className="space-y-6"
               >
-                Change Password
-              </Button>
-            </form>
+                <FormField
+                  control={passwordForm.control}
+                  name="oldPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-base font-medium text-gray-700">
+                        Old Password
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Enter your old password"
+                          type="password"
+                          {...field}
+                        />
+                      </FormControl>
+                      <p className="text-xs text-gray-500">
+                        Minimum 8 characters
+                      </p>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={passwordForm.control}
+                  name="newPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-base font-medium text-gray-700">
+                        New Password
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Enter your new password"
+                          type="password"
+                          {...field}
+                        />
+                      </FormControl>
+                      <p className="text-xs text-gray-500">
+                        Minimum 8 characters
+                      </p>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <Button
+                  type="submit"
+                  className="bg-indigo-600 text-white hover:bg-indigo-700"
+                  disabled={isChangingPassword}
+                >
+                  {isChangingPassword && (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
+                  Change Password
+                </Button>
+              </form>
+            </Form>
           </div>
         </div>
         <div className="mt-6 border-t border-gray-200"></div>

@@ -15,6 +15,45 @@ import {
 import { ExperienceForm } from './experience-form';
 import type { Experience } from '@/types/CandidateProfile';
 
+// Function to calculate duration between two dates
+const calculateDuration = (startDate: string, endDate?: string): string => {
+  const start = new Date(startDate);
+  const end = endDate ? new Date(endDate) : new Date();
+
+  // Calculate years
+  let years = end.getFullYear() - start.getFullYear();
+
+  // Adjust years if needed based on months
+  if (
+    end.getMonth() < start.getMonth() ||
+    (end.getMonth() === start.getMonth() && end.getDate() < start.getDate())
+  ) {
+    years--;
+  }
+
+  // Calculate months
+  let months = end.getMonth() - start.getMonth();
+  if (end.getDate() < start.getDate()) {
+    months--;
+  }
+
+  // Correct negative months
+  if (months < 0) {
+    months += 12;
+  }
+
+  // Format the output
+  let result = '';
+  if (years > 0) {
+    result += `${years}y `;
+  }
+  if (months > 0 || years === 0) {
+    result += `${months}m`;
+  }
+
+  return result.trim();
+};
+
 interface ExperienceSectionProps {
   experiences: Experience[];
   onAddExperience?: (experience: Experience) => void;
@@ -91,7 +130,11 @@ export function ExperienceSection({
         {displayedExperiences.map((experience, index) => (
           <div
             key={experience.id}
-            className={`${index < displayedExperiences.length - 1 ? 'mb-8 border-b pb-8' : 'mb-4'} relative`}
+            className={`${
+              index < displayedExperiences.length - 1
+                ? 'mb-8 border-b pb-8'
+                : 'mb-4'
+            } relative`}
           >
             <Button
               variant="outline"
@@ -116,8 +159,12 @@ export function ExperienceSection({
                 <div className="mb-2 text-gray-500">
                   {experience.company} • {experience.employmentType} •{' '}
                   {experience.startDate} - {experience.endDate || 'Present'}
-                  {!experience.endDate && ' (1y 1m)'}
-                  {experience.endDate && ' (8y)'}
+                  {' ('}
+                  {calculateDuration(
+                    experience.startDate,
+                    experience.endDate ?? undefined,
+                  )}
+                  {')'}
                 </div>
                 <div className="mb-3 text-gray-500">{experience.location}</div>
                 <p className="text-gray-600">{experience.description}</p>

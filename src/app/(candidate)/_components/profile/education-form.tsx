@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
-import { z } from 'zod';
 import { toast } from 'react-toastify';
 import { useDispatch } from 'react-redux';
 
@@ -38,20 +37,7 @@ import {
   updateCaProfileStart,
   updateCaProfileSuccess,
 } from '@/services/state/caProfileSlice';
-
-// Update the education schema to use numbers for years and make currentlyStudying required
-const educationSchema = z.object({
-  institution: z.string().min(1, 'Institution is required'),
-  degree: z.string().min(1, 'Degree is required'),
-  field: z.string().min(1, 'Field of study is required'),
-  startYear: z.number().min(1900, 'Start year is required'),
-  endYear: z.number().nullable(),
-  currentlyStudying: z.boolean(),
-  logo: z.string().optional(),
-  description: z.string().optional(),
-});
-
-type EducationInput = z.infer<typeof educationSchema>;
+import { EducationInput, educationSchema } from '@/schemas/CandidateProfile';
 
 interface EducationFormProps {
   mode: 'add' | 'edit';
@@ -141,6 +127,7 @@ export function EducationForm({
         const createDto = educationData as CreateEducationDto;
         dispatch(updateCaProfileStart());
         result = await candidateEducationService.CreateEducation(createDto);
+        toast.success('Education added successfully');
         dispatch(updateCaProfileSuccess());
       } else {
         // Type assertion for UpdateEducationDto, including the id from the original education
@@ -150,6 +137,7 @@ export function EducationForm({
         } as UpdateEducationDto;
         dispatch(updateCaProfileStart());
         result = await candidateEducationService.UpdateEducation(updateDto);
+        toast.success('Education updated successfully');
         dispatch(updateCaProfileSuccess());
       }
 

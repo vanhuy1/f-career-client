@@ -41,7 +41,7 @@ export default function ContactSection({
         website: company.website || contactInfo.website,
       });
     }
-  }, [company]);
+  }, [company, contactInfo]);
 
   const contactFields: FormField[] = [
     {
