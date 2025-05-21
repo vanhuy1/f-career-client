@@ -18,13 +18,17 @@ import type { EmploymentType, StepProps } from '@/types/Job';
 import { useEffect, useState } from 'react';
 import { Category } from '@/types/Category';
 import { categoryService } from '@/services/api/category/category-api';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 
 export default function Step1({
   skills,
-  newSkill,
   salaryRange,
-  setSkills,
-  setNewSkill,
   setSalaryRange,
   handleAddSkill,
   handleRemoveSkill,
@@ -40,15 +44,11 @@ export default function Step1({
   setExperienceYears,
   deadline,
   setDeadline,
+  availableSkills,
 }: StepProps) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    setSkills('Graphic Design, Communication, Illustrator'.split(', '));
-    setNewSkill('');
-    console.log('Skills updated:', newSkill);
-  }, [newSkill, setSkills, setNewSkill]);
+  const [isSkillDialogOpen, setIsSkillDialogOpen] = useState(false);
 
   // Fetch categories from API
   useEffect(() => {
@@ -67,7 +67,6 @@ export default function Step1({
     fetchCategories();
   }, []);
 
-  // Cập nhật handler để chỉ cho phép chọn một loại
   const handleEmploymentTypeChange = (type: EmploymentType) => {
     setTypeOfEmployment(type);
   };
@@ -297,14 +296,47 @@ export default function Step1({
             </p>
           </div>
           <div className="w-full md:col-span-2 md:w-[70%]">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleAddSkill}
-              className="mb-4 flex items-center gap-1"
+            <Dialog
+              open={isSkillDialogOpen}
+              onOpenChange={setIsSkillDialogOpen}
             >
-              <span>+</span> Add Skills
-            </Button>
+              <DialogTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="mb-4 flex items-center gap-1"
+                >
+                  <span>+</span> Add Skills
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-h-[80vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Select Skills</DialogTitle>
+                </DialogHeader>
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                  {availableSkills.map((skill) => (
+                    <Button
+                      key={skill.id}
+                      variant={
+                        skills.includes(skill.name) ? 'default' : 'outline'
+                      }
+                      className="justify-start"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (skills.includes(skill.name)) {
+                          handleRemoveSkill(skill.name);
+                        } else {
+                          handleAddSkill(skill.id);
+                        }
+                      }}
+                    >
+                      {skill.name}
+                    </Button>
+                  ))}
+                </div>
+              </DialogContent>
+            </Dialog>
+
             <div className="mt-2 flex flex-wrap gap-2">
               {skills.map((skill) => (
                 <Badge
@@ -313,36 +345,21 @@ export default function Step1({
                   className="flex items-center gap-1 px-3 py-1"
                 >
                   {skill}
-                  <X
-                    className="ml-1 h-3 w-3 cursor-pointer"
-                    onClick={() => handleRemoveSkill(skill)}
-                  />
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleRemoveSkill(skill);
+                    }}
+                    className="ml-1 h-3 w-3 cursor-pointer hover:text-red-500"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
                 </Badge>
               ))}
               {skills.length === 0 && (
-                <>
-                  <Badge
-                    variant="secondary"
-                    className="flex items-center gap-1 px-3 py-1"
-                  >
-                    Graphic Design
-                    <X className="ml-1 h-3 w-3 cursor-pointer" />
-                  </Badge>
-                  <Badge
-                    variant="secondary"
-                    className="flex items-center gap-1 px-3 py-1"
-                  >
-                    Communication
-                    <X className="ml-1 h-3 w-3 cursor-pointer" />
-                  </Badge>
-                  <Badge
-                    variant="secondary"
-                    className="flex items-center gap-1 px-3 py-1"
-                  >
-                    Illustrator
-                    <X className="ml-1 h-3 w-3 cursor-pointer" />
-                  </Badge>
-                </>
+                <p className="text-sm text-gray-500">No skills selected</p>
               )}
             </div>
           </div>

@@ -1,5 +1,7 @@
 // src/types/Job.ts
 
+import { Skill } from '@/services/api/skills/skill-api';
+
 export interface Category {
   id: string;
   name: string;
@@ -110,7 +112,7 @@ export interface StepProps {
   setNewSkill: (newSkill: string) => void;
   setSalaryRange: (range: number[]) => void;
   setBenefits: (benefits: Benefit[]) => void;
-  handleAddSkill: () => void;
+  handleAddSkill: (skillId: string) => void;
   handleRemoveSkill: (skill: string) => void;
   jobTitle: string;
   setJobTitle: (title: string) => void;
@@ -136,6 +138,30 @@ export interface StepProps {
   setDeadline: (deadline: string) => void;
   experienceYears: number;
   setExperienceYears: (years: number) => void;
+  availableSkills: Skill[];
+}
+
+export interface JobCategory {
+  id: string;
+  name: string;
+}
+
+export interface JobFormData {
+  title: string;
+  category: Category;
+  responsibility: string[];
+  jobFitAttributes: string[];
+  niceToHave: string[];
+  description: string;
+  location: string;
+  salaryMin: number;
+  salaryMax: number;
+  experienceYears: number;
+  status: JobStatus;
+  isVip: boolean;
+  deadline: string;
+  typeOfEmployment: EmploymentType;
+  benefit: string[];
 }
 
 export interface JobCategory {

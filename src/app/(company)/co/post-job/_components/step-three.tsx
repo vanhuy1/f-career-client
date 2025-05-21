@@ -38,32 +38,6 @@ export default function Step3({ benefits = [], setBenefits }: StepProps) {
     icon: 'healthcare',
   });
 
-  const defaultBenefits = [
-    {
-      id: 1,
-      title: 'Full Healthcare',
-      description:
-        'We believe in thriving communities and that starts with our team being happy and healthy.',
-      icon: 'healthcare',
-    },
-    {
-      id: 2,
-      title: 'Unlimited Vacation',
-      description:
-        'We believe you should have a flexible schedule that makes space for family, wellness, and fun.',
-      icon: 'vacation',
-    },
-    {
-      id: 3,
-      title: 'Skill Development',
-      description:
-        "We believe in always learning and leveling up our skills. Whether it's a conference or online course.",
-      icon: 'development',
-    },
-  ];
-
-  const displayBenefits = benefits.length > 0 ? benefits : defaultBenefits;
-
   const handleAddBenefit = () => {
     if (setBenefits && newBenefit.title && newBenefit.description) {
       const newBenefitWithId = {
@@ -71,7 +45,7 @@ export default function Step3({ benefits = [], setBenefits }: StepProps) {
         id: Date.now(),
       };
 
-      setBenefits([...displayBenefits, newBenefitWithId]);
+      setBenefits([...benefits, newBenefitWithId]);
       setNewBenefit({
         title: '',
         description: '',
@@ -83,7 +57,7 @@ export default function Step3({ benefits = [], setBenefits }: StepProps) {
 
   const handleRemoveBenefit = (id: number) => {
     if (setBenefits) {
-      setBenefits(displayBenefits.filter((benefit) => benefit.id !== id));
+      setBenefits(benefits.filter((benefit) => benefit.id !== id));
     }
   };
 
@@ -197,33 +171,38 @@ export default function Step3({ benefits = [], setBenefits }: StepProps) {
             </div>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {displayBenefits.map((benefit) => (
-                <div
-                  key={benefit.id}
-                  className="relative rounded-md border p-4"
-                >
-                  <button
-                    onClick={() => handleRemoveBenefit(benefit.id)}
-                    className="absolute top-2 right-2 rounded-full p-1 hover:bg-gray-100"
+              {benefits.length > 0 ? (
+                benefits.map((benefit) => (
+                  <div
+                    key={benefit.id}
+                    className="relative rounded-md border p-4"
                   >
-                    <X className="h-4 w-4" />
-                  </button>
-                  <div className="flex gap-4">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-md text-indigo-600">
-                      {benefit.icon === 'healthcare' && benefitIcons.healthcare}
-                      {benefit.icon === 'vacation' && benefitIcons.vacation}
-                      {benefit.icon === 'development' &&
-                        benefitIcons.development}
-                    </div>
-                    <div>
-                      <h4 className="font-medium">{benefit.title}</h4>
-                      <p className="text-sm text-gray-500">
-                        {benefit.description}
-                      </p>
+                    <button
+                      onClick={() => handleRemoveBenefit(benefit.id)}
+                      className="absolute top-2 right-2 rounded-full p-1 hover:bg-gray-100"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                    <div className="flex gap-4">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-md text-indigo-600">
+                        {benefit.icon === 'healthcare' &&
+                          benefitIcons.healthcare}
+                        {benefit.icon === 'vacation' && benefitIcons.vacation}
+                        {benefit.icon === 'development' &&
+                          benefitIcons.development}
+                      </div>
+                      <div>
+                        <h4 className="font-medium">{benefit.title}</h4>
+                        <p className="text-sm text-gray-500">
+                          {benefit.description}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))
+              ) : (
+                <p className="text-sm text-gray-500">No benefits added yet</p>
+              )}
             </div>
           </div>
         </div>
