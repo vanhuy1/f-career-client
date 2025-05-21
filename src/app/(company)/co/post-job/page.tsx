@@ -1,14 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ArrowLeft, Pencil } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import Step1 from './_components/step-one';
 import Step2 from './_components/step-two';
 import Step3 from './_components/step-three';
-import { StepProps } from '@/types/Job';
+import { StepProps, Benefit } from '@/types/Job';
 import { jobService } from '@/services/api/jobs/job-api';
+import { skillService, Skill } from '@/services/api/skills/skill-api';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
 import { JobStatus, EmploymentType } from '@/types/Job';
@@ -17,36 +18,12 @@ import { useUser } from '@/services/state/userSlice';
 export default function JobPostingForm() {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
-  const [skills, setSkills] = useState<string[]>([
-    'Graphic Design',
-    'Communication',
-    'Illustrator',
-  ]);
+  const [skills, setSkills] = useState<string[]>([]);
   const [newSkill, setNewSkill] = useState('');
+  const [availableSkills, setAvailableSkills] = useState<Skill[]>([]);
+  const [selectedSkillIds, setSelectedSkillIds] = useState<string[]>([]);
   const [salaryRange, setSalaryRange] = useState([5000, 22000]);
-  const [benefits, setBenefits] = useState([
-    {
-      id: 1,
-      icon: 'healthcare',
-      title: 'Full Healthcare',
-      description:
-        'We believe in thriving communities and that starts with our team being happy and healthy.',
-    },
-    {
-      id: 2,
-      icon: 'vacation',
-      title: 'Unlimited Vacation',
-      description:
-        'We believe you should have a flexible schedule that makes space for family, wellness, and fun.',
-    },
-    {
-      id: 3,
-      icon: 'development',
-      title: 'Skill Development',
-      description:
-        "We believe in investing and leveling up our skills. Whether it's a conference or online course.",
-    },
-  ]);
+  const [benefits, setBenefits] = useState<Benefit[]>([]);
 
   // Thêm state cho các thông tin job
   const [jobTitle, setJobTitle] = useState('');
@@ -65,15 +42,34 @@ export default function JobPostingForm() {
     useState<EmploymentType>('FullTime');
   const user = useUser();
 
-  const handleAddSkill = () => {
-    if (newSkill && !skills.includes(newSkill)) {
-      setSkills([...skills, newSkill]);
-      setNewSkill('');
+  useEffect(() => {
+    const fetchSkills = async () => {
+      try {
+        const skills = await skillService.findAll();
+        setAvailableSkills(skills);
+      } catch (error) {
+        console.error('Error fetching skills:', error);
+        toast.error('Failed to fetch skills');
+      }
+    };
+
+    fetchSkills();
+  }, []);
+
+  const handleAddSkill = (skillId: string) => {
+    const skill = availableSkills.find((s) => s.id === skillId);
+    if (skill && !skills.includes(skill.name)) {
+      setSkills([...skills, skill.name]);
+      setSelectedSkillIds([...selectedSkillIds, skillId]);
     }
   };
 
-  const handleRemoveSkill = (skill: string) => {
-    setSkills(skills.filter((s) => s !== skill));
+  const handleRemoveSkill = (skillName: string) => {
+    const skill = availableSkills.find((s) => s.name === skillName);
+    if (skill) {
+      setSelectedSkillIds((prev) => prev.filter((id) => id !== skill.id));
+      setSkills((prev) => prev.filter((s) => s !== skillName));
+    }
   };
 
   const nextStep = () => {
@@ -90,12 +86,12 @@ export default function JobPostingForm() {
 
   const handleSubmit = async () => {
     try {
-      // Chuẩn bị dữ liệu để gửi lên BE
       const jobData = {
         title: jobTitle,
         description: jobDescription,
         categoryId: categoryId || '1',
         companyId: user?.data?.companyId || '1',
+        skillIds: selectedSkillIds,
         responsibility: responsibilities
           .split('\n')
           .filter((item) => item.trim() !== ''),
@@ -105,22 +101,20 @@ export default function JobPostingForm() {
         niceToHave: niceToHaves
           .split('\n')
           .filter((item) => item.trim() !== ''),
-        benefit: benefit.split('\n').filter((item) => item.trim() !== ''),
-        location: location || 'New York', // Default value
+        benefit: benefits.map((benefit) => benefit.description),
+        location: location || 'New York',
         salaryMin: salaryRange[0],
         salaryMax: salaryRange[1],
         experienceYears: experienceYears,
         isVip: isVip,
         status: jobStatus,
-        deadline: deadline || '2024-12-31T00:00:00.000Z', // Default value
-        typeOfEmployment: typeOfEmployment, // Lấy loại đầu tiên hoặc default
+        deadline: deadline || '2024-12-31T00:00:00.000Z',
+        typeOfEmployment: typeOfEmployment,
       };
 
-      // Gọi API tạo job
       await jobService.create(jobData);
-
       toast.success('Job created successfully!');
-      router.push('/job'); // Chuyển hướng về trang danh sách job
+      router.push('/job');
     } catch (error) {
       console.error('Error creating job:', error);
       toast.error('Failed to create job. Please try again.');
@@ -162,6 +156,7 @@ export default function JobPostingForm() {
     setDeadline,
     experienceYears,
     setExperienceYears,
+    availableSkills,
   };
 
   return (
