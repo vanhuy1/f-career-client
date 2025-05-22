@@ -93,6 +93,19 @@ class AuthService {
     });
     return response;
   }
+
+  async verifyEmail(token: string): Promise<{ message: string, success: boolean }> {
+    const url = this.requestBuilder.buildUrl(`verify?token=${token}`);
+    const response = await httpClient.get<{ message: string, success: boolean }>({
+      url,
+      typeCheck: (data) => ({
+        success: true,
+        data: data as { message: string, success: boolean },
+      }),
+    });
+    return response;
+  }
 }
 
 export const authService = new AuthService();
+

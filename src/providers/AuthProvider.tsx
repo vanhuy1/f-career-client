@@ -35,7 +35,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     } else {
       setUserFailure('User already exists');
     }
-  }, [user, dispatch]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dispatch]);
 
   if (isLoading === LoadingState.loading) {
     return <LoadingScreen />;
