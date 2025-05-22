@@ -11,10 +11,6 @@ import { CreateCompanyReq } from '@/types/Company';
 interface ContactSectionProps {
   company: Company;
   onUpdateCompany: (data: Partial<CreateCompanyReq>) => Promise<void>;
-  phone?: number;
-  email?: string;
-  website?: string;
-  socialMedia?: string[];
 }
 
 export default function ContactSection({
@@ -22,40 +18,39 @@ export default function ContactSection({
   onUpdateCompany,
 }: ContactSectionProps) {
   const defaultContactInfo = {
-    email: 'info@nomad.com (default)',
-    phone: '+1 (555) 123-4567 (default)',
-    address:
-      company?.address?.[0] ||
-      '123 Tech Lane, San Francisco, CA 94107 (default)',
-    website: company?.website || 'https://www.nomad.com (default)',
+    email: company?.email || null,
+    phone: company?.phone?.toString() || null,
+    address: company?.address?.[0] || null,
+    website: company?.website || null,
   };
 
   const [contactInfo, setContactInfo] = useState(defaultContactInfo);
 
-  // Cập nhật khi company thay đổi
+  // Update contact info when the `company` object changes
   useEffect(() => {
     if (company) {
       setContactInfo({
-        ...contactInfo,
-        address: company.address?.[0] || contactInfo.address,
-        website: company.website || contactInfo.website,
+        email: company.email || null,
+        phone: company.phone?.toString() || null,
+        address: company.address?.[0] || null,
+        website: company.website || null,
       });
     }
-  }, [company, contactInfo]);
+  }, [company]);
 
   const contactFields: FormField[] = [
     {
       id: 'address',
       label: 'Address',
       type: 'text',
-      defaultValue: contactInfo.address,
+      defaultValue: contactInfo.address || '',
       placeholder: 'Enter company address',
     },
     {
       id: 'website',
       label: 'Website',
       type: 'url',
-      defaultValue: contactInfo.website,
+      defaultValue: contactInfo.website || '',
       placeholder: 'Enter company website',
     },
   ];
@@ -64,19 +59,19 @@ export default function ContactSection({
     if (!company) return;
 
     try {
-      // Tạo mảng address mới, chỉ thay đổi phần tử đầu tiên (HQ)
+      // Create a new address array, updating only the first element (HQ)
       const newAddresses =
         company.address && Array.isArray(company.address)
           ? [data.address, ...company.address.slice(1)]
           : [data.address];
 
-      // Sử dụng hàm onUpdateCompany để cập nhật
+      // Use the `onUpdateCompany` function to update the company data
       await onUpdateCompany({
         address: newAddresses,
         website: data.website,
       });
 
-      // Cập nhật state local (giữ nguyên email và phone)
+      // Update local state (keep email and phone unchanged)
       setContactInfo((prev) => ({
         ...prev,
         address: data.address,
@@ -103,68 +98,88 @@ export default function ContactSection({
       </div>
       <div className="rounded-lg border bg-white p-4">
         <div className="flex flex-col gap-4">
+          {/* Email */}
           <div className="flex items-start gap-3">
             <div className="flex-shrink-0 rounded-full bg-blue-50 p-2">
               <Mail className="h-5 w-5 text-blue-600" />
             </div>
             <div className="min-w-0 flex-1">
               <div className="text-xs text-gray-500">Email</div>
-              <a
-                href={`mailto:${contactInfo.email}`}
-                className="block truncate text-sm font-medium text-indigo-600 hover:underline"
-                title={contactInfo.email}
-              >
-                {contactInfo.email}
-              </a>
+              {contactInfo.email ? (
+                <a
+                  href={`mailto:${contactInfo.email}`}
+                  className="block truncate text-sm font-medium text-indigo-600 hover:underline"
+                  title={contactInfo.email}
+                >
+                  {contactInfo.email}
+                </a>
+              ) : (
+                <div className="text-sm font-medium text-gray-500">N/A</div>
+              )}
             </div>
           </div>
 
+          {/* Phone */}
           <div className="flex items-start gap-3">
             <div className="flex-shrink-0 rounded-full bg-blue-50 p-2">
               <Phone className="h-5 w-5 text-blue-600" />
             </div>
             <div className="min-w-0 flex-1">
               <div className="text-xs text-gray-500">Phone</div>
-              <a
-                href={`tel:${contactInfo.phone}`}
-                className="block truncate text-sm font-medium"
-                title={contactInfo.phone}
-              >
-                {contactInfo.phone}
-              </a>
+              {contactInfo.phone ? (
+                <a
+                  href={`tel:${contactInfo.phone}`}
+                  className="block truncate text-sm font-medium"
+                  title={contactInfo.phone}
+                >
+                  {contactInfo.phone}
+                </a>
+              ) : (
+                <div className="text-sm font-medium text-gray-500">N/A</div>
+              )}
             </div>
           </div>
 
+          {/* Address */}
           <div className="flex items-start gap-3">
             <div className="flex-shrink-0 rounded-full bg-blue-50 p-2">
               <MapPin className="h-5 w-5 text-blue-600" />
             </div>
             <div className="min-w-0 flex-1">
               <div className="text-xs text-gray-500">Address</div>
-              <div
-                className="text-sm font-medium break-words"
-                title={contactInfo.address}
-              >
-                {contactInfo.address}
-              </div>
+              {contactInfo.address ? (
+                <div
+                  className="text-sm font-medium break-words"
+                  title={contactInfo.address}
+                >
+                  {contactInfo.address}
+                </div>
+              ) : (
+                <div className="text-sm font-medium text-gray-500">N/A</div>
+              )}
             </div>
           </div>
 
+          {/* Website */}
           <div className="flex items-start gap-3">
             <div className="flex-shrink-0 rounded-full bg-blue-50 p-2">
               <Globe className="h-5 w-5 text-blue-600" />
             </div>
             <div className="min-w-0 flex-1">
               <div className="text-xs text-gray-500">Website</div>
-              <a
-                href={contactInfo.website}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block truncate text-sm font-medium text-indigo-600 hover:underline"
-                title={contactInfo.website}
-              >
-                {contactInfo.website}
-              </a>
+              {contactInfo.website ? (
+                <a
+                  href={contactInfo.website}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block truncate text-sm font-medium text-indigo-600 hover:underline"
+                  title={contactInfo.website}
+                >
+                  {contactInfo.website}
+                </a>
+              ) : (
+                <div className="text-sm font-medium text-gray-500">N/A</div>
+              )}
             </div>
           </div>
         </div>
