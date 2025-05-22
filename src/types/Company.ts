@@ -54,20 +54,25 @@ export interface Job {
 }
 
 export interface CreateCompanyReq {
-  companyName?: string;
-  logoUrl?: string;
+  logoUrl?: string | null; // Allow null
+  companyName: string;
   phone?: number;
   email?: string;
   foundedAt?: string;
   employees?: number;
-  address?: string[];
+  address?: string[] | null;
   website?: string;
-  industry?: string;
-  description?: string;
+  industry?: string | null;
+  description?: string | null;
   socialMedia?: string[];
   workImageUrl?: string[];
+  coreTeam?: CoreTeamMember[];
+  benefits?: Benefit[];
+  openPositions?: OpenPositionsJob[];
   taxCode?: string;
   businessLicenseUrl?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export type ContactInfo = {

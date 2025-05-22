@@ -10,29 +10,24 @@ import { CreateCompanyReq } from '@/types/Company';
 interface CompanyProfileSectionProps {
   company: Company;
   onUpdateCompany: (data: Partial<CreateCompanyReq>) => Promise<void>;
-  description?: string | null;
-  industry?: string;
-  foundedAt?: string;
-  employees?: number;
 }
 
 export default function CompanyProfileSection({
   company,
   onUpdateCompany,
-  description,
 }: CompanyProfileSectionProps) {
-  // Sử dụng thông tin từ database hoặc dữ liệu mẫu nếu không có
+  // Initialize profile with company description or a default value
   const [profile, setProfile] = useState<string>(
-    description ||
+    company.description ||
       "(default) Nomad is a software platform for starting and running internet businesses. Millions of businesses rely on Stripe's software tools to accept payments, expand globally, and manage their businesses online. Stripe has been at the forefront of expanding internet commerce, powering new business models, and supporting the latest platforms, from marketplaces to mobile commerce sites. We believe that growing the GDP of the internet is a problem rooted in code and design, not finance. Stripe is built for developers, makers, and creators. We work on solving the hard technical problems necessary to build global economic infrastructure—from designing highly reliable systems to developing advanced machine learning algorithms to prevent fraud.",
   );
 
-  // Cập nhật profile khi company thay đổi
+  // Update profile when the company object changes
   useEffect(() => {
-    if (description) {
-      setProfile(description);
+    if (company.description) {
+      setProfile(company.description);
     }
-  }, [description]);
+  }, [company.description]);
 
   const companyProfileFields: FormField[] = [
     {
@@ -48,19 +43,19 @@ export default function CompanyProfileSection({
     if (!company) return;
 
     try {
-      // Sử dụng hàm onUpdateCompany để cập nhật
+      // Use onUpdateCompany to update the company description
       await onUpdateCompany({
         description: data.profile,
       });
 
-      // Cập nhật state local
+      // Update local state
       setProfile(data.profile);
 
-      // Hiển thị thông báo thành công
+      // Show success toast
       toast.success('Description updated successfully');
     } catch (error) {
       console.error('Failed to update description:', error);
-      // Hiển thị thông báo lỗi
+      // Show error toast
       toast.error('Failed to update description');
     }
   };

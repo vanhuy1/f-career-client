@@ -4,7 +4,6 @@ import { useEffect, useState, useCallback } from 'react';
 import { Company, CreateCompanyReq } from '@/types/Company';
 import { companyService } from '@/services/api/company/company-api';
 import { toast } from 'react-toastify';
-import { useUser } from '@/services/state/userSlice';
 import CompanyHeaderSection from './_components/company-header-section';
 import CompanyProfileSection from './_components/company-profile-section';
 import ContactSection from './_components/contact-section';
@@ -13,6 +12,7 @@ import OfficeLocationsSection from './_components/office-locations-section';
 import TeamSection from './_components/team-section';
 import BenefitsSection from './_components/benefits-section';
 import OpenPositionsSection from './_components/open-positions-section';
+import { useUser } from '@/services/state/userSlice';
 
 // Main component
 const CompanyProfilePage = () => {
@@ -23,24 +23,17 @@ const CompanyProfilePage = () => {
 
   // Fetch company data
   const fetchCompanyData = useCallback(async () => {
-    // Skip if already loading or data is fetched
-    if (!isLoading || company) return;
-
-    setError(null);
-
-    if (!user?.data?.companyId) {
-      setError('Company ID not found');
+    // Skip if no companyId or already fetched
+    if (!user?.data?.companyId || company) {
       setIsLoading(false);
-      toast.error('Company ID not found', { toastId: 'company-id-error' });
       return;
     }
 
+    setError(null);
+
     try {
-      const data = await companyService.findOne(user?.data?.companyId);
+      const data = await companyService.findOne(user.data.companyId);
       setCompany(data);
-      toast.success('Company data loaded successfully', {
-        toastId: 'company-data-success',
-      });
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : 'Failed to load company data';
@@ -52,9 +45,8 @@ const CompanyProfilePage = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [user?.data?.companyId, isLoading, company]);
+  }, [user?.data?.companyId, company]);
 
-  // Update company data
   const updateCompanyData = useCallback(
     async (updatedData: Partial<CreateCompanyReq>) => {
       if (!company) {
@@ -84,12 +76,10 @@ const CompanyProfilePage = () => {
     [company],
   );
 
-  // Initial data fetch
   useEffect(() => {
     fetchCompanyData();
   }, [fetchCompanyData]);
 
-  // Error state
   if (error) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50">
@@ -100,7 +90,6 @@ const CompanyProfilePage = () => {
     );
   }
 
-  // Loading state
   if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50">
@@ -112,7 +101,6 @@ const CompanyProfilePage = () => {
     );
   }
 
-  // No company data
   if (!company) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50">
@@ -128,11 +116,6 @@ const CompanyProfilePage = () => {
         <CompanyHeaderSection
           company={company}
           onUpdateCompany={updateCompanyData}
-          logoUrl={company.logoUrl}
-          companyName={company.companyName}
-          industry={company.industry || undefined}
-          foundedAt={company.foundedAt}
-          employees={company.employees}
         />
 
         {/* Main Content Grid */}
@@ -142,14 +125,10 @@ const CompanyProfilePage = () => {
             <CompanyProfileSection
               company={company}
               onUpdateCompany={updateCompanyData}
-              description={company.description}
-              industry={company.industry || undefined}
-              foundedAt={company.foundedAt}
-              employees={company.employees}
             />
             <WorkingAtNomadSection workImageUrl={company.workImageUrl} />
             <TeamSection company={company} />
-            <BenefitsSection benefits={company.benefits} />
+            <BenefitsSection company={company} />
             <OpenPositionsSection companyJob={company.openPositions || []} />
           </div>
 
@@ -158,15 +137,11 @@ const CompanyProfilePage = () => {
             <ContactSection
               company={company}
               onUpdateCompany={updateCompanyData}
-              phone={company.phone}
-              email={company.email}
-              website={company.website}
-              socialMedia={company.socialMedia}
             />
             <OfficeLocationsSection
               company={company}
               onUpdateCompany={updateCompanyData}
-              address={company.address}
+              address={company.address || []}
             />
           </div>
         </div>
