@@ -67,7 +67,10 @@ export const SignInForm = () => {
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Welcome Back</h1>
 
-      <GoogleSignButton text="Sign In with Google" />
+      <GoogleSignButton
+        text="Sign In with Google"
+        redirectTo={`${window.location.origin}/auth/callback`}
+      />
 
       <Divider />
 
