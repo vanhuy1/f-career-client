@@ -4,37 +4,51 @@ import { ChevronDown, Grid, List } from 'lucide-react';
 import JobCard from '@/components/job-search/job-card';
 import Pagination from '@/components/job-search/pagination';
 import JobFilterSidebar from '@/components/job-search/filter-sidebar';
-import { Job } from '@/types/Job';
 import { jobService } from '@/services/api/jobs/job-api';
+import { useDispatch } from 'react-redux';
+import {
+  setJobFailure,
+  setJobStart,
+  setJobSuccess,
+  useJobLoadingState,
+  useJobs,
+} from '@/services/state/jobSlice';
+import { LoadingState } from '@/store/store.model';
+import LoadingScreen from '@/pages/LoadingScreen';
 
 export default function JobListingsPage() {
-  const [jobs, setJobs] = useState<Job[]>([]);
   const [count, setCount] = useState(0);
   const [page, setPage] = useState(1);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
   const limit = 10;
 
+  const dispatch = useDispatch();
+  const jobs = useJobs();
+  const Loading = useJobLoadingState();
+  const isLoading = Loading === LoadingState.loading;
+
   useEffect(() => {
-    let mounted = true;
     async function fetchJobs() {
       try {
+        dispatch(setJobStart());
         const res = await jobService.findAll(limit, (page - 1) * limit);
-        if (!mounted) return;
-        setJobs(res.data);
-        console.log(res.data, 'locdep');
+        dispatch(setJobSuccess(res.data));
         setCount(res.meta.count);
       } catch (error) {
-        console.error('Lỗi khi fetch jobs', error);
+        dispatch(setJobFailure(error as string));
       }
     }
     setPage(1);
-    fetchJobs();
-    return () => {
-      mounted = false;
-    };
-  }, [page, limit]);
+    if (jobs?.length === 0) {
+      fetchJobs();
+    }
+  }, [page, limit, dispatch, jobs?.length]);
 
   const totalPages = Math.ceil(count / limit);
+
+  if (isLoading) {
+    return <LoadingScreen />;
+  }
 
   return (
     <div className="max-w-8xl container mx-auto p-4">
@@ -84,7 +98,7 @@ export default function JobListingsPage() {
           {/* Job cards */}
           {viewMode === 'grid' ? (
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-              {jobs.map((job) => (
+              {jobs?.map((job) => (
                 <JobCard
                   key={job.id}
                   title={job.title}
@@ -97,7 +111,7 @@ export default function JobListingsPage() {
             </div>
           ) : (
             <div className="space-y-4">
-              {jobs.map((job) => (
+              {jobs?.map((job) => (
                 <JobCard
                   key={job.id}
                   title={job.title}

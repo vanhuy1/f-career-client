@@ -29,7 +29,7 @@ export default async function JobDetailPageComponent({
     .join(' ');
 
   // Hardcoded data for demonstration
-  const location = 'Paris, France';
+  const location = 'Danang, Vietnam';
   const jobType = 'Full-Time';
   const applied = 5;
   const capacity = 10;
