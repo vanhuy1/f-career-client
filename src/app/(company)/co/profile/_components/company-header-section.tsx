@@ -29,6 +29,7 @@ import {
 import { Company } from '@/types/Company';
 import Image from 'next/image';
 import { toast } from 'react-toastify';
+import { useRouter } from 'next/navigation';
 
 interface CompanyHeaderSectionProps {
   company: Company;
@@ -40,6 +41,7 @@ export default function CompanyHeaderSection({
   onUpdateCompany,
 }: CompanyHeaderSectionProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const router = useRouter();
 
   const {
     register,
@@ -92,6 +94,10 @@ export default function CompanyHeaderSection({
     }
   };
 
+  const handlePublicView = () => {
+    router.push(`/company/${company.id}`);
+  };
+
   return (
     <>
       <div className="mb-8 flex items-start gap-6">
@@ -112,10 +118,15 @@ export default function CompanyHeaderSection({
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold">{company.companyName}</h1>
             <div className="flex gap-2">
-              <div className="flex items-center gap-1.5 border-none text-sm font-bold text-indigo-700">
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-1.5 text-sm font-bold text-indigo-700"
+                onClick={handlePublicView}
+              >
                 <Eye className="h-4 w-4" />
                 Public View
-              </div>
+              </Button>
               <Button
                 variant="outline"
                 size="sm"
@@ -125,15 +136,6 @@ export default function CompanyHeaderSection({
                 <Settings className="mr-2 h-4 w-4" />
                 Edit Company Info
               </Button>
-              {/* <Button
-                variant="outline"
-                size="sm"
-                className="text-sm text-indigo-700"
-                onClick={() => router.push(ROUTES.CO.HOME.SETTINGS.path)}
-              >
-                <Settings className="h-4 w-4" />
-                Profile Settings
-              </Button> */}
             </div>
           </div>
           <a

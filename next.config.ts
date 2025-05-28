@@ -3,16 +3,29 @@ import type { NextConfig } from 'next';
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   images: {
-    domains: ['github.com'], // chỉ hostname
-    // hoặc nếu bạn muốn linh hoạt hơn:
-    // remotePatterns: [
-    //   {
-    //     protocol: 'https',
-    //     hostname: 'github.com',
-    //     port: '',
-    //     pathname: '/**',
-    //   },
-    // ],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'http',
+        hostname: '**',
+        port: '',
+        pathname: '/**',
+      },
+    ],
+    domains: [
+      'github.com',
+      'githubusercontent.com',
+      'cloudinary.com',
+      'res.cloudinary.com',
+      'images.unsplash.com',
+      'lh3.googleusercontent.com',
+      'storage.googleapis.com',
+    ],
   },
 };
 

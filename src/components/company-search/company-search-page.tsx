@@ -4,36 +4,52 @@ import CompanyCard from '@/components/company-search/company-card';
 import Pagination from '@/components/company-search/pagination';
 import FilterSidebar from './filter-sidebar';
 import { useEffect, useState } from 'react';
-import { Company } from '@/types/Company';
 import { companyService } from '@/services/api/company/company-api';
+import { useDispatch } from 'react-redux';
+import {
+  setCompanyStart,
+  setCompanySuccess,
+  setCompanyFailure,
+  useCompanies,
+  useCompanyLoadingState,
+} from '@/services/state/companySlice';
+import { LoadingState } from '@/store/store.model';
+import LoadingScreen from '@/pages/LoadingScreen';
 
 export default function CompanySearchPage() {
-  const [companies, setCompanies] = useState<Company[]>([]);
   const [count, setCount] = useState(0);
   const [page, setPage] = useState(1);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const limit = 10;
 
+  const dispatch = useDispatch();
+  const companies = useCompanies();
+  const loading = useCompanyLoadingState();
+  const isLoading = loading === LoadingState.loading;
+
   useEffect(() => {
-    let mounted = true;
     async function fetchCompanies() {
       try {
+        dispatch(setCompanyStart());
         const res = await companyService.findAll(limit, (page - 1) * limit);
-        if (!mounted) return;
-        setCompanies(res.data);
+        dispatch(setCompanySuccess(res.data));
         setCount(res.meta.count);
       } catch (error) {
-        console.error('Lỗi khi fetch companies', error);
+        dispatch(setCompanyFailure(error as string));
       }
     }
+
     setPage(1);
-    fetchCompanies();
-    return () => {
-      mounted = false;
-    };
-  }, [page, limit]);
+    if (!companies || companies.length === 0) {
+      fetchCompanies();
+    }
+  }, [page, limit, dispatch, companies?.length]);
 
   const totalPages = Math.ceil(count / limit);
+
+  if (isLoading) {
+    return <LoadingScreen />;
+  }
 
   return (
     <div className="max-w-8xl container mx-auto p-4">
@@ -85,7 +101,7 @@ export default function CompanySearchPage() {
           {/* Content */}
           {viewMode === 'grid' ? (
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-              {companies.map((co) => (
+              {companies?.map((co) => (
                 <CompanyCard
                   key={co.id}
                   id={co.id}
@@ -98,7 +114,7 @@ export default function CompanySearchPage() {
             </div>
           ) : (
             <div className="flex flex-col gap-4">
-              {companies.map((co) => (
+              {companies?.map((co) => (
                 <CompanyCard
                   key={co.id}
                   id={co.id}
@@ -116,8 +132,7 @@ export default function CompanySearchPage() {
             <Pagination
               currentPage={page}
               totalPages={totalPages}
-              // nếu bạn muốn bắt sự kiện chuyển trang:
-              // onPageChange={(newPage) => setPage(newPage)}
+              onPageChange={(newPage) => setPage(newPage)}
             />
           </div>
         </div>

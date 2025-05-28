@@ -19,10 +19,11 @@ class JobService {
   /** GET /jobs/:id */
   async findOne(id: string): Promise<Job> {
     const url = this.rb.buildUrl(id);
-    return await httpClient.get<Job>({
+    const response = await httpClient.get<{ data: Job; meta?: string }>({
       url,
-      typeCheck: (data) => ({ success: true, data: data as Job }),
+      typeCheck: (data) => ({ success: true, data }),
     });
+    return response.data;
   }
 
   /** POST /jobs */

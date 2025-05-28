@@ -33,6 +33,7 @@ export interface Job {
   location: string;
   salaryMin: number;
   salaryMax: number;
+  skills: Skill[];
   experienceYears: number;
   status: JobStatus;
   isVip: boolean;

@@ -46,6 +46,7 @@ class CompanyService {
         data: data as Company,
       }),
     });
+    console.log('company', response);
     return response;
   }
 
