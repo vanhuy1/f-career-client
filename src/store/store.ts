@@ -3,6 +3,7 @@ import userReducer from '@/services/state/userSlice';
 import authReducer from '@/services/state/authSlice';
 import caProfileReducer from '@/services/state/caProfileSlice';
 import jobReducer from '@/services/state/jobSlice';
+import companyReducer from '@/services/state/companySlice';
 
 export const makeStore = () => {
   return configureStore({
@@ -11,6 +12,7 @@ export const makeStore = () => {
       auth: authReducer,
       caProfile: caProfileReducer,
       job: jobReducer,
+      company: companyReducer,
     },
   });
 };

@@ -7,6 +7,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 
 interface JobCardProps {
+  id?: string;
   title: string;
   company: CompanyInfo;
   location: string;
@@ -15,6 +16,7 @@ interface JobCardProps {
 }
 
 export default function JobCard({
+  id,
   title,
   company,
   location,
@@ -42,9 +44,9 @@ export default function JobCard({
     'bg-indigo-100 text-indigo-800 border-indigo-200';
 
   const handleCardClick = () => {
-    const companySlug = company.companyName.toLowerCase().replace(/\s+/g, '-');
-    const jobSlug = title.toLowerCase().replace(/\s+/g, '-');
-    router.push(`/company/${companySlug}/${jobSlug}`);
+    if (id) {
+      router.push(`/job/${id}`);
+    }
   };
 
   return (
