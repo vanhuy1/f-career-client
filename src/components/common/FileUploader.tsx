@@ -42,7 +42,7 @@ export default function FileUploader({
         onChange={handleChange}
         disabled={loading}
       />
-      <span className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+      <span className="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">
         {loading ? 'Uploading…' : children}
       </span>
     </label>
