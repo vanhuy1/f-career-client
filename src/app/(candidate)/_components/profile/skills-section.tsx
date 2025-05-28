@@ -12,8 +12,8 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { SkillSearchInput } from '@/components/skill-input-form';
 
 interface SkillsSectionProps {
   skills: string[];
@@ -27,7 +27,11 @@ export function SkillsSection({ skills: initialSkills }: SkillsSectionProps) {
 
   const handleAddSkill = () => {
     if (newSkill.trim()) {
-      setSkills([...skills, newSkill.trim()]);
+      // Check if skill already exists
+      const trimmedSkill = newSkill.trim();
+      if (!skills.includes(trimmedSkill)) {
+        setSkills([...skills, trimmedSkill]);
+      }
       setNewSkill('');
       setIsAddDialogOpen(false);
     }
@@ -39,6 +43,11 @@ export function SkillsSection({ skills: initialSkills }: SkillsSectionProps) {
 
   const toggleEditMode = () => {
     setIsEditMode(!isEditMode);
+  };
+
+  const handleDialogClose = () => {
+    setIsAddDialogOpen(false);
+    setNewSkill('');
   };
 
   return (
@@ -104,24 +113,20 @@ export function SkillsSection({ skills: initialSkills }: SkillsSectionProps) {
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
               <Label htmlFor="skill">Skill Name</Label>
-              <Input
-                id="skill"
+              <SkillSearchInput
                 value={newSkill}
-                onChange={(e) => setNewSkill(e.target.value)}
-                placeholder="Enter a skill (e.g., React, TypeScript, UI Design)"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    handleAddSkill();
-                  }
-                }}
+                onChange={setNewSkill}
+                placeholder="Search for skills (e.g., React, TypeScript, UI Design)"
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+            <Button variant="outline" onClick={handleDialogClose}>
               Cancel
             </Button>
-            <Button onClick={handleAddSkill}>Add Skill</Button>
+            <Button onClick={handleAddSkill} disabled={!newSkill.trim()}>
+              Add Skill
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

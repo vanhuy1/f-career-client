@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { debounce } from 'lodash';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { toast } from 'react-toastify';
@@ -39,12 +40,27 @@ import {
 } from '@/services/state/caProfileSlice';
 import { EducationInput, educationSchema } from '@/schemas/CandidateProfile';
 
+interface Institution {
+  name: string;
+  country: string;
+}
+
 interface EducationFormProps {
   mode: 'add' | 'edit';
   education?: Education;
   onSubmit: (education: Education) => void;
   onCancel?: () => void;
 }
+
+const fetchInstitutions = async (query: string): Promise<Institution[]> => {
+  const response = await fetch(
+    `http://universities.hipolabs.com/search?name=${query}`,
+  );
+  if (!response.ok) {
+    throw new Error('Failed to fetch institutions');
+  }
+  return response.json();
+};
 
 export function EducationForm({
   mode,
@@ -54,7 +70,6 @@ export function EducationForm({
 }: EducationFormProps) {
   const dispatch = useDispatch();
 
-  // Update the defaultValues to use numbers for years
   const defaultValues =
     mode === 'edit' && education
       ? {
@@ -88,26 +103,46 @@ export function EducationForm({
   const [isCurrentlyStudying, setIsCurrentlyStudying] = useState(
     defaultValues.currentlyStudying,
   );
+  const [institutionSuggestions, setInstitutionSuggestions] = useState<
+    Institution[]
+  >([]);
+  const [loadingInstitutions, setLoadingInstitutions] = useState(false);
 
   const form = useForm<EducationInput>({
     resolver: zodResolver(educationSchema),
     defaultValues,
   });
 
-  // Update the isCurrentlyStudying state when the form value changes
-  useEffect(() => {
-    const subscription = form.watch((value, { name }) => {
-      if (name === 'currentlyStudying') {
-        setIsCurrentlyStudying(!!value.currentlyStudying);
-        if (value.currentlyStudying) {
-          form.setValue('endYear', null);
-        }
-      }
-    });
-    return () => subscription.unsubscribe();
-  }, [form]);
+  const handleInstitutionChange = async (query: string) => {
+    if (query.length < 2) {
+      setInstitutionSuggestions([]);
+      return;
+    }
 
-  // Update the handleSubmit function to use the API
+    setLoadingInstitutions(true);
+    try {
+      const suggestions = await fetchInstitutions(query);
+      setInstitutionSuggestions(suggestions.slice(0, 4));
+    } catch (error) {
+      console.error('Error fetching institutions:', error);
+      setInstitutionSuggestions([]);
+    } finally {
+      setLoadingInstitutions(false);
+    }
+  };
+
+  const debouncedHandleInstitutionChange = debounce(
+    handleInstitutionChange,
+    300,
+  );
+
+  useEffect(() => {
+    return () => debouncedHandleInstitutionChange.cancel();
+  }, [debouncedHandleInstitutionChange]);
+
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: 51 }, (_, i) => currentYear - i);
+
   async function handleSubmit(values: EducationInput) {
     try {
       const educationData = {
@@ -123,14 +158,12 @@ export function EducationForm({
       let result: Education;
 
       if (mode === 'add') {
-        // Type assertion for CreateEducationDto
         const createDto = educationData as CreateEducationDto;
         dispatch(updateCaProfileStart());
         result = await candidateEducationService.CreateEducation(createDto);
         toast.success('Education added successfully');
         dispatch(updateCaProfileSuccess());
       } else {
-        // Type assertion for UpdateEducationDto, including the id from the original education
         const updateDto = {
           id: education!.id,
           ...educationData,
@@ -148,10 +181,6 @@ export function EducationForm({
     }
   }
 
-  // Update the years array to use numbers
-  const currentYear = new Date().getFullYear();
-  const years = Array.from({ length: 51 }, (_, i) => currentYear - i);
-
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
@@ -159,11 +188,39 @@ export function EducationForm({
           control={form.control}
           name="institution"
           render={({ field }) => (
-            <FormItem>
+            <FormItem className="relative">
               <FormLabel>Institution*</FormLabel>
               <FormControl>
-                <Input placeholder="University of California" {...field} />
+                <Input
+                  placeholder="Enter institution name"
+                  {...field}
+                  onChange={(e) => {
+                    field.onChange(e);
+                    debouncedHandleInstitutionChange(e.target.value);
+                  }}
+                />
               </FormControl>
+              {loadingInstitutions && (
+                <p className="text-sm text-gray-500">Loading...</p>
+              )}
+              {institutionSuggestions.length > 0 && (
+                <div className="relative mt-1">
+                  <ul className="absolute z-50 max-h-60 w-full overflow-auto rounded-md border bg-white shadow-lg">
+                    {institutionSuggestions.map((institution, index) => (
+                      <li
+                        key={index}
+                        className="cursor-pointer border-b p-2.5 text-sm last:border-b-0 hover:bg-gray-100"
+                        onClick={() => {
+                          form.setValue('institution', institution.name);
+                          setInstitutionSuggestions([]);
+                        }}
+                      >
+                        {institution.name} - {institution.country}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
               <FormMessage />
             </FormItem>
           )}

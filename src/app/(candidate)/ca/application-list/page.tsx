@@ -156,8 +156,8 @@ export default function JobApplicationsPage() {
         />
 
         {/* Pagination with shadcn components */}
-        <div className="sticky bottom-4 mt-6 flex justify-center">
-          <div className="rounded-lg border bg-white p-2 shadow-sm">
+        <div className="fixed right-0 bottom-4 left-0 z-10 flex justify-center">
+          <div className="rounded-lg border bg-white p-2 shadow-md">
             <div className="flex items-center gap-1">
               <Button
                 variant="outline"
@@ -211,6 +211,9 @@ export default function JobApplicationsPage() {
             </div>
           </div>
         </div>
+
+        {/* Add padding at the bottom to prevent content from being hidden behind the fixed pagination */}
+        <div className="h-16"></div>
       </div>
     </div>
   );

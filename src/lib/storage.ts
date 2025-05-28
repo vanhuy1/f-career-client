@@ -21,8 +21,7 @@ export async function uploadFile({
 
   const path = folder ? `${folder}/${name}` : name;
 
-  const { data, error: uploadErr } = await supabase
-    .storage
+  const { data, error: uploadErr } = await supabase.storage
     .from(bucket)
     .upload(path, file);
 
@@ -32,8 +31,7 @@ export async function uploadFile({
     return { publicUrl: null, error: uploadErr || new Error(errorMessage) };
   }
 
-  const { data: publicUrlData } = supabase
-    .storage
+  const { data: publicUrlData } = supabase.storage
     .from(bucket)
     .getPublicUrl(data.path);
 
