@@ -2,14 +2,8 @@ import type {
   DetailedApplication,
   FetchApplicationDetailRequest,
   FetchApplicationDetailResponse,
-  UpdateApplicationNotesRequest,
-  UpdateApplicationNotesResponse,
-  AddTimelineEventRequest,
-  AddTimelineEventResponse,
-  ApplicationEvent,
 } from '@/types/Application';
 
-// Sample detailed application data
 export const mockDetailedApplications: DetailedApplication[] = [
   {
     id: 3,
@@ -23,8 +17,6 @@ export const mockDetailedApplications: DetailedApplication[] = [
     role: 'Social Media Assistant',
     dateApplied: '2021-07-16',
     status: 'OFFERED',
-    notes: 'Final interview scheduled for next week',
-    hasFollowedUp: true,
     jobDescription:
       'We are looking for a Social Media Assistant to help manage our social media accounts and create engaging content for our audience. The ideal candidate will have experience with social media management tools and a passion for creating compelling content.',
     salaryRange: {
@@ -47,62 +39,6 @@ export const mockDetailedApplications: DetailedApplication[] = [
       'Copywriting',
       'Analytics',
     ],
-    timeline: [
-      {
-        id: 1,
-        date: '2021-07-16',
-        type: 'status_change',
-        title: 'Application Submitted',
-        status: 'IN_REVIEW',
-      },
-      {
-        id: 2,
-        date: '2021-07-20',
-        type: 'status_change',
-        title: 'Application Under Review',
-        status: 'IN_REVIEW',
-      },
-      {
-        id: 3,
-        date: '2021-07-25',
-        type: 'interview',
-        title: 'Phone Screening',
-        description: '30-minute call with HR',
-        feedback: 'Positive feedback, moving to next round',
-      },
-      {
-        id: 4,
-        date: '2021-07-28',
-        type: 'status_change',
-        title: 'Moved to Interview Stage',
-        status: 'INTERVIEWING',
-      },
-      {
-        id: 5,
-        date: '2021-08-02',
-        type: 'interview',
-        title: 'Technical Interview',
-        description: '1-hour interview with the marketing team',
-        feedback: 'Strong skills in social media management',
-      },
-      {
-        id: 6,
-        date: '2021-08-05',
-        type: 'assessment',
-        title: 'Social Media Strategy Assessment',
-        description:
-          'Create a sample social media strategy for a product launch',
-        feedback: 'Excellent strategy with creative content ideas',
-      },
-      {
-        id: 7,
-        date: '2021-08-10',
-        type: 'status_change',
-        title: 'Offer Extended',
-        status: 'OFFERED',
-        description: 'Received job offer via email',
-      },
-    ],
     contacts: [
       {
         id: 1,
@@ -110,51 +46,12 @@ export const mockDetailedApplications: DetailedApplication[] = [
         role: 'HR Manager',
         email: 'jane.smith@packer.io',
         phone: '555-123-4567',
-        communications: [
-          {
-            id: 1,
-            date: '2021-07-18',
-            type: 'email',
-            direction: 'incoming',
-            summary: 'Application received confirmation',
-          },
-          {
-            id: 2,
-            date: '2021-07-23',
-            type: 'email',
-            direction: 'incoming',
-            summary: 'Invitation for phone screening',
-          },
-          {
-            id: 3,
-            date: '2021-07-25',
-            type: 'phone',
-            direction: 'incoming',
-            summary: 'Phone screening interview',
-          },
-        ],
       },
       {
         id: 2,
         name: 'Michael Johnson',
         role: 'Marketing Director',
         email: 'michael.johnson@packer.io',
-        communications: [
-          {
-            id: 4,
-            date: '2021-08-02',
-            type: 'video',
-            direction: 'incoming',
-            summary: 'Technical interview',
-          },
-          {
-            id: 5,
-            date: '2021-08-10',
-            type: 'email',
-            direction: 'incoming',
-            summary: 'Job offer details',
-          },
-        ],
       },
     ],
     documents: [
@@ -212,76 +109,5 @@ export const fakeFetchApplicationDetail = async (
 
   return {
     application,
-  };
-};
-
-// Fake API for updating application notes
-export const fakeUpdateApplicationNotes = async (
-  request: UpdateApplicationNotesRequest,
-): Promise<UpdateApplicationNotesResponse> => {
-  // Simulate network delay
-  await new Promise((resolve) => setTimeout(resolve, 500));
-
-  // Find the application by ID
-  const applicationIndex = mockDetailedApplications.findIndex(
-    (app) => app.id === request.applicationId,
-  );
-
-  if (applicationIndex === -1) {
-    throw new Error('Application not found');
-  }
-
-  // Update the notes
-  mockDetailedApplications[applicationIndex].notes = request.notes;
-
-  return {
-    success: true,
-    application: mockDetailedApplications[applicationIndex],
-  };
-};
-
-// Fake API for adding a timeline event
-export const fakeAddTimelineEvent = async (
-  request: AddTimelineEventRequest,
-): Promise<AddTimelineEventResponse> => {
-  // Simulate network delay
-  await new Promise((resolve) => setTimeout(resolve, 500));
-
-  // Find the application by ID
-  const applicationIndex = mockDetailedApplications.findIndex(
-    (app) => app.id === request.applicationId,
-  );
-
-  if (applicationIndex === -1) {
-    throw new Error('Application not found');
-  }
-
-  // Create a new event with an ID
-  const newEvent: ApplicationEvent = {
-    ...request.event,
-    id:
-      Math.max(
-        0,
-        ...mockDetailedApplications[applicationIndex].timeline.map((e) => e.id),
-      ) + 1,
-  };
-
-  // Add the event to the timeline
-  mockDetailedApplications[applicationIndex].timeline.push(newEvent);
-
-  // Sort timeline by date (newest first)
-  mockDetailedApplications[applicationIndex].timeline.sort(
-    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
-  );
-
-  // If the event is a status change, update the application status
-  if (newEvent.type === 'status_change' && newEvent.status) {
-    mockDetailedApplications[applicationIndex].status = newEvent.status;
-  }
-
-  return {
-    success: true,
-    event: newEvent,
-    application: mockDetailedApplications[applicationIndex],
   };
 };

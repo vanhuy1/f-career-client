@@ -2,15 +2,14 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { z } from 'zod';
-import { Calendar, ImageIcon, Loader2 } from 'lucide-react';
+import { ImageIcon, Loader2 } from 'lucide-react';
 import Image from 'next/image';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import {
   Select,
   SelectContent,
@@ -19,49 +18,89 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { toast } from 'react-toastify';
-import { updateProfile } from '@/app/(candidate)/_components/settings/user-info/api';
 import { ProfileFormSchema } from '@/schemas/CandidateSettings';
-import type { ProfileUpdateRequest } from '@/types/CandidateSettings';
+import { useDispatch } from 'react-redux';
+import {
+  updateUserFailure,
+  updateUserSuccess,
+  useUser,
+} from '@/services/state/userSlice';
+import { userService } from '@/services/api/auth/user-api';
 
 export default function SettingsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const dispatch = useDispatch();
+  const user = useUser();
+  const [formattedDob, setFormattedDob] = useState('');
 
   // Define form with react-hook-form and zod validation
   const form = useForm<z.infer<typeof ProfileFormSchema>>({
     resolver: zodResolver(ProfileFormSchema),
     defaultValues: {
-      fullName: 'Jake Gyll',
-      phoneNumber: '+44 1245 572 135',
-      email: 'Jakegyll@gmail.com',
-      dateOfBirth: '09/08/1997',
-      gender: 'Male',
-      accountType: 'jobSeeker',
+      name: user?.data.name,
+      phone: user?.data.phone,
+      email: user?.data.email,
+      dob: user?.data.dob ? new Date(user.data.dob).toISOString() : '',
+      gender: user?.data.gender,
+      avatar: user?.data.avatar || '',
     },
   });
+
+  // Format the date for display
+  useEffect(() => {
+    if (form.watch('dob')) {
+      try {
+        const date = new Date(form.watch('dob'));
+        if (!isNaN(date.getTime())) {
+          setFormattedDob(date.toISOString().split('T')[0]); // Format as YYYY-MM-DD
+        }
+      } catch (error) {
+        console.error('Error formatting date:', error);
+      }
+    }
+  }, [form.watch('dob')]);
+
+  // Handle date change
+  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+
+    try {
+      // If it's a valid date string, convert to ISO
+      const date = new Date(value);
+      if (!isNaN(date.getTime())) {
+        form.setValue('dob', date.toISOString());
+        setFormattedDob(value);
+      } else {
+        // Keep the input value as is for user typing
+        setFormattedDob(value);
+      }
+    } catch (error) {
+      setFormattedDob(value);
+      console.error('Invalid date format:', error);
+    }
+  };
 
   const onSubmit = async (data: z.infer<typeof ProfileFormSchema>) => {
     try {
       setIsSubmitting(true);
 
-      // Create request DTO from form data
-      const requestData: ProfileUpdateRequest = {
-        fullName: data.fullName,
-        phoneNumber: data.phoneNumber,
+      // Map form data to ProfileUpdateRequest DTO
+      const requestData = {
+        name: data.name,
+        phone: data.phone,
         email: data.email,
-        dateOfBirth: data.dateOfBirth,
         gender: data.gender,
-        accountType: data.accountType,
+        dob: data.dob, // ISO string
       };
 
       // Call API to update profile
-      const response = await updateProfile(requestData);
+      const response = await userService.updateMe(requestData);
 
       toast.success('Success', {});
-
-      console.log('Profile updated:', response);
+      dispatch(updateUserSuccess(response));
     } catch (error) {
-      console.error('Error updating profile:', error);
       toast.error('Error failed', {});
+      dispatch(updateUserFailure(error as string));
     } finally {
       setIsSubmitting(false);
     }
@@ -122,19 +161,15 @@ export default function SettingsPage() {
         <div className="mt-6 grid grid-cols-1 gap-x-6 gap-y-8 md:grid-cols-2">
           <div className="col-span-1">
             <Label
-              htmlFor="fullName"
+              htmlFor="name"
               className="block text-sm font-medium text-gray-700 after:ml-0.5 after:text-red-500 after:content-['*']"
             >
               Full Name
             </Label>
-            <Input
-              id="fullName"
-              {...form.register('fullName')}
-              className="mt-1"
-            />
-            {form.formState.errors.fullName && (
+            <Input id="name" {...form.register('name')} className="mt-1" />
+            {form.formState.errors.name && (
               <p className="mt-1 text-sm text-red-500">
-                {form.formState.errors.fullName.message}
+                {form.formState.errors.name.message}
               </p>
             )}
           </div>
@@ -143,19 +178,15 @@ export default function SettingsPage() {
 
           <div className="col-span-1">
             <Label
-              htmlFor="phoneNumber"
+              htmlFor="phone"
               className="block text-sm font-medium text-gray-700 after:ml-0.5 after:text-red-500 after:content-['*']"
             >
               Phone Number
             </Label>
-            <Input
-              id="phoneNumber"
-              {...form.register('phoneNumber')}
-              className="mt-1"
-            />
-            {form.formState.errors.phoneNumber && (
+            <Input id="phone" {...form.register('phone')} className="mt-1" />
+            {form.formState.errors.phone && (
               <p className="mt-1 text-sm text-red-500">
-                {form.formState.errors.phoneNumber.message}
+                {form.formState.errors.phone.message}
               </p>
             )}
           </div>
@@ -182,24 +213,23 @@ export default function SettingsPage() {
 
           <div className="col-span-1">
             <Label
-              htmlFor="dateOfBirth"
+              htmlFor="dob"
               className="block text-sm font-medium text-gray-700 after:ml-0.5 after:text-red-500 after:content-['*']"
             >
               Date of Birth
             </Label>
-            <div className="relative mt-1">
+            <div className="mt-1">
               <Input
-                id="dateOfBirth"
-                {...form.register('dateOfBirth')}
-                className="pr-10"
+                id="dob"
+                type="date"
+                value={formattedDob}
+                onChange={handleDateChange}
+                className="w-full"
               />
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
-                <Calendar className="h-5 w-5 text-gray-400" />
-              </div>
             </div>
-            {form.formState.errors.dateOfBirth && (
+            {form.formState.errors.dob && (
               <p className="mt-1 text-sm text-red-500">
-                {form.formState.errors.dateOfBirth.message}
+                {form.formState.errors.dob.message}
               </p>
             )}
           </div>
@@ -219,9 +249,9 @@ export default function SettingsPage() {
                 <SelectValue placeholder="Select gender" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Male">Male</SelectItem>
-                <SelectItem value="Female">Female</SelectItem>
-                <SelectItem value="Other">Other</SelectItem>
+                <SelectItem value="MALE">Male</SelectItem>
+                <SelectItem value="FEMALE">Female</SelectItem>
+                <SelectItem value="OTHER">Other</SelectItem>
                 <SelectItem value="Prefer not to say">
                   Prefer not to say
                 </SelectItem>
@@ -235,70 +265,6 @@ export default function SettingsPage() {
           </div>
         </div>
         <div className="mt-8 border-t border-gray-200"></div>
-      </section>
-
-      <section className="py-6">
-        <div className="flex flex-col gap-8 md:flex-row">
-          <div className="flex-1">
-            <h3 className="text-lg font-medium text-gray-900">Account Type</h3>
-            <p className="mt-1 text-gray-600">
-              You can update your account type
-            </p>
-          </div>
-          <div className="flex-1">
-            <RadioGroup
-              value={form.watch('accountType')}
-              onValueChange={(value) =>
-                form.setValue(
-                  'accountType',
-                  value === 'jobSeeker' ? 'jobSeeker' : 'employer',
-                )
-              }
-              className="space-y-6"
-            >
-              <div className="flex items-start space-x-3">
-                <RadioGroupItem
-                  value="jobSeeker"
-                  id="jobSeeker"
-                  className="mt-1"
-                />
-                <div>
-                  <Label
-                    htmlFor="jobSeeker"
-                    className="text-base font-medium text-gray-900"
-                  >
-                    Job Seeker
-                  </Label>
-                  <p className="text-sm text-gray-500">Looking for a job</p>
-                </div>
-              </div>
-
-              <div className="flex items-start space-x-3">
-                <RadioGroupItem
-                  value="employer"
-                  id="employer"
-                  className="mt-1"
-                />
-                <div>
-                  <Label
-                    htmlFor="employer"
-                    className="text-base font-medium text-gray-900"
-                  >
-                    Employer
-                  </Label>
-                  <p className="text-sm text-gray-500">
-                    Hiring, sourcing candidates, or posting a jobs
-                  </p>
-                </div>
-              </div>
-            </RadioGroup>
-            {form.formState.errors.accountType && (
-              <p className="mt-1 text-sm text-red-500">
-                {form.formState.errors.accountType.message}
-              </p>
-            )}
-          </div>
-        </div>
       </section>
 
       <div className="mt-8 flex justify-end">

@@ -3,8 +3,6 @@ import type {
   ApplicationStatus,
   FetchApplicationsRequest,
   FetchApplicationsResponse,
-  FollowUpRequest,
-  FollowUpResponse,
 } from '@/types/Application';
 
 // Mock company logos
@@ -35,8 +33,6 @@ export const mockApplications: Application[] = [
     role: 'Social Media Assistant',
     dateApplied: '2021-07-24',
     status: 'IN_REVIEW',
-    notes: 'Applied through company website',
-    hasFollowedUp: false,
   },
   {
     id: 2,
@@ -49,9 +45,7 @@ export const mockApplications: Application[] = [
     },
     role: 'Social Media Assistant',
     dateApplied: '2021-07-20',
-    status: 'SHORTLISTED',
-    notes: 'Referred by John',
-    hasFollowedUp: false,
+    status: 'HIRED',
   },
   {
     id: 3,
@@ -65,8 +59,6 @@ export const mockApplications: Application[] = [
     role: 'Social Media Assistant',
     dateApplied: '2021-07-16',
     status: 'OFFERED',
-    notes: 'Final interview scheduled for next week',
-    hasFollowedUp: true,
   },
   {
     id: 4,
@@ -80,8 +72,6 @@ export const mockApplications: Application[] = [
     role: 'Social Media Assistant',
     dateApplied: '2021-07-14',
     status: 'INTERVIEWING',
-    notes: 'First round completed',
-    hasFollowedUp: true,
   },
   {
     id: 5,
@@ -94,9 +84,7 @@ export const mockApplications: Application[] = [
     },
     role: 'Social Media Assistant',
     dateApplied: '2021-07-10',
-    status: 'UNSUITABLE',
-    notes: 'Position requires 5+ years of experience',
-    hasFollowedUp: false,
+    status: 'REJECTED',
   },
   {
     id: 6,
@@ -110,8 +98,6 @@ export const mockApplications: Application[] = [
     role: 'Social Media Manager',
     dateApplied: '2021-07-22',
     status: 'IN_REVIEW',
-    notes: 'Applied through referral',
-    hasFollowedUp: false,
   },
   {
     id: 7,
@@ -125,8 +111,6 @@ export const mockApplications: Application[] = [
     role: 'Digital Marketing Specialist',
     dateApplied: '2021-07-21',
     status: 'ASSESSMENT',
-    notes: 'Technical assessment scheduled',
-    hasFollowedUp: false,
   },
   {
     id: 8,
@@ -140,8 +124,6 @@ export const mockApplications: Application[] = [
     role: 'Content Creator',
     dateApplied: '2021-07-19',
     status: 'IN_REVIEW',
-    notes: 'Applied through LinkedIn',
-    hasFollowedUp: false,
   },
   {
     id: 9,
@@ -155,8 +137,6 @@ export const mockApplications: Application[] = [
     role: 'Social Media Coordinator',
     dateApplied: '2021-07-18',
     status: 'HIRED',
-    notes: 'Offer accepted',
-    hasFollowedUp: true,
   },
   {
     id: 10,
@@ -170,8 +150,6 @@ export const mockApplications: Application[] = [
     role: 'Digital Marketing Assistant',
     dateApplied: '2021-07-15',
     status: 'REJECTED',
-    notes: 'Position filled internally',
-    hasFollowedUp: false,
   },
 ];
 
@@ -187,8 +165,6 @@ for (let i = 11; i <= 45; i++) {
     'OFFERED',
     'HIRED',
     'REJECTED',
-    'SHORTLISTED',
-    'UNSUITABLE',
   ];
   const randomStatus = statuses[Math.floor(Math.random() * statuses.length)];
   const day = Math.floor(Math.random() * 15) + 10; // Random day between 10 and 25
@@ -205,8 +181,6 @@ for (let i = 11; i <= 45; i++) {
     role: 'Social Media Assistant',
     dateApplied: `2021-07-${day}`,
     status: randomStatus,
-    notes: 'Applied online',
-    hasFollowedUp: Math.random() > 0.7,
   });
 }
 
@@ -261,65 +235,5 @@ export const fakeFetchApplications = async (
     total,
     page: request.page,
     limit: request.limit,
-  };
-};
-
-// Fake follow-up API
-export const fakeFollowUp = async (
-  request: FollowUpRequest,
-): Promise<FollowUpResponse> => {
-  // Simulate network delay
-  await new Promise((resolve) => setTimeout(resolve, 500));
-
-  // Find the application
-  const application = mockApplications.find(
-    (app) => app.id === request.applicationId,
-  );
-
-  if (!application) {
-    return {
-      success: false,
-      message: 'Application not found',
-    };
-  }
-
-  // Check if application is in review
-  if (application.status !== 'IN_REVIEW') {
-    return {
-      success: false,
-      message: 'Follow-up can only be requested for applications in review',
-    };
-  }
-
-  // Check if already followed up
-  if (application.hasFollowedUp) {
-    return {
-      success: false,
-      message: 'You have already followed up on this application',
-    };
-  }
-
-  // Check if 7 days have passed since application
-  const applicationDate = new Date(application.dateApplied);
-  const currentDate = new Date();
-  const daysDifference = Math.floor(
-    (currentDate.getTime() - applicationDate.getTime()) / (1000 * 60 * 60 * 24),
-  );
-
-  if (daysDifference < 7) {
-    return {
-      success: false,
-      message: `You can follow up after 7 days. ${7 - daysDifference} days remaining.`,
-    };
-  }
-
-  // Update application
-  application.hasFollowedUp = true;
-  application.followUpDate = new Date().toISOString().split('T')[0];
-
-  return {
-    success: true,
-    message: 'Follow-up request sent successfully',
-    application,
   };
 };

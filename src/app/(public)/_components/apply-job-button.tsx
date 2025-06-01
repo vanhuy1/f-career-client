@@ -9,6 +9,7 @@ interface ApplyJobButtonProps {
   company: string;
   location: string;
   jobType: string;
+  jobId?: string; // Optional, if needed for ApplyJobButton
 }
 
 export default function ApplyJobButton({
@@ -16,6 +17,7 @@ export default function ApplyJobButton({
   company,
   location,
   jobType,
+  jobId,
 }: ApplyJobButtonProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -38,6 +40,7 @@ export default function ApplyJobButton({
         company={company}
         location={location}
         jobType={jobType}
+        jobId={jobId}
       />
     </>
   );

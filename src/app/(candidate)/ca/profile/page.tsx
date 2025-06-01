@@ -32,7 +32,6 @@ export default function ProfilePage() {
         try {
           dispatch(setCaProfileStart());
           const profile = await candidateProfileService.getCandidateProfile();
-          // const profile = await candidateProfileService.getCandidateProfile();
           dispatch(setCaProfileSuccess(profile));
         } catch (error) {
           console.error('Error fetching candidate profile:', error);
@@ -41,27 +40,43 @@ export default function ProfilePage() {
 
       fetchData();
     }
-  }, [dispatch, profile]); // Changed dependency to dispatch instead of profile
+  }, [dispatch, profile]);
 
   if (error) {
-    return <div>Error loading profile: {error}</div>;
+    return (
+      <div className="flex min-h-screen w-full justify-center">
+        <main className="w-[95%] origin-top scale-100 p-[2%]">
+          <div className="rounded-lg border border-red-200 bg-red-50 p-[2%]">
+            <h2 className="mb-[1%] text-[calc(1.25rem+0.3vw)] font-semibold text-red-800">
+              Error Loading Profile
+            </h2>
+            <p className="text-[calc(0.875rem+0.1vw)] text-red-600">{error}</p>
+          </div>
+        </main>
+      </div>
+    );
   }
 
   if (isLoading === LoadingState.loading) {
     return (
-      <div className="container mx-auto max-w-6xl px-4 py-8">
-        <CaProfileSkeleton />;
+      <div className="flex min-h-screen w-full justify-center">
+        <main className="w-[95%] origin-top scale-100 p-[2%]">
+          <CaProfileSkeleton />
+        </main>
       </div>
     );
   }
 
   if (profile) {
     return (
-      <div className="container mx-auto max-w-6xl px-4 py-8">
-        <>
-          <ProfileHeader profile={profile} />
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-            <div className="md:col-span-2">
+      <div className="flex min-h-screen w-full justify-center">
+        <main className="w-[95%] origin-top scale-100 p-[2%]">
+          <div className="mb-[3%]">
+            <ProfileHeader profile={profile} />
+          </div>
+
+          <div className="grid grid-cols-1 gap-[3%] md:grid-cols-3">
+            <div className="space-y-[3%] md:col-span-2">
               <AboutSection about={profile.about} />
               <ExperienceSection experiences={profile.experiences} />
               <EducationSection
@@ -72,7 +87,7 @@ export default function ProfilePage() {
               <PortfolioSection portfolios={profile.portfolios} />
             </div>
 
-            <div className="md:col-span-1">
+            <div className="space-y-[3%] md:col-span-1">
               <ContactSection
                 email={profile.contact?.email}
                 phone={profile.contact?.phone}
@@ -85,8 +100,10 @@ export default function ProfilePage() {
               />
             </div>
           </div>
-        </>
+        </main>
       </div>
     );
   }
+
+  return null;
 }

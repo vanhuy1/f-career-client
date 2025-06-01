@@ -33,24 +33,17 @@ export interface ApiResponse<T> {
   success: boolean;
 }
 
-// Data Types for Profile
-
 // Base Profile Data Type
 export interface ProfileData {
-  fullName: string;
-  phoneNumber: string;
+  name: string;
+  phone: string;
   email: string;
-  dateOfBirth: string;
+  dob: string;
   gender: string;
-  accountType: 'jobSeeker' | 'employer';
 }
 
 // Request DTO for Profile Update
 export type ProfileUpdateRequest = ProfileData;
-// Type alias used for semantic clarity in request handling
-// Can be converted to an interface if request-specific fields are needed
-
-// Response DTO for Profile Update
 export interface ProfileUpdateResponse {
   success: boolean;
   message: string;
