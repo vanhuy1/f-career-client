@@ -23,9 +23,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import type { DetailedApplication } from '@/types/Application';
 import { fetchApplicationDetail } from '@/app/(candidate)/_components/applications-list/utils/api';
 import StatusBadge from '@/app/(candidate)/_components/applications-list/StatusBadge';
-import TimelineSection from '@/app/(candidate)/_components/applications-list/TimelineSection';
 import ContactsSection from '@/app/(candidate)/_components/applications-list/ContactsSection';
-import NotesSection from '@/app/(candidate)/_components/applications-list/NotesSection';
 import DocumentsSection from '@/app/(candidate)/_components/applications-list/DocumentsSection';
 import Image from 'next/image';
 
@@ -120,10 +118,6 @@ export default function ApplicationDetailPage() {
               </div>
             </div>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline">Withdraw</Button>
-            <Button>Follow Up</Button>
-          </div>
         </div>
       </div>
 
@@ -214,27 +208,13 @@ export default function ApplicationDetailPage() {
             </CardContent>
           </Card>
 
-          <Tabs defaultValue="timeline" className="mb-6">
-            <TabsList className="mb-4 grid grid-cols-4">
-              <TabsTrigger value="timeline">Timeline</TabsTrigger>
+          <Tabs defaultValue="contacts" className="mb-6">
+            <TabsList className="mb-4 grid grid-cols-2">
               <TabsTrigger value="contacts">Contacts</TabsTrigger>
-              <TabsTrigger value="notes">Notes</TabsTrigger>
               <TabsTrigger value="documents">Documents</TabsTrigger>
             </TabsList>
-            <TabsContent value="timeline">
-              <TimelineSection
-                timeline={application.timeline}
-                applicationId={application.id}
-              />
-            </TabsContent>
             <TabsContent value="contacts">
               <ContactsSection contacts={application.contacts} />
-            </TabsContent>
-            <TabsContent value="notes">
-              <NotesSection
-                notes={application.notes}
-                applicationId={application.id}
-              />
             </TabsContent>
             <TabsContent value="documents">
               <DocumentsSection documents={application.documents} />
@@ -300,19 +280,7 @@ export default function ApplicationDetailPage() {
                 <div>
                   <h3 className="text-sm text-gray-500">Last Updated</h3>
                   <p className="font-medium">
-                    {application.timeline.length > 0
-                      ? new Date(
-                          application.timeline[0].date,
-                        ).toLocaleDateString()
-                      : 'N/A'}
-                  </p>
-                </div>
-                <div>
-                  <h3 className="text-sm text-gray-500">Follow-up Status</h3>
-                  <p className="font-medium">
-                    {application.hasFollowedUp
-                      ? 'Followed up'
-                      : 'No follow-up yet'}
+                    {new Date().toLocaleDateString()}
                   </p>
                 </div>
               </div>

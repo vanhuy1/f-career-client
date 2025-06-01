@@ -44,7 +44,7 @@ export default function DocumentsSection({ documents }: DocumentsSectionProps) {
 
   return (
     <Card>
-      <CardContent className="pt-6">
+      <CardContent>
         <div className="mb-4 flex items-center justify-between">
           <h3 className="text-lg font-medium">Documents</h3>
           <Button size="sm">

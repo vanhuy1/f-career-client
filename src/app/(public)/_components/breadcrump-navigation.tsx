@@ -8,21 +8,18 @@ interface BreadcrumbNavigationProps {
   jobTitle?: {
     title: string;
   };
+  companyId?: string;
 }
 
 const BreadcrumbNavigation = ({
   company,
   jobTitle,
+  companyId,
 }: BreadcrumbNavigationProps) => {
   const formattedCompany = company.companyName
     .split(' ')
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(' ');
-
-  const companyRoute = company.companyName
-    .split(' ')
-    .map((word) => word.toLowerCase())
-    .join('-');
 
   return (
     <nav className="mb-8">
@@ -44,7 +41,7 @@ const BreadcrumbNavigation = ({
         <li>/</li>
         <li>
           <Link
-            href={`${ROUTES.HOMEPAGE.COMPANY.path}/${companyRoute}`}
+            href={`${ROUTES.HOMEPAGE.COMPANY.path}/${companyId}`}
             className="hover:text-gray-700"
           >
             {formattedCompany}

@@ -18,31 +18,27 @@ export const changePasswordSchema = z.object({
 });
 
 export const ProfileFormSchema = z.object({
-  fullName: z
+  name: z
     .string()
     .min(2, { message: 'Full name must be at least 2 characters' })
     .max(100, { message: 'Full name must be less than 100 characters' }),
 
-  phoneNumber: z
+  phone: z
     .string()
     .min(6, { message: 'Phone number must be at least 6 characters' })
-    .regex(/^[+]?[\d\s()-]+$/, {
+    .regex(/^[+]?\d[\d\s()-]+$/, {
       message: 'Please enter a valid phone number',
     }),
 
   email: z.string().email({ message: 'Please enter a valid email address' }),
 
-  dateOfBirth: z
-    .string()
-    .regex(/^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])\/\d{4}$/, {
-      message: 'Date must be in DD/MM/YYYY format',
-    }),
+  dob: z.string().refine((val) => !isNaN(Date.parse(val)), {
+    message: 'Date of birth must be a valid date',
+  }),
 
   gender: z.string().min(1, { message: 'Please select a gender' }),
 
-  accountType: z.enum(['jobSeeker', 'employer'], {
-    message: 'Please select a valid account type',
-  }),
+  avatar: z.string().optional(),
 });
 
 export type UpdateEmailFormValues = z.infer<typeof updateEmailSchema>;
