@@ -6,6 +6,7 @@ interface JobHeaderProps {
   jobTitle: string;
   location: string;
   jobType: string;
+  jobId?: string; // Optional, if needed for ApplyJobButton
 }
 
 export default function JobHeader({
@@ -13,6 +14,7 @@ export default function JobHeader({
   jobTitle,
   location,
   jobType,
+  jobId, // Optional, if needed for ApplyJobButton
 }: JobHeaderProps) {
   const logoLetter = companyName.charAt(0).toUpperCase();
   return (
@@ -38,6 +40,7 @@ export default function JobHeader({
           company={companyName}
           location={location}
           jobType={jobType}
+          jobId={jobId}
         />
       </div>
     </div>

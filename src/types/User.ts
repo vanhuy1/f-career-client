@@ -21,6 +21,10 @@ export interface UserProfile {
     createdAt: string | Date;
     updatedAt: string | Date;
     companyId: string;
+    phone: string;
+    gender: string;
+    dob: string;
+    avatar: string;
   };
   meta: {
     message: string;

@@ -110,7 +110,6 @@ export function ProfileHeader({
 
       setIsDialogOpen(false);
     } catch (error) {
-      console.error('Failed to update profile:', error);
       dispatch(updateCaProfileFailure(error as string));
       toast.error(`Failed to update profile. Please try again. ${errors}`, {});
     }

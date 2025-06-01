@@ -1,11 +1,52 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Smile, Paperclip } from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { X, Paperclip, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+
+// Validation schema
+const applicationSchema = z.object({
+  title: z
+    .string()
+    .min(1, 'Title is required')
+    .min(3, 'Title must be at least 3 characters'),
+  description: z
+    .string()
+    .min(1, 'Description is required')
+    .min(10, 'Description must be at least 10 characters')
+    .max(500, 'Description must not exceed 500 characters'),
+  cvFile: z
+    .instanceof(File, { message: 'CV file is required' })
+    .refine(
+      (file) => file.size <= 5 * 1024 * 1024,
+      'File size must be less than 5MB',
+    )
+    .refine(
+      (file) =>
+        [
+          'application/pdf',
+          'application/msword',
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        ].includes(file.type),
+      'Only PDF, DOC, and DOCX files are allowed',
+    ),
+});
+
+type ApplicationFormData = z.infer<typeof applicationSchema>;
 
 interface ApplyDialogProps {
   isOpen: boolean;
@@ -14,7 +55,29 @@ interface ApplyDialogProps {
   company: string;
   location: string;
   jobType: string;
+  jobId?: string;
 }
+
+// Fake API call function
+const submitApplication = async (
+  data: ApplicationFormData & { jobId?: string },
+): Promise<{ success: boolean; message: string }> => {
+  // Simulate API delay
+  console.log('Submitting application data:', data);
+  await new Promise((resolve) => setTimeout(resolve, 2000));
+
+  // Simulate random success/failure for demo
+  const isSuccess = Math.random() > 0.2; // 80% success rate
+
+  if (isSuccess) {
+    return {
+      success: true,
+      message: 'Application submitted successfully!',
+    };
+  } else {
+    throw new Error('Failed to submit application. Please try again.');
+  }
+};
 
 export default function ApplyDialog({
   isOpen,
@@ -23,55 +86,69 @@ export default function ApplyDialog({
   company,
   location,
   jobType,
+  jobId,
 }: ApplyDialogProps) {
-  const [formData, setFormData] = useState({
-    fullName: '',
-    email: '',
-    phone: '',
-    currentJob: '',
-    linkedinUrl: '',
-    portfolioUrl: '',
-    additionalInfo: '',
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitMessage, setSubmitMessage] = useState<{
+    type: 'success' | 'error';
+    text: string;
+  } | null>(null);
+
+  const form = useForm<ApplicationFormData>({
+    resolver: zodResolver(applicationSchema),
+    defaultValues: {
+      title: '',
+      description: '',
+    },
   });
-  const [resumeFile, setResumeFile] = useState<File | null>(null);
-  const [charCount, setCharCount] = useState(0);
+
+  const watchedDescription = form.watch('description');
+  const charCount = watchedDescription?.length || 0;
   const maxChars = 500;
 
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-  ) => {
-    const { name, value } = e.target;
+  const onSubmit = async (data: ApplicationFormData) => {
+    setIsSubmitting(true);
+    setSubmitMessage(null);
 
-    if (name === 'additionalInfo') {
-      setCharCount(value.length);
+    try {
+      const result = await submitApplication({ ...data, jobId });
+      setSubmitMessage({ type: 'success', text: result.message });
+
+      // Close dialog after successful submission
+      setTimeout(() => {
+        onClose();
+        form.reset();
+        setSubmitMessage(null);
+      }, 2000);
+    } catch (error) {
+      setSubmitMessage({
+        type: 'error',
+        text:
+          error instanceof Error
+            ? error.message
+            : 'An unexpected error occurred',
+      });
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setFormData({
-      ...formData,
-      [name]: value,
-    });
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setResumeFile(e.target.files[0]);
+  const handleClose = () => {
+    if (!isSubmitting) {
+      onClose();
+      form.reset();
+      setSubmitMessage(null);
     }
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Handle form submission logic here
-    console.log({ ...formData, resumeFile });
-    onClose();
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-h-9/10 gap-0 overflow-y-auto p-0 sm:max-w-[600px]">
+    <Dialog open={isOpen} onOpenChange={handleClose}>
+      <DialogContent className="max-h-[90vh] gap-0 overflow-y-auto p-0 sm:max-w-[600px]">
         <div className="relative">
           <button
-            onClick={onClose}
-            className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
+            onClick={handleClose}
+            disabled={isSubmitting}
+            className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 disabled:opacity-50"
           >
             <X className="h-4 w-4" />
           </button>
@@ -98,7 +175,7 @@ export default function ApplyDialog({
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="p-6">
+          <div className="p-6">
             <h3 className="mb-4 text-xl font-semibold">
               Submit your application
             </h3>
@@ -106,210 +183,145 @@ export default function ApplyDialog({
               The following is required and will only be shared with {company}
             </p>
 
-            <div className="space-y-4">
-              <div>
-                <label
-                  htmlFor="fullName"
-                  className="mb-1 block text-sm font-medium text-gray-700"
-                >
-                  Full name
-                </label>
-                <Input
-                  id="fullName"
-                  name="fullName"
-                  placeholder="Enter your fullname"
-                  value={formData.fullName}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-
-              <div>
-                <label
-                  htmlFor="email"
-                  className="mb-1 block text-sm font-medium text-gray-700"
-                >
-                  Email address
-                </label>
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  placeholder="Enter your email address"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-
-              <div>
-                <label
-                  htmlFor="phone"
-                  className="mb-1 block text-sm font-medium text-gray-700"
-                >
-                  Phone number
-                </label>
-                <Input
-                  id="phone"
-                  name="phone"
-                  placeholder="Enter your phone number"
-                  value={formData.phone}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-
-              <div>
-                <label
-                  htmlFor="currentJob"
-                  className="mb-1 block text-sm font-medium text-gray-700"
-                >
-                  Current of previous job title
-                </label>
-                <Input
-                  id="currentJob"
-                  name="currentJob"
-                  placeholder="What's your current or previous job title?"
-                  value={formData.currentJob}
-                  onChange={handleInputChange}
-                />
-              </div>
-
-              <div className="pt-4">
-                <h4 className="mb-2 text-sm font-semibold text-gray-700 uppercase">
-                  Links
-                </h4>
-
-                <div className="space-y-4">
-                  <div>
-                    <label
-                      htmlFor="linkedinUrl"
-                      className="mb-1 block text-sm font-medium text-gray-700"
-                    >
-                      LinkedIn URL
-                    </label>
-                    <Input
-                      id="linkedinUrl"
-                      name="linkedinUrl"
-                      placeholder="Link to your LinkedIn URL"
-                      value={formData.linkedinUrl}
-                      onChange={handleInputChange}
-                    />
-                  </div>
-
-                  <div>
-                    <label
-                      htmlFor="portfolioUrl"
-                      className="mb-1 block text-sm font-medium text-gray-700"
-                    >
-                      Portfolio URL
-                    </label>
-                    <Input
-                      id="portfolioUrl"
-                      name="portfolioUrl"
-                      placeholder="Link to your portfolio URL"
-                      value={formData.portfolioUrl}
-                      onChange={handleInputChange}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <label
-                  htmlFor="additionalInfo"
-                  className="mb-1 block text-sm font-medium text-gray-700"
-                >
-                  Additional information
-                </label>
-                <Textarea
-                  id="additionalInfo"
-                  name="additionalInfo"
-                  placeholder="Add a cover letter or anything else you want to share"
-                  value={formData.additionalInfo}
-                  onChange={handleInputChange}
-                  className="min-h-[120px]"
-                  maxLength={maxChars}
-                />
-                <div className="mt-2 flex items-center justify-between">
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      className="text-gray-500 hover:text-gray-700"
-                    >
-                      <Smile className="h-5 w-5" />
-                    </button>
-                    <button
-                      type="button"
-                      className="font-bold text-gray-500 hover:text-gray-700"
-                    >
-                      B
-                    </button>
-                    <button
-                      type="button"
-                      className="text-gray-500 italic hover:text-gray-700"
-                    >
-                      I
-                    </button>
-                  </div>
-                  <div className="text-sm text-gray-500">
-                    {charCount} / {maxChars}
-                  </div>
-                </div>
-              </div>
-
-              <div className="pt-2">
-                <div className="flex items-center justify-between">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Attach your resume
-                  </label>
-                  <div className="rounded-md border border-dashed border-indigo-300 px-4 py-2">
-                    <label
-                      htmlFor="resume"
-                      className="flex cursor-pointer items-center gap-2 text-sm text-indigo-600"
-                    >
-                      <Paperclip className="h-4 w-4" />
-                      <span>Attach Resume/CV</span>
-                      <input
-                        id="resume"
-                        type="file"
-                        accept=".pdf,.doc,.docx"
-                        onChange={handleFileChange}
-                        className="hidden"
-                      />
-                    </label>
-                  </div>
-                </div>
-                {resumeFile && (
-                  <div className="mt-2 text-sm text-gray-600">
-                    Selected file: {resumeFile.name}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="mt-8">
-              <Button
-                type="submit"
-                className="w-full bg-indigo-600 py-3 text-white hover:bg-indigo-700"
+            {submitMessage && (
+              <div
+                className={`mb-4 rounded-md p-3 ${
+                  submitMessage.type === 'success'
+                    ? 'border border-green-200 bg-green-50 text-green-800'
+                    : 'border border-red-200 bg-red-50 text-red-800'
+                }`}
               >
-                Submit Application
-              </Button>
-            </div>
+                {submitMessage.text}
+              </div>
+            )}
 
-            <div className="mt-4 text-center text-sm text-gray-600">
-              <p>
-                By sending the request you confirm that you accept our{' '}
-                <a href="#" className="text-indigo-600 hover:underline">
-                  Terms of Service
-                </a>{' '}
-                and{' '}
-                <a href="#" className="text-indigo-600 hover:underline">
-                  Privacy Policy
-                </a>
-              </p>
-            </div>
-          </form>
+            <Form {...form}>
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-6"
+              >
+                <FormField
+                  control={form.control}
+                  name="title"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Application Title</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Enter your application title"
+                          disabled={isSubmitting}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Description</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Add a cover letter or anything else you want to share"
+                          className="min-h-[120px]"
+                          disabled={isSubmitting}
+                          maxLength={maxChars}
+                          {...field}
+                        />
+                      </FormControl>
+                      <div className="flex justify-end">
+                        <div className="text-sm text-gray-500">
+                          {charCount} / {maxChars}
+                        </div>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="cvFile"
+                  render={({ field: { onChange, value, ...field } }) => (
+                    <FormItem>
+                      <FormLabel>CV/Resume</FormLabel>
+                      <FormControl>
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-gray-600">
+                              Upload your CV or Resume
+                            </span>
+                            <div className="rounded-md border border-dashed border-indigo-300 px-4 py-2">
+                              <label
+                                htmlFor="cvFile"
+                                className="flex cursor-pointer items-center gap-2 text-sm text-indigo-600"
+                              >
+                                <Paperclip className="h-4 w-4" />
+                                <span>Attach CV/Resume</span>
+                                <input
+                                  id="cvFile"
+                                  type="file"
+                                  accept=".pdf,.doc,.docx"
+                                  disabled={isSubmitting}
+                                  onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) {
+                                      onChange(file);
+                                    }
+                                  }}
+                                  className="hidden"
+                                  {...field}
+                                />
+                              </label>
+                            </div>
+                          </div>
+                          {value && (
+                            <div className="text-sm text-gray-600">
+                              Selected file: {value.name} (
+                              {(value.size / 1024 / 1024).toFixed(2)} MB)
+                            </div>
+                          )}
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <Button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full bg-indigo-600 py-3 text-white hover:bg-indigo-700 disabled:opacity-50"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Submitting Application...
+                    </>
+                  ) : (
+                    'Submit Application'
+                  )}
+                </Button>
+
+                <div className="text-center text-sm text-gray-600">
+                  <p>
+                    By sending the request you confirm that you accept our{' '}
+                    <a href="#" className="text-indigo-600 hover:underline">
+                      Terms of Service
+                    </a>{' '}
+                    and{' '}
+                    <a href="#" className="text-indigo-600 hover:underline">
+                      Privacy Policy
+                    </a>
+                  </p>
+                </div>
+              </form>
+            </Form>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

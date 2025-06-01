@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, SlidersHorizontal } from 'lucide-react';
 import { Search } from 'lucide-react';
+import { Calendar } from 'lucide-react';
 import ApplicationTable from '@/app/(candidate)/_components/applications-list/ApplicationTable';
 import StatusTabs from '@/app/(candidate)/_components/applications-list/StatusTabs';
 import type {
@@ -13,7 +14,6 @@ import type {
 } from '@/types/Application';
 import { fetchApplications } from '@/app/(candidate)/_components/applications-list/utils/api';
 import NewFeatureAlert from '@/app/(candidate)/_components/applications-list/NewFeatureAlert';
-import DateRangePicker from '@/app/(candidate)/_components/applications-list/DateRangePicker';
 
 export default function JobApplicationsPage() {
   const [applications, setApplications] = useState<Application[]>([]);
@@ -23,7 +23,7 @@ export default function JobApplicationsPage() {
   const [activeTab, setActiveTab] = useState<ApplicationStatus | 'ALL'>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const [dateRange, setDateRange] = useState<{
+  const [dateRange] = useState<{
     startDate: string;
     endDate: string;
   }>({
@@ -87,85 +87,86 @@ export default function JobApplicationsPage() {
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
   };
-
-  const handleDateRangeChange = (startDate: string, endDate: string) => {
-    setDateRange({ startDate, endDate });
-    setCurrentPage(1);
-  };
-
   return (
-    <div className="container mx-auto max-w-6xl px-4 py-8 pb-0">
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-800">Keep it up, Jake</h1>
-          <p className="mt-1 text-gray-600">
-            Here is job applications status from July 19 - July 25.
-          </p>
-        </div>
-        <div className="relative">
-          <DateRangePicker
-            startDate={dateRange.startDate}
-            endDate={dateRange.endDate}
-            onDateRangeChange={handleDateRangeChange}
-            displayText={formattedDateRange}
-          />
-        </div>
-      </div>
-
-      {showNewFeature && (
-        <NewFeatureAlert onClose={() => setShowNewFeature(false)} />
-      )}
-
-      <div className="mt-8">
-        <StatusTabs
-          activeTab={activeTab}
-          onTabChange={handleTabChange}
-          statusCounts={statusCounts}
-        />
-      </div>
-
-      <div className="mt-8">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-gray-800">
-            Applications History
-          </h2>
-          <div className="flex gap-2">
-            <div className="relative">
-              <div className="pointer-events-none absolute inset-y-0 left-3 flex items-center">
-                <Search className="h-4 w-4 text-gray-400" />
-              </div>
-              <input
-                type="text"
-                placeholder="Search"
-                className="rounded-lg border py-2 pr-4 pl-10 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                value={searchQuery}
-                onChange={(e) => handleSearch(e.target.value)}
-              />
-            </div>
-            <button className="flex items-center gap-2 rounded-lg border px-4 py-2 hover:bg-gray-50">
-              <SlidersHorizontal className="h-4 w-4" />
-              <span>Filter</span>
-            </button>
+    <div className="flex min-h-screen w-full justify-center">
+      <main className="w-[95%] origin-top scale-100 p-[2%]">
+        <div className="mb-[2%] flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="mb-1 text-[calc(1.5rem+0.5vw)] font-semibold">
+              Keep it up, Jake
+            </h2>
+            <p className="text-muted-foreground text-[calc(0.875rem+0.2vw)]">
+              Here is job applications status from July 19 - July 25.
+            </p>
+          </div>
+          <div className="flex items-center gap-2 rounded-md border p-[1%] whitespace-nowrap">
+            <span className="text-[calc(0.875rem+0.1vw)]">
+              {formattedDateRange}
+            </span>
+            <Calendar className="h-[calc(1.25rem+0.2vw)] w-[calc(1.25rem+0.2vw)] text-indigo-600" />
           </div>
         </div>
 
-        <ApplicationTable
-          applications={applications}
-          loading={loading}
-          error={error}
-        />
+        {showNewFeature && (
+          <div className="mb-[3%]">
+            <NewFeatureAlert onClose={() => setShowNewFeature(false)} />
+          </div>
+        )}
 
-        {/* Pagination with shadcn components */}
-        <div className="fixed right-0 bottom-4 left-0 z-10 flex justify-center">
-          <div className="rounded-lg border bg-white p-2 shadow-md">
-            <div className="flex items-center gap-1">
+        <div className="mb-[3%]">
+          <StatusTabs
+            activeTab={activeTab}
+            onTabChange={handleTabChange}
+            statusCounts={statusCounts}
+          />
+        </div>
+
+        <div className="mb-[3%]">
+          <div className="mb-[2%] flex flex-col gap-[2%] sm:flex-row sm:items-center sm:justify-between">
+            <h2 className="text-[calc(1.25rem+0.3vw)] font-semibold text-gray-800">
+              Applications History
+            </h2>
+            <div className="flex gap-[1%]">
+              <div className="relative">
+                <div className="pointer-events-none absolute inset-y-0 left-[1%] flex items-center">
+                  <Search className="h-[calc(1rem+0.2vw)] w-[calc(1rem+0.2vw)] text-gray-400" />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Search"
+                  className="rounded-lg border py-[1%] pr-[2%] pl-[8%] text-[calc(0.875rem+0.1vw)] focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  value={searchQuery}
+                  onChange={(e) => handleSearch(e.target.value)}
+                />
+              </div>
+              <button className="flex items-center gap-[1%] rounded-lg border px-[2%] py-[1%] text-[calc(0.875rem+0.1vw)] hover:bg-gray-50">
+                <SlidersHorizontal className="h-[calc(1rem+0.2vw)] w-[calc(1rem+0.2vw)]" />
+                <span>Filter</span>
+              </button>
+            </div>
+          </div>
+
+          <div className="rounded-lg border bg-white">
+            <ApplicationTable
+              applications={applications}
+              loading={loading}
+              error={error}
+            />
+          </div>
+        </div>
+
+        {/* Pagination with responsive design */}
+        <div className="fixed right-[2%] bottom-[2%] left-[2%] z-10 flex justify-center">
+          <div className="rounded-lg border bg-white p-[1%] shadow-md">
+            <div className="flex items-center gap-[0.5%]">
               <Button
                 variant="outline"
                 size="icon"
                 onClick={() => handlePageChange(currentPage - 1)}
                 disabled={currentPage === 1}
+                className="h-[calc(2rem+0.5vw)] w-[calc(2rem+0.5vw)]"
               >
-                <ChevronLeft className="h-4 w-4" />
+                <ChevronLeft className="h-[calc(1rem+0.2vw)] w-[calc(1rem+0.2vw)]" />
                 <span className="sr-only">Previous</span>
               </Button>
 
@@ -175,7 +176,7 @@ export default function JobApplicationsPage() {
                     key={i}
                     variant={currentPage === i + 1 ? 'default' : 'outline'}
                     size="icon"
-                    className="h-8 w-8"
+                    className="h-[calc(2rem+0.5vw)] w-[calc(2rem+0.5vw)] text-[calc(0.875rem+0.1vw)]"
                     onClick={() => handlePageChange(i + 1)}
                   >
                     {i + 1}
@@ -185,11 +186,13 @@ export default function JobApplicationsPage() {
 
               {Math.ceil(totalApplications / 5) > 5 && (
                 <>
-                  <span className="px-1">...</span>
+                  <span className="px-[1%] text-[calc(0.875rem+0.1vw)]">
+                    ...
+                  </span>
                   <Button
                     variant="outline"
                     size="icon"
-                    className="h-8 w-8"
+                    className="h-[calc(2rem+0.5vw)] w-[calc(2rem+0.5vw)] text-[calc(0.875rem+0.1vw)]"
                     onClick={() =>
                       handlePageChange(Math.ceil(totalApplications / 5))
                     }
@@ -204,17 +207,18 @@ export default function JobApplicationsPage() {
                 size="icon"
                 onClick={() => handlePageChange(currentPage + 1)}
                 disabled={currentPage === Math.ceil(totalApplications / 5)}
+                className="h-[calc(2rem+0.5vw)] w-[calc(2rem+0.5vw)]"
               >
-                <ChevronRight className="h-4 w-4" />
+                <ChevronRight className="h-[calc(1rem+0.2vw)] w-[calc(1rem+0.2vw)]" />
                 <span className="sr-only">Next</span>
               </Button>
             </div>
           </div>
         </div>
 
-        {/* Add padding at the bottom to prevent content from being hidden behind the fixed pagination */}
-        <div className="h-16"></div>
-      </div>
+        {/* Add responsive padding at the bottom */}
+        <div className="h-[calc(4rem+1vw)]"></div>
+      </main>
     </div>
   );
 }
