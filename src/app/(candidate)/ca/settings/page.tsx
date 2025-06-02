@@ -27,13 +27,16 @@ import {
 } from '@/services/state/userSlice';
 import { userService } from '@/services/api/auth/user-api';
 
+import FileUploader from '@/components/common/FileUploader';
+import { SupabaseBucket, SupabaseFolder } from '@/enums/supabase';
+
 export default function SettingsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const dispatch = useDispatch();
   const user = useUser();
   const [formattedDob, setFormattedDob] = useState('');
 
-  // Define form with react-hook-form and zod validation
+  // Set up React Hook Form with Zod
   const form = useForm<z.infer<typeof ProfileFormSchema>>({
     resolver: zodResolver(ProfileFormSchema),
     defaultValues: {
@@ -46,37 +49,36 @@ export default function SettingsPage() {
     },
   });
 
-  // Format the date for display
+  // Whenever the raw ISO dob changes, format for the <input type="date">
   useEffect(() => {
-    if (form.watch('dob')) {
+    const raw = form.watch('dob');
+    if (raw) {
       try {
-        const date = new Date(form.watch('dob'));
+        const date = new Date(raw);
         if (!isNaN(date.getTime())) {
-          setFormattedDob(date.toISOString().split('T')[0]); // Format as YYYY-MM-DD
+          setFormattedDob(date.toISOString().split('T')[0]); // "YYYY-MM-DD"
         }
-      } catch (error) {
-        console.error('Error formatting date:', error);
+      } catch {
+        // ignore formatting errors
       }
     }
   }, [form.watch('dob')]);
 
-  // Handle date change
+  // Handler for the date picker
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-
+    const value = e.target.value; // e.g. "2025-06-02"
     try {
-      // If it's a valid date string, convert to ISO
       const date = new Date(value);
       if (!isNaN(date.getTime())) {
+        // Convert to ISO before storing in RHF
         form.setValue('dob', date.toISOString());
         setFormattedDob(value);
       } else {
-        // Keep the input value as is for user typing
+        // If the user is still typing / not a full date yet
         setFormattedDob(value);
       }
-    } catch (error) {
+    } catch {
       setFormattedDob(value);
-      console.error('Invalid date format:', error);
     }
   };
 
@@ -84,30 +86,32 @@ export default function SettingsPage() {
     try {
       setIsSubmitting(true);
 
-      // Map form data to ProfileUpdateRequest DTO
       const requestData = {
         name: data.name,
         phone: data.phone,
         email: data.email,
         gender: data.gender,
-        dob: data.dob, // ISO string
+        dob: data.dob,
+        avatar: data.avatar,
       };
 
-      // Call API to update profile
       const response = await userService.updateMe(requestData);
-
-      toast.success('Success', {});
+      toast.success('Profile updated successfully');
       dispatch(updateUserSuccess(response));
     } catch (error) {
-      toast.error('Error failed', {});
+      toast.error('Failed to update profile');
       dispatch(updateUserFailure(error as string));
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const currentAvatar =
+    form.watch('avatar') || user?.data.avatar || '/Auth/authbg-bear.jpg';
+
   return (
     <form onSubmit={form.handleSubmit(onSubmit)}>
+      {/* ————— Basic Information Header ————— */}
       <section className="py-6">
         <h2 className="text-xl font-semibold text-gray-900">
           Basic Information
@@ -118,6 +122,7 @@ export default function SettingsPage() {
         <div className="mt-4 border-t border-gray-200"></div>
       </section>
 
+      {/* ————— Profile Photo Section ————— */}
       <section className="py-6">
         <div className="flex flex-col gap-8 md:flex-row">
           <div className="flex-1">
@@ -130,17 +135,47 @@ export default function SettingsPage() {
               help recruiters recognize you!
             </p>
           </div>
+
           <div className="flex flex-1 items-start gap-6">
+            {/* Current avatar preview */}
             <div className="relative">
               <Image
-                src="/Auth/authbg-bear.jpg"
+                src={currentAvatar}
                 alt="Profile"
                 width={120}
                 height={120}
                 className="rounded-full object-cover"
               />
             </div>
-            <div className="flex h-36 w-60 flex-col items-center justify-center rounded-lg border-2 border-dashed border-indigo-300 p-6 text-center">
+
+            {/* FileUploader replaces the static dashed box */}
+            <FileUploader
+              bucket={SupabaseBucket.USER_SETTINGS}
+              folder={SupabaseFolder.USER_SETTINGS}
+              onComplete={(url) => {
+                form.setValue('avatar', url);
+              }}
+              wrapperClassName="
+                flex
+                h-36
+                w-60
+                flex-col
+                items-center
+                justify-center
+                rounded-lg
+                border-2
+                border-dashed
+                border-indigo-300
+                p-6
+                text-center
+                hover:border-indigo-400
+                transition
+                duration-150
+                ease-in-out
+              "
+              buttonClassName="flex flex-col items-center"
+            >
+              {/* All of this is the “children” inside the clickable area */}
               <ImageIcon className="h-6 w-6 text-indigo-600" />
               <p className="mt-2 font-medium text-indigo-600">
                 Click to replace
@@ -149,16 +184,18 @@ export default function SettingsPage() {
               <p className="mt-1 text-xs text-gray-500">
                 SVG, PNG, JPG or GIF (max. 400 x 400px)
               </p>
-            </div>
+            </FileUploader>
           </div>
         </div>
         <div className="mt-6 border-t border-gray-200"></div>
       </section>
 
+      {/* ————— Personal Details Section ————— */}
       <section className="py-6">
         <h3 className="text-lg font-medium text-gray-900">Personal Details</h3>
 
         <div className="mt-6 grid grid-cols-1 gap-x-6 gap-y-8 md:grid-cols-2">
+          {/* Full Name */}
           <div className="col-span-1">
             <Label
               htmlFor="name"
@@ -176,6 +213,7 @@ export default function SettingsPage() {
 
           <div className="col-span-1"></div>
 
+          {/* Phone Number */}
           <div className="col-span-1">
             <Label
               htmlFor="phone"
@@ -191,6 +229,7 @@ export default function SettingsPage() {
             )}
           </div>
 
+          {/* Email */}
           <div className="col-span-1">
             <Label
               htmlFor="email"
@@ -211,6 +250,7 @@ export default function SettingsPage() {
             )}
           </div>
 
+          {/* Date of Birth */}
           <div className="col-span-1">
             <Label
               htmlFor="dob"
@@ -234,6 +274,7 @@ export default function SettingsPage() {
             )}
           </div>
 
+          {/* Gender */}
           <div className="col-span-1">
             <Label
               htmlFor="gender"
@@ -267,6 +308,7 @@ export default function SettingsPage() {
         <div className="mt-8 border-t border-gray-200"></div>
       </section>
 
+      {/* ————— Save Button ————— */}
       <div className="mt-8 flex justify-end">
         <Button
           type="submit"
