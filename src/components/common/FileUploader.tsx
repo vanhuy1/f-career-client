@@ -6,6 +6,8 @@ interface FileUploaderProps {
   bucket?: SupabaseBucket;
   folder?: SupabaseFolder;
   onComplete: (url: string) => void;
+  wrapperClassName?: string;
+  buttonClassName?: string;
   children?: React.ReactNode;
 }
 
@@ -13,6 +15,8 @@ export default function FileUploader({
   bucket,
   folder,
   onComplete,
+  wrapperClassName = '',
+  buttonClassName = '',
   children = 'Choose file…',
 }: FileUploaderProps) {
   const [loading, setLoading] = useState(false);
@@ -35,16 +39,20 @@ export default function FileUploader({
   };
 
   return (
-    <label className="inline-block cursor-pointer">
+    <label className={`cursor-pointer ${wrapperClassName}`}>
       <input
         type="file"
         className="hidden"
         onChange={handleChange}
         disabled={loading}
       />
-      <span className="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">
-        {loading ? 'Uploading…' : children}
-      </span>
+      {loading ? (
+        <div className={buttonClassName}>
+          <span>Uploading…</span>
+        </div>
+      ) : (
+        <div className={buttonClassName}>{children}</div>
+      )}
     </label>
   );
 }
