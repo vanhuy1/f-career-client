@@ -16,6 +16,21 @@ class JobService {
     });
   }
 
+  /** GET /jobs/company/:companyId?limit=&offset= */
+
+  async findByCompany(
+    companyId: string,
+    limit?: number,
+    offset?: number,
+  ): Promise<JobListResponse> {
+    const url = this.rb.buildUrl(`company/${companyId}`);
+    console.log(limit, offset);
+    return await httpClient.get<JobListResponse>({
+      url,
+      typeCheck: (data) => ({ success: true, data: data as JobListResponse }),
+    });
+  }
+
   /** GET /jobs/:id */
   async findOne(id: string): Promise<Job> {
     const url = this.rb.buildUrl(id);
