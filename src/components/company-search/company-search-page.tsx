@@ -43,7 +43,7 @@ export default function CompanySearchPage() {
     if (!companies || companies.length === 0) {
       fetchCompanies();
     }
-  }, [page, limit, dispatch, companies?.length, companies]);
+  }, [page, limit, dispatch, companies?.length]);
 
   const totalPages = Math.ceil(count / limit);
 

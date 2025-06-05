@@ -42,6 +42,7 @@ export interface Job {
   benefit: string[];
   createdAt?: string;
   updatedAt?: string;
+  applicants: number;
 }
 
 export interface OpenPositionsJob {

@@ -77,10 +77,8 @@ export default function JobDetailPage() {
       <BreadcrumbNavigation
         company={job.company}
         jobTitle={{ title: job.title }}
-        companyId={job.company.id}
       />
       <JobHeader
-        jobId={job.id}
         companyName={job.company.companyName}
         jobTitle={job.title}
         location={job.location}
