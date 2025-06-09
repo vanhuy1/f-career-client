@@ -11,6 +11,7 @@ import {
   Settings,
   HelpCircle,
   LogOut,
+  FileUser,
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -79,6 +80,12 @@ export default function Sidebar() {
             icon={<User />}
             label="My Public Profile"
             active={pathname === ROUTES.CA.HOME.PROFILE.path}
+          />
+          <NavItem
+            href={ROUTES.CA.HOME.CV.path}
+            icon={<FileUser />}
+            label="My CV"
+            active={pathname === ROUTES.CA.HOME.CV.path}
           />
         </ul>
 

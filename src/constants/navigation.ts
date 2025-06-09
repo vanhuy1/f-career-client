@@ -73,6 +73,11 @@ const ROUTES = {
         path: '/ca/find-job',
         name: 'Find Job',
       },
+
+      CV: {
+        path: '/ca/cv-builder',
+        name: 'CV Builder',
+      },
     },
   },
 

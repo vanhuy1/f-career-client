@@ -4,6 +4,7 @@ import authReducer from '@/services/state/authSlice';
 import caProfileReducer from '@/services/state/caProfileSlice';
 import jobReducer from '@/services/state/jobSlice';
 import companyReducer from '@/services/state/companySlice';
+import cvReducer from '@/services/state/cvSlice';
 
 export const makeStore = () => {
   return configureStore({
@@ -13,6 +14,7 @@ export const makeStore = () => {
       caProfile: caProfileReducer,
       job: jobReducer,
       company: companyReducer,
+      cv: cvReducer,
     },
   });
 };
