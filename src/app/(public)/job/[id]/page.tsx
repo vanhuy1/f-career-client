@@ -76,7 +76,7 @@ export default function JobDetailPage() {
     <div className="mx-auto max-w-screen-xl px-4 py-8">
       <BreadcrumbNavigation
         company={job.company}
-        jobTitle={{ title: job.title }
+        jobTitle={{ title: job.title }}
         companyId={job.company.id}
       />
       <JobHeader

@@ -1,12 +1,23 @@
 'use client';
 
+import type React from 'react';
+
 import Image from 'next/image';
 import ReactMarkdown from 'react-markdown';
 import { useState } from 'react';
 import { websiteLinkCreator, resolvedWebsiteLink } from '@/utils/link.utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Github, Linkedin, Edit } from 'lucide-react';
+import {
+  Github,
+  Linkedin,
+  Edit,
+  Calendar,
+  MapPin,
+  ExternalLink,
+  Mail,
+  Phone,
+} from 'lucide-react';
 import type { Experience, Education, Cv, Certification } from '@/types/Cv';
 import EditDialogs from './shared/EditDialogs';
 
@@ -51,141 +62,170 @@ const CV3 = ({
 
   return (
     <div
-      className="flex min-h-[1188px] w-full flex-col bg-white print:h-auto print:min-h-0 print:overflow-visible"
+      className="flex min-h-[1188px] w-full flex-col bg-gradient-to-br from-slate-50 via-white to-blue-50 print:h-auto print:min-h-0 print:overflow-visible print:bg-white"
       id="cv"
     >
-      {/* Header */}
-      <header className="flex-shrink-0 border-b border-gray-200 bg-gray-50 p-8 print:border-gray-200 print:bg-white">
-        <div className="group relative flex items-center justify-between">
-          <div className="flex items-center space-x-6">
-            {cv.image ? (
-              <Image
-                src={cv.image}
-                className="h-20 w-20 rounded-lg object-cover shadow-md"
-                width={80}
-                height={80}
-                alt="Profile Picture"
-                quality={100}
-              />
-            ) : (
-              <Image
-                src={'/Gradient.jpg'}
-                className="h-20 w-20 rounded-lg object-cover shadow-md"
-                width={80}
-                height={80}
-                alt="Profile Picture"
-                quality={100}
-              />
-            )}
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">{cv.name}</h1>
-              <div className="mt-1 flex items-center space-x-2 text-gray-600">
-                <span className="text-sm">{cv.title}</span>
-                {/* {cv.location && (
-                  <>
-                    <span>•</span>
-                    <span className="text-sm">{cv.location}</span>
-                  </>
-                )} */}
+      {/* Enhanced Header */}
+      <header className="flex-shrink-0 border-b border-slate-200 bg-white shadow-sm print:border-slate-200 print:bg-white print:shadow-none">
+        <div className="p-8">
+          {/* Main Profile Section */}
+          <div className="mb-6 flex items-center justify-between">
+            <div className="flex items-center space-x-8">
+              <div className="relative">
+                <Image
+                  src={cv.image || '/Gradient.jpg'}
+                  className="h-24 w-24 rounded-2xl object-cover shadow-lg ring-4 ring-blue-100"
+                  width={96}
+                  height={96}
+                  alt="Profile Picture"
+                  quality={100}
+                />
+                <div className="absolute inset-0 rounded-2xl bg-gradient-to-t from-black/10 to-transparent"></div>
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center gap-4">
+                  <h1 className="text-4xl font-bold tracking-tight text-slate-900">
+                    {cv.name}
+                  </h1>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="flex items-center gap-2 text-slate-500 transition-all duration-200 hover:bg-slate-100 hover:text-slate-700"
+                    onClick={() => setEditSection('about')}
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                </div>
+                <div className="flex items-center space-x-3 text-slate-600">
+                  <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-lg font-medium text-transparent">
+                    {cv.title}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
-          <div className="flex items-start gap-4">
-            <Button
-              variant="outline"
-              size="sm"
-              className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100"
-              onClick={() => setEditSection('contact')}
-            >
-              <Edit className="h-3 w-3" />
-              <span>Edit Contact</span>
-            </Button>
-            <div className="flex flex-col items-end space-y-2">
+          {/* Social Links Section */}
+          <div className="border-t border-slate-200 pt-6">
+            <div className="flex justify-between">
+              <h3 className="mb-4 text-sm font-semibold tracking-wider text-slate-700 uppercase">
+                Contact
+              </h3>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="flex items-center gap-1 text-slate-500 transition-all duration-200 hover:bg-slate-100 hover:text-slate-700"
+                onClick={() => setEditSection('contact')}
+              >
+                <Edit className="h-3 w-3" />
+              </Button>
+            </div>
+            <div className="flex space-x-6">
               {cv.displayMail && cv.email && (
                 <a
                   href={`mailto:${cv.email}`}
-                  className="text-sm text-gray-600 hover:text-gray-900"
+                  className="group/link flex items-center text-slate-600 transition-all duration-300 hover:translate-y-[-1px] hover:text-slate-900"
                 >
-                  {cv.email}
+                  <div className="mr-2 flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 transition-colors group-hover/link:bg-slate-200">
+                    <Mail className="h-4 w-4" />
+                  </div>
+                  <span className="text-sm font-medium">{cv.email}</span>
+                </a>
+              )}
+
+              {cv.phone && (
+                <a
+                  href={`tel:${cv.phone}`}
+                  className="group/link flex items-center text-slate-600 transition-all duration-300 hover:translate-y-[-1px] hover:text-slate-900"
+                >
+                  <div className="mr-2 flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 transition-colors group-hover/link:bg-slate-200">
+                    <Phone className="h-4 w-4" />
+                  </div>
+                  <span className="text-sm font-medium">{cv.phone}</span>
+                </a>
+              )}
+
+              {cv.github && (
+                <a
+                  href={websiteLinkCreator(cv.github)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="group/link flex items-center text-slate-600 transition-all duration-300 hover:translate-y-[-1px] hover:text-slate-900"
+                >
+                  <div className="mr-2 flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 transition-colors group-hover/link:bg-slate-200">
+                    <Github className="h-4 w-4" />
+                  </div>
+                  <span className="text-sm font-medium">
+                    {resolvedWebsiteLink(cv.github)}
+                  </span>
+                </a>
+              )}
+              {cv.linkedin && (
+                <a
+                  href={websiteLinkCreator(cv.linkedin)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="group/link flex items-center text-slate-600 transition-all duration-300 hover:translate-y-[-1px] hover:text-slate-900"
+                >
+                  <div className="mr-2 flex h-8 w-8 items-center justify-center rounded-lg bg-blue-100 transition-colors group-hover/link:bg-blue-200">
+                    <Linkedin className="h-4 w-4" />
+                  </div>
+                  <span className="text-sm font-medium">
+                    {resolvedWebsiteLink(cv.linkedin)}
+                  </span>
                 </a>
               )}
             </div>
           </div>
         </div>
-
-        {/* Social Links */}
-        <div className="mt-4 flex space-x-4">
-          {cv.github && (
-            <a
-              href={websiteLinkCreator(cv.github)}
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center text-gray-600 hover:text-gray-900"
-            >
-              <Github className="mr-1 h-4 w-4" />
-              <span className="text-sm">{resolvedWebsiteLink(cv.github)}</span>
-            </a>
-          )}
-          {cv.linkedin && (
-            <a
-              href={websiteLinkCreator(cv.linkedin)}
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center text-gray-600 hover:text-gray-900"
-            >
-              <Linkedin className="mr-1 h-4 w-4" />
-              <span className="text-sm">
-                {resolvedWebsiteLink(cv.linkedin)}
-              </span>
-            </a>
-          )}
-        </div>
       </header>
 
-      {/* Main Content */}
-      <main className="grid flex-grow grid-cols-3 gap-8 p-8 print:grid print:grid-cols-3 print:gap-6">
+      {/* Enhanced Main Content */}
+      <main className="grid flex-grow grid-cols-3 gap-10 p-8 print:grid print:grid-cols-3 print:gap-8">
         {/* Left Column */}
         <div className="col-span-1 space-y-8 print:col-span-1 print:space-y-6">
           {/* About Section */}
           <section className="print:mb-6">
-            <div className="group relative flex items-center justify-between">
-              <h2 className="mb-3 text-lg font-semibold text-gray-900">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="flex items-center text-xl font-bold text-slate-900">
+                <div className="mr-3 h-6 w-1 rounded-full bg-blue-500"></div>
                 About
               </h2>
               <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
-                className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100"
+                className="flex items-center gap-2 text-slate-500 transition-all duration-200 hover:bg-slate-100 hover:text-slate-700"
                 onClick={() => setEditSection('about')}
               >
-                <Edit className="h-3 w-3" />
-                <span>Edit</span>
+                <Edit className="h-4 w-4" />
               </Button>
             </div>
-            <div className="text-sm leading-relaxed text-gray-600">
-              <ReactMarkdown>{cv.summary}</ReactMarkdown>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <div className="text-sm leading-relaxed text-slate-600">
+                <ReactMarkdown>{cv.summary}</ReactMarkdown>
+              </div>
             </div>
           </section>
 
           {/* Skills Section */}
           <section className="print:mb-6">
-            <div className="group relative flex items-center justify-between">
-              <h2 className="mb-3 text-lg font-semibold text-gray-900">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="flex items-center text-xl font-bold text-slate-900">
+                <div className="mr-3 h-6 w-1 rounded-full bg-green-500"></div>
                 Skills
               </h2>
               <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
-                className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100"
+                className="flex items-center gap-2 text-slate-500 transition-all duration-200 hover:bg-slate-100 hover:text-slate-700"
                 onClick={() => setEditSection('skills')}
               >
-                <Edit className="h-3 w-3" />
-                <span>Edit</span>
+                <Edit className="h-4 w-4" />
               </Button>
             </div>
-            <div className="space-y-4">
+
+            <div className="space-y-6">
               <div className="skill-block">
-                <h3 className="mb-2 text-sm font-medium text-gray-700">
+                <h3 className="mb-3 text-sm font-semibold tracking-wider text-slate-700 uppercase">
                   Industry Knowledge
                 </h3>
                 <div className="flex flex-wrap gap-2">
@@ -193,23 +233,24 @@ const CV3 = ({
                     <Badge
                       key={index}
                       variant="outline"
-                      className="bg-gray-50 text-[0.7rem] text-gray-700"
+                      className="border-blue-200 bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700 transition-colors hover:bg-blue-100"
                     >
                       {skill}
                     </Badge>
                   ))}
                 </div>
               </div>
+
               <div>
-                <h3 className="mb-2 text-sm font-medium text-gray-700">
+                <h3 className="mb-3 text-sm font-semibold tracking-wider text-slate-700 uppercase">
                   Languages
                 </h3>
                 <div className="flex flex-wrap gap-2">
-                  {cv.languages.map((skill, index) => (
+                  {(cv.languages || []).map((skill, index) => (
                     <Badge
                       key={index}
                       variant="outline"
-                      className="bg-gray-50 text-[0.7rem] text-gray-700"
+                      className="border-purple-200 bg-purple-50 px-3 py-1 text-xs font-medium text-purple-700 transition-colors hover:bg-purple-100"
                     >
                       {skill}
                     </Badge>
@@ -221,126 +262,106 @@ const CV3 = ({
         </div>
 
         {/* Right Column */}
-        <div className="col-span-2 space-y-8 print:col-span-2 print:space-y-6">
+        <div className="col-span-2 space-y-10 print:col-span-2 print:space-y-8">
           {/* Experience Section */}
           <section>
-            <div className="group relative flex items-center justify-between">
-              <h2 className="mb-4 text-lg font-semibold text-gray-900">
+            <div className="mb-6 flex items-center justify-between">
+              <h2 className="flex items-center text-xl font-bold text-slate-900">
+                <div className="mr-3 h-6 w-1 rounded-full bg-purple-500"></div>
                 Experience
               </h2>
               <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
-                className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100"
+                className="flex items-center gap-2 text-slate-500 transition-all duration-200 hover:bg-slate-100 hover:text-slate-700"
                 onClick={() => setEditSection('experience')}
               >
-                <Edit className="h-3 w-3" />
-                <span>Edit</span>
+                <Edit className="h-4 w-4" />
               </Button>
             </div>
-            <div className="space-y-6 print:space-y-4">
+
+            <div className="space-y-8 print:space-y-6">
               {cv.experience.map((experience, index) => (
                 <div
                   key={index}
-                  className="experience-block border-b border-gray-100 pb-6 last:border-0 last:pb-0 print:border-gray-100 print:pb-4"
+                  className="experience-block relative border-l-2 border-slate-200 pl-6 transition-colors hover:border-purple-300"
                 >
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-base font-medium text-gray-900">
-                      {experience.role}
-                    </h3>
-                    <span className="text-sm text-gray-500">
-                      {experience.startDate} - {experience.endDate}
-                    </span>
-                  </div>
-                  <p className="mt-1 text-sm text-gray-600">
-                    {experience.company}
-                  </p>
-                  <div className="mt-2 text-sm leading-relaxed text-gray-600">
-                    <ReactMarkdown>{experience.description}</ReactMarkdown>
+                  <div className="absolute top-2 -left-[7px] h-3 w-3 rounded-full bg-purple-500"></div>
+                  <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-md">
+                    <div className="mb-3 flex items-start justify-between">
+                      <div>
+                        <h3 className="mb-1 text-lg font-semibold text-slate-900">
+                          {experience.role}
+                        </h3>
+                        <p className="mb-2 font-medium text-purple-600">
+                          {experience.company}
+                        </p>
+                      </div>
+                      <div className="text-right text-sm text-slate-500">
+                        <div className="flex items-center">
+                          <Calendar className="mr-1 h-3 w-3" />
+                          <span>
+                            {experience.startDate} - {experience.endDate}
+                          </span>
+                        </div>
+                        {experience.location && (
+                          <div className="mt-1 flex items-center">
+                            <MapPin className="mr-1 h-3 w-3" />
+                            <span>{experience.location}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="text-sm leading-relaxed text-slate-600">
+                      <ReactMarkdown>{experience.description}</ReactMarkdown>
+                    </div>
                   </div>
                 </div>
               ))}
             </div>
           </section>
 
-          {/* Projects Section */}
-          {/* <section>
-            <div className="group relative flex items-center justify-between">
-              <h2 className="mb-4 text-lg font-semibold text-gray-900">
-                Projects
-              </h2>
-              <Button
-                variant="outline"
-                size="sm"
-                className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100"
-                onClick={() => setEditSection('projects')}
-              >
-                <Edit className="h-3 w-3" />
-                <span>Edit</span>
-              </Button>
-            </div>
-            <div className="grid grid-cols-2 gap-4 print:gap-4">
-              {cv.projects.map((project, index) => (
-                <div
-                  key={index}
-                  className="project-block rounded-lg border border-gray-100 bg-gray-50 p-4 print:border-gray-100 print:bg-white"
-                >
-                  <div className="flex items-start justify-between">
-                    <h3 className="text-base font-medium text-gray-900">
-                      {project.title}
-                    </h3>
-                    {project.link && (
-                      <a
-                        href={websiteLinkCreator(project.link)}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="flex items-center text-blue-600 hover:text-blue-700"
-                      >
-                        <ExternalLink className="h-4 w-4" />
-                      </a>
-                    )}
-                  </div>
-                  <div className="mt-2 text-sm leading-relaxed text-gray-600">
-                    <ReactMarkdown>{project.summary}</ReactMarkdown>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section> */}
-
           {/* Education Section */}
           <section>
-            <div className="group relative flex items-center justify-between">
-              <h2 className="mb-4 text-lg font-semibold text-gray-900">
+            <div className="mb-6 flex items-center justify-between">
+              <h2 className="flex items-center text-xl font-bold text-slate-900">
+                <div className="mr-3 h-6 w-1 rounded-full bg-blue-500"></div>
                 Education
               </h2>
               <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
-                className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100"
+                className="flex items-center gap-2 text-slate-500 transition-all duration-200 hover:bg-slate-100 hover:text-slate-700"
                 onClick={() => setEditSection('education')}
               >
-                <Edit className="h-3 w-3" />
-                <span>Edit</span>
+                <Edit className="h-4 w-4" />
               </Button>
             </div>
+
             <div className="space-y-4">
               {cv.education.map((education, index) => (
                 <div
                   key={index}
-                  className="education-block flex items-center justify-between border-b border-gray-100 pb-4 last:border-0 last:pb-0 print:break-inside-avoid"
+                  className="education-block rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-md"
                 >
-                  <div>
-                    <h3 className="text-base font-medium text-gray-900">
-                      {education.field}
-                    </h3>
-                    <p className="mt-1 text-sm text-gray-600">
-                      {education.institution}
-                    </p>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="mb-1 text-lg font-semibold text-slate-900">
+                        {education.field}
+                      </h3>
+                      <p className="font-medium text-blue-600">
+                        {education.institution}
+                      </p>
+                    </div>
+                    <div className="text-right text-sm text-slate-500">
+                      <div className="flex items-center">
+                        <Calendar className="mr-1 h-3 w-3" />
+                        <span>
+                          {education.startYear} - {education.endYear}
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                  <span className="text-sm text-gray-500">
-                    {education.startYear} - {education.endYear}
-                  </span>
                 </div>
               ))}
             </div>
@@ -348,50 +369,59 @@ const CV3 = ({
 
           {/* Certifications Section */}
           <section>
-            <div className="group relative flex items-center justify-between">
-              <h2 className="mb-4 text-lg font-semibold text-gray-900">
+            <div className="mb-6 flex items-center justify-between">
+              <h2 className="flex items-center text-xl font-bold text-slate-900">
+                <div className="mr-3 h-6 w-1 rounded-full bg-orange-500"></div>
                 Certifications
               </h2>
               <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
-                className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100"
+                className="flex items-center gap-2 text-slate-500 transition-all duration-200 hover:bg-slate-100 hover:text-slate-700"
                 onClick={() => setEditSection('certifications')}
               >
-                <Edit className="h-3 w-3" />
-                <span>Edit</span>
+                <Edit className="h-4 w-4" />
               </Button>
             </div>
+
             <div className="space-y-4">
               {cv.certifications.map((certification, index) => (
                 <div
                   key={index}
-                  className="certification-block flex items-start justify-between border-b border-gray-100 pb-4 last:border-0 last:pb-0 print:break-inside-avoid"
+                  className="certification-block rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-md"
                 >
-                  <div>
-                    <h3 className="text-base font-medium text-gray-900">
-                      {certification.title}
-                    </h3>
-                    <p className="mt-1 text-sm text-gray-600">
-                      Issued by {certification.issuer} on{' '}
-                      {certification.issueDate}
-                    </p>
-                    {certification.expiryDate && (
-                      <p className="text-sm text-gray-500">
-                        Expires on {certification.expiryDate}
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <h3 className="mb-1 text-lg font-semibold text-slate-900">
+                        {certification.title}
+                      </h3>
+                      <p className="mb-2 font-medium text-orange-600">
+                        Issued by {certification.issuer} on{' '}
+                        {certification.issueDate}
                       </p>
+                      {certification.expiryDate && (
+                        <p className="mb-2 text-sm text-slate-500">
+                          Expires on {certification.expiryDate}
+                        </p>
+                      )}
+                      {certification.credentialId && (
+                        <p className="mb-2 text-sm text-slate-600">
+                          Credential ID: {certification.credentialId}
+                        </p>
+                      )}
+                    </div>
+                    {certification.credentialUrl && (
+                      <a
+                        href={websiteLinkCreator(certification.credentialUrl)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="ml-4 flex items-center text-sm font-medium text-blue-600 transition-colors hover:text-blue-700"
+                      >
+                        View Credential
+                        <ExternalLink className="ml-1 h-4 w-4" />
+                      </a>
                     )}
                   </div>
-                  {certification.credentialUrl && (
-                    <a
-                      href={websiteLinkCreator(certification.credentialUrl)}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-blue-600 hover:text-blue-700"
-                    >
-                      View Credential
-                    </a>
-                  )}
                 </div>
               ))}
             </div>
