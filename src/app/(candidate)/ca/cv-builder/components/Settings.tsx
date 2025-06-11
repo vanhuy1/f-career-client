@@ -90,6 +90,22 @@ const Settings = ({
           easily. You can customize all sections, add your skills, experience,
           and education, and choose from different templates.
         </p>
+
+        <Card className="border-sky-200 bg-sky-50 dark:border-gray-900 dark:bg-gray-950/30">
+          <CardContent className="p-4">
+            <h2 className="text-lg font-semibold text-sky-900 dark:text-sky-400">
+              Before using
+            </h2>
+            <ul className="mt-2 space-y-2 text-sm text-sky-800 dark:text-sky-200">
+              <li className="flex items-start">
+                <span className="mr-2">•</span>
+                The <strong>Reset</strong> button and the{' '}
+                <strong>Fill Sample Data</strong> button will clear all the
+                changes you have made and you cannot undo them.
+              </li>
+            </ul>
+          </CardContent>
+        </Card>
       </div>
 
       <div className="space-y-4">

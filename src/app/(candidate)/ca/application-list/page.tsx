@@ -1,28 +1,27 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, SlidersHorizontal } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { SlidersHorizontal } from 'lucide-react';
 import { Search } from 'lucide-react';
 import { Calendar } from 'lucide-react';
 import ApplicationTable from '@/app/(candidate)/_components/applications-list/ApplicationTable';
-import StatusTabs from '@/app/(candidate)/_components/applications-list/StatusTabs';
-import type {
-  Application,
-  ApplicationStatus,
-  FetchApplicationsRequest,
-} from '@/types/Application';
-import { fetchApplications } from '@/app/(candidate)/_components/applications-list/utils/api';
 import NewFeatureAlert from '@/app/(candidate)/_components/applications-list/NewFeatureAlert';
+import { applicationService } from '@/services/api/applications/application-api';
+import { useAppDispatch } from '@/store/hooks';
+import {
+  setApplicationDetailStart,
+  setApplicationFailure,
+  setApplicationSuccess,
+  useApplicationList,
+  useApplicationListErrors,
+  useApplicationListLoadingState,
+} from '@/services/state/applicationsSlice';
+import { LoadingState } from '@/store/store.model';
 
 export default function JobApplicationsPage() {
-  const [applications, setApplications] = useState<Application[]>([]);
-  const [totalApplications, setTotalApplications] = useState<number>(0);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<ApplicationStatus | 'ALL'>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [currentPage, setCurrentPage] = useState<number>(1);
+  const pageSize = 10;
   const [dateRange] = useState<{
     startDate: string;
     endDate: string;
@@ -31,53 +30,43 @@ export default function JobApplicationsPage() {
     endDate: '2021-07-25',
   });
   const [showNewFeature, setShowNewFeature] = useState<boolean>(true);
+  const [total, setTotal] = useState<number>(0); // Add this state for total count
+  const dispatch = useAppDispatch();
+  const applications = useApplicationList();
+  const loading = useApplicationListLoadingState() === LoadingState.loading;
+  const error = useApplicationListErrors();
 
   // Format date range for display
   const formattedDateRange = `Jul ${dateRange.startDate.split('-')[2]} - Jul ${dateRange.endDate.split('-')[2]}`;
 
   // Status counts
-  const statusCounts = {
-    ALL: totalApplications,
-    IN_REVIEW: applications.filter((app) => app.status === 'IN_REVIEW').length,
-    INTERVIEWING: applications.filter((app) => app.status === 'INTERVIEWING')
-      .length,
-    ASSESSMENT: applications.filter((app) => app.status === 'ASSESSMENT')
-      .length,
-    OFFERED: applications.filter((app) => app.status === 'OFFERED').length,
-    HIRED: applications.filter((app) => app.status === 'HIRED').length,
-  };
+  // const statusCounts = {
+  //   ALL: totalApplications,
+  //   IN_REVIEW: applications.filter((app) => app.status === 'IN_REVIEW').length,
+  //   INTERVIEWING: applications.filter((app) => app.status === 'INTERVIEWING')
+  //     .length,
+  //   ASSESSMENT: applications.filter((app) => app.status === 'ASSESSMENT')
+  //     .length,
+  //   OFFERED: applications.filter((app) => app.status === 'OFFERED').length,
+  //   HIRED: applications.filter((app) => app.status === 'HIRED').length,
+  // };
 
   useEffect(() => {
     const loadApplications = async () => {
-      setLoading(true);
       try {
-        const request: FetchApplicationsRequest = {
-          page: currentPage,
-          limit: 5,
-          status: activeTab === 'ALL' ? undefined : activeTab,
-          searchQuery: searchQuery || undefined,
-          startDate: dateRange.startDate,
-          endDate: dateRange.endDate,
-        };
-
-        const response = await fetchApplications(request);
-        setApplications(response.applications);
-        setTotalApplications(response.total);
+        dispatch(setApplicationDetailStart());
+        const response = await applicationService.getApplications();
+        dispatch(setApplicationSuccess(response.data || []));
+        // Capture the total from the response
+        setTotal(response.total || response.data?.length || 0);
       } catch (err) {
-        setError('Failed to load applications. Please try again later.');
-        console.error(err);
-      } finally {
-        setLoading(false);
+        dispatch(setApplicationFailure(err as string));
       }
     };
-
-    loadApplications();
-  }, [activeTab, searchQuery, currentPage, dateRange]);
-
-  const handleTabChange = (tab: ApplicationStatus | 'ALL') => {
-    setActiveTab(tab);
-    setCurrentPage(1);
-  };
+    if (applications?.length === 0) {
+      loadApplications();
+    }
+  }, [searchQuery, currentPage, dateRange, applications?.length, dispatch]);
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
@@ -87,6 +76,10 @@ export default function JobApplicationsPage() {
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
   };
+
+  // const handlePageChange = (page: number) => {
+  //   setCurrentPage(page);
+  // };
   return (
     <div className="flex min-h-screen w-full justify-center">
       <main className="w-[95%] origin-top scale-100 p-[2%]">
@@ -113,13 +106,13 @@ export default function JobApplicationsPage() {
           </div>
         )}
 
-        <div className="mb-[3%]">
+        {/* <div className="mb-[3%]">
           <StatusTabs
             activeTab={activeTab}
             onTabChange={handleTabChange}
             statusCounts={statusCounts}
           />
-        </div>
+        </div> */}
 
         <div className="mb-[3%]">
           <div className="mb-[2%] flex flex-col gap-[2%] sm:flex-row sm:items-center sm:justify-between">
@@ -151,12 +144,16 @@ export default function JobApplicationsPage() {
               applications={applications}
               loading={loading}
               error={error}
+              page={currentPage}
+              pageSize={pageSize}
+              total={total} // Pass the total prop here
+              onPageChange={handlePageChange}
             />
           </div>
         </div>
 
         {/* Pagination with responsive design */}
-        <div className="fixed right-[2%] bottom-[2%] left-[2%] z-10 flex justify-center">
+        {/* <div className="fixed right-[2%] bottom-[2%] left-[2%] z-10 flex justify-center">
           <div className="rounded-lg border bg-white p-[1%] shadow-md">
             <div className="flex items-center gap-[0.5%]">
               <Button
@@ -214,7 +211,7 @@ export default function JobApplicationsPage() {
               </Button>
             </div>
           </div>
-        </div>
+        </div> */}
 
         {/* Add responsive padding at the bottom */}
         <div className="h-[calc(4rem+1vw)]"></div>

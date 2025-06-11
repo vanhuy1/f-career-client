@@ -1,15 +1,73 @@
-export interface Application {
+export interface Company {
+  id: string;
+  companyName: string;
+  foundedAt: string;
+  phone: number;
+  email: string;
+  employees: number;
+  address: string[];
+  website: string;
+  industry: string;
+  description: string | null;
+  logoUrl: string | null;
+  socialMedia: string[];
+  workImageUrl: string[];
+  taxCode: string;
+  businessLicenseUrl: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Job {
+  id: string;
+  title: string;
+  description: string;
+  location: string;
+  salaryMin: string;
+  salaryMax: string;
+  experienceYears: number;
+  status: string;
+  typeOfEmployment: string;
+  deadline: string;
+  responsibility: string[];
+  jobFitAttributes: string[];
+  niceToHave: string[];
+  benefit: string[];
+  isVip: boolean;
+  company: Company;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface User {
   id: number;
-  company: {
-    id: number;
-    name: string;
-    logo: string;
-    website: string;
-    industry: string;
+}
+
+export interface Application {
+  id: string;
+  user: User;
+  job: Job;
+  company: Company;
+  status: string;
+  cv_id: string;
+  cover_letter: string;
+  applied_at: string;
+  updated_at: string;
+}
+
+export interface ApplicationsResponse {
+  data: Application[];
+  meta: {
+    count: number;
   };
+}
+
+export interface ContactPerson {
+  id: string;
+  name: string;
   role: string;
-  dateApplied: string;
-  status: ApplicationStatus;
+  email?: string;
+  phone?: string;
 }
 
 export type ApplicationStatus =
@@ -19,72 +77,3 @@ export type ApplicationStatus =
   | 'OFFERED'
   | 'HIRED'
   | 'REJECTED';
-
-export interface FetchApplicationsRequest {
-  page: number;
-  limit: number;
-  status?: ApplicationStatus | 'ALL';
-  searchQuery?: string;
-  startDate?: string;
-  endDate?: string;
-}
-
-export interface FetchApplicationsResponse {
-  applications: Application[];
-  total: number;
-  page: number;
-  limit: number;
-}
-
-// Extended Application Type with more details
-export interface DetailedApplication extends Application {
-  jobDescription: string;
-  salaryRange?: {
-    min: number;
-    max: number;
-    currency: string;
-  };
-  location: {
-    type: 'remote' | 'hybrid' | 'on-site';
-    address?: string;
-    city?: string;
-    state?: string;
-    country?: string;
-  };
-  employmentType: 'full-time' | 'part-time' | 'contract' | 'internship';
-  requiredSkills: string[];
-  contacts: ContactPerson[];
-  documents: ApplicationDocument[];
-}
-
-// Contact Person
-export interface ContactPerson {
-  id: number;
-  name: string;
-  role: string;
-  email?: string;
-  phone?: string;
-}
-
-// Application Document
-export interface ApplicationDocument {
-  id: number;
-  type:
-    | 'resume'
-    | 'cover_letter'
-    | 'portfolio'
-    | 'reference'
-    | 'assessment'
-    | 'other';
-  name: string;
-  url?: string;
-  dateUploaded: string;
-  version?: number;
-}
-
-export interface FetchApplicationDetailRequest {
-  applicationId: number;
-}
-export interface FetchApplicationDetailResponse {
-  application: DetailedApplication;
-}

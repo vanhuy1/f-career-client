@@ -77,86 +77,10 @@ export const deleteCvById = createAsyncThunk(
   },
 );
 
-export const optimizeCvById = createAsyncThunk(
-  'cv/optimize',
-  async ({
-    cvId,
-    jobTitle,
-    jobDescription,
-  }: {
-    cvId: string;
-    jobTitle?: string;
-    jobDescription?: string;
-  }) => {
-    console.log('Optimizing CV with ID:', cvId);
-    const response = await cvService.optimizeCv(cvId, jobTitle, jobDescription);
-    console.log('Optimization API Response:', response);
-
-    if (!response || !response.data) {
-      throw new Error('Invalid optimization data received from API');
-    }
-
-    // Ensure the optimizedCv has default values for potentially null fields
-    if (response.data.optimizedCv) {
-      response.data.optimizedCv = {
-        ...response.data.optimizedCv,
-        experience: response.data.optimizedCv.experience || [],
-        education: response.data.optimizedCv.education || [],
-        certifications: response.data.optimizedCv.certifications || [],
-        skills: response.data.optimizedCv.skills || [],
-        languages: response.data.optimizedCv.languages || [],
-      };
-    }
-
-    return {
-      optimizedCv: response.data.optimizedCv,
-      suggestions: response.data.suggestions,
-      jobTitle,
-      jobDescription,
-    };
-  },
-);
-
-interface CvSuggestion {
-  summary?: {
-    suggestion: string;
-    reason: string;
-  };
-  skills?: {
-    suggestions: string[];
-    reason: string;
-  };
-  experience?: {
-    index: number;
-    field: string;
-    suggestion: string;
-    reason: string;
-  }[];
-  education?: {
-    index: number;
-    field: string;
-    suggestion: string;
-    reason: string;
-  }[];
-}
-
-interface OptimizationHistoryItem {
-  timestamp: string;
-  suggestions: CvSuggestion;
-  jobTitle?: string;
-  jobDescription?: string;
-}
-
 interface CvState {
   list: AppStoreState<Cv[]>;
   details: {
     data: Cv[];
-    loadingState: LoadingState;
-    errors: string | null;
-  };
-  optimization: {
-    suggestions: CvSuggestion | null;
-    history: OptimizationHistoryItem[];
     loadingState: LoadingState;
     errors: string | null;
   };
@@ -170,12 +94,6 @@ const initialState: CvState = {
   },
   details: {
     data: [],
-    loadingState: LoadingState.init,
-    errors: null,
-  },
-  optimization: {
-    suggestions: null,
-    history: [],
     loadingState: LoadingState.init,
     errors: null,
   },
@@ -234,25 +152,6 @@ const cvSlice = createSlice({
       state.details.data = state.details.data.filter(
         (cv) => cv.id !== action.payload,
       );
-    },
-    // Optimization actions
-    clearOptimizationSuggestions(state) {
-      state.optimization.suggestions = null;
-      state.optimization.loadingState = LoadingState.init;
-      state.optimization.errors = null;
-    },
-    saveToOptimizationHistory(
-      state,
-      action: PayloadAction<OptimizationHistoryItem>,
-    ) {
-      state.optimization.history.push(action.payload);
-      // Keep only the last 10 items in history
-      if (state.optimization.history.length > 10) {
-        state.optimization.history = state.optimization.history.slice(-10);
-      }
-    },
-    restoreFromHistory(state, action: PayloadAction<CvSuggestion>) {
-      state.optimization.suggestions = action.payload;
     },
   },
   extraReducers: (builder) => {
@@ -358,40 +257,6 @@ const cvSlice = createSlice({
       .addCase(deleteCvById.rejected, (state, action) => {
         state.details.loadingState = LoadingState.loaded;
         state.details.errors = action.error.message || 'Failed to delete CV';
-      })
-      .addCase(optimizeCvById.pending, (state) => {
-        state.optimization.loadingState = LoadingState.loading;
-        state.optimization.errors = null;
-      })
-      .addCase(optimizeCvById.fulfilled, (state, action) => {
-        state.optimization.suggestions = action.payload.suggestions;
-
-        // Save to history
-        if (action.payload.suggestions) {
-          const historyItem: OptimizationHistoryItem = {
-            timestamp: new Date().toISOString(),
-            suggestions: action.payload.suggestions,
-            jobTitle: action.payload.jobTitle,
-            jobDescription: action.payload.jobDescription,
-          };
-          state.optimization.history.push(historyItem);
-
-          // Keep only the last 10 items in history
-          if (state.optimization.history.length > 10) {
-            state.optimization.history = state.optimization.history.slice(-10);
-          }
-        }
-
-        // Note: We no longer automatically update the CV in the details state
-        // The optimizedCv will only be applied when the user explicitly clicks apply
-
-        state.optimization.loadingState = LoadingState.loaded;
-        state.optimization.errors = null;
-      })
-      .addCase(optimizeCvById.rejected, (state, action) => {
-        state.optimization.loadingState = LoadingState.loaded;
-        state.optimization.errors =
-          action.error.message || 'Failed to optimize CV';
       });
   },
 });
@@ -406,9 +271,6 @@ export const {
   setCvDetailFailure,
   clearCvDetail,
   removeCvDetail,
-  clearOptimizationSuggestions,
-  saveToOptimizationHistory,
-  restoreFromHistory,
 } = cvSlice.actions;
 
 export default cvSlice.reducer;
@@ -428,18 +290,6 @@ export const selectCvDetailLoadingState = (state: RootState) =>
 export const selectCvDetailErrors = (state: RootState) =>
   state.cv.details.errors;
 
-// Optimization selectors
-export const selectCvOptimizationSuggestions = (state: RootState) =>
-  state.cv.optimization.suggestions;
-export const selectCvOptimizationLoadingState = (state: RootState) =>
-  state.cv.optimization.loadingState;
-export const selectCvOptimizationErrors = (state: RootState) =>
-  state.cv.optimization.errors;
-
-// Add selectors for history
-export const selectCvOptimizationHistory = (state: RootState) =>
-  state.cv.optimization.history;
-
 // Custom hooks for list
 export const useCvs = () => useAppSelector(selectCv);
 export const useCvLoadingState = () => useAppSelector(selectCvLoadingState);
@@ -452,15 +302,3 @@ export const useCvDetailById = (id?: string) =>
 export const useCvDetailLoadingState = () =>
   useAppSelector(selectCvDetailLoadingState);
 export const useCvDetailErrors = () => useAppSelector(selectCvDetailErrors);
-
-// Custom hooks for optimization
-export const useCvOptimizationSuggestions = () =>
-  useAppSelector(selectCvOptimizationSuggestions);
-export const useCvOptimizationLoadingState = () =>
-  useAppSelector(selectCvOptimizationLoadingState);
-export const useCvOptimizationErrors = () =>
-  useAppSelector(selectCvOptimizationErrors);
-
-// Add custom hooks for history
-export const useCvOptimizationHistory = () =>
-  useAppSelector(selectCvOptimizationHistory);

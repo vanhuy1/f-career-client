@@ -5,7 +5,6 @@ import { useForm } from 'react-hook-form';
 import { useState, useEffect } from 'react';
 import type { z } from 'zod';
 import { ImageIcon, Loader2 } from 'lucide-react';
-import Image from 'next/image';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,6 +28,7 @@ import { userService } from '@/services/api/auth/user-api';
 
 import FileUploader from '@/components/common/FileUploader';
 import { SupabaseBucket, SupabaseFolder } from '@/enums/supabase';
+import Image from 'next/image';
 
 export default function SettingsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);

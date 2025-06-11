@@ -1,9 +1,9 @@
-const ApplicantPage = () => {
+import ApplicantTable from "@/app/(company)/_components/applicants/applicant-table"
+
+export default function Home() {
   return (
-    <div>
-      <h1>Applicant List</h1>
-      {/* Add your applicant list component here */}
+    <div className="min-h-screen bg-gray-50">
+      <ApplicantTable />
     </div>
-  );
-};
-export default ApplicantPage;
+  )
+}

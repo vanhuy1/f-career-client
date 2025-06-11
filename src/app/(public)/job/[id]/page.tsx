@@ -23,6 +23,8 @@ import JobDetailError from './components/JobDetailError';
 import JobDetailNotFound from './components/JobDetailNotFound';
 import JobDetailContent from './components/JobDetailContent';
 import JobDetailSidebar from './components/JobDetailSidebar';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import StatusBadge from '@/app/(candidate)/_components/applications-list/StatusBadge';
 
 export default function JobDetailPage() {
   const params = useParams();
@@ -87,8 +89,39 @@ export default function JobDetailPage() {
         jobType={job.typeOfEmployment}
       />
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-        <JobDetailContent job={job} />
-        <JobDetailSidebar job={job} />
+        <div className="lg:col-span-2">
+          <JobDetailContent job={job} />
+        </div>
+        <div className="space-y-8">
+          <Card>
+            <CardHeader>
+              <CardTitle>Application Status</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-sm text-gray-500">Current Status</h3>
+                  <div className="mt-1">
+                    <StatusBadge status={"OK"} />
+                  </div>
+                </div>
+                <div>
+                  <h3 className="text-sm text-gray-500">Applied On</h3>
+                  <p className="font-medium">
+                    {new Date().toLocaleDateString()}
+                  </p>
+                </div>
+                <div>
+                  <h3 className="text-sm text-gray-500">Last Updated</h3>
+                  <p className="font-medium">
+                    {new Date().toLocaleDateString()}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <JobDetailSidebar job={job} />
+        </div>
       </div>
     </div>
   );

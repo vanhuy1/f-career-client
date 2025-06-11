@@ -5,7 +5,6 @@ import CV from '../components/CV';
 import CV2 from '../components/CV2';
 import CV3 from '../components/CV3';
 import PageButtons from '../components/PageButtons';
-import CvOptimizer from '../components/CvOptimizer';
 import { useState, useRef, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import { useParams } from 'next/navigation';
@@ -232,11 +231,9 @@ export default function CvBuilderPage() {
 
   const handleDeleteCertification = (index: number) => {
     if (localCv) {
-      const updatedCertifications = [...localCv.certifications];
-      updatedCertifications.splice(index, 1);
       setLocalCv({
         ...localCv,
-        certifications: updatedCertifications,
+        certifications: localCv.certifications.filter((_, i) => i !== index),
       });
     }
   };
@@ -254,11 +251,9 @@ export default function CvBuilderPage() {
 
   const handleDeleteEducation = (index: number) => {
     if (localCv) {
-      const updatedEducation = [...localCv.education];
-      updatedEducation.splice(index, 1);
       setLocalCv({
         ...localCv,
-        education: updatedEducation,
+        education: localCv.education.filter((_, i) => i !== index),
       });
     }
   };
@@ -276,11 +271,9 @@ export default function CvBuilderPage() {
 
   const handleDeleteExperience = (index: number) => {
     if (localCv) {
-      const updatedExperience = [...localCv.experience];
-      updatedExperience.splice(index, 1);
       setLocalCv({
         ...localCv,
-        experience: updatedExperience,
+        experience: localCv.experience.filter((_, i) => i !== index),
       });
     }
   };
@@ -293,6 +286,7 @@ export default function CvBuilderPage() {
 
   const handleSelectTemplate = (template: number) => {
     setTemplate(template);
+    handleUpdateCv('templateId', template); // Update localCv.templateId
   };
 
   const handleResetCv = () => {
@@ -341,21 +335,25 @@ export default function CvBuilderPage() {
   };
 
   const handleSave = async () => {
-    if (!localCv || !cvId) return;
+    if (!cvId || !localCv) {
+      console.error('Cannot save CV: Missing ID or data');
+      return;
+    }
+
+    const cvData = {
+      ...localCv,
+      templateId: template,
+    };
 
     try {
-      await dispatch(
-        updateCvById({
-          cvId,
-          cv: { ...localCv, templateId: template },
-        }),
-      ).unwrap();
-    } catch (error) {
-      console.error('Failed to save CV:', error);
+      await dispatch(updateCvById({ cvId, cv: cvData })).unwrap();
+    } catch (err) {
+      console.error('Failed to save CV:', err);
     }
   };
 
-  if (isLoading || !localCv) {
+  // Early returns
+  if (isLoading) {
     return <LoadingScreen />;
   }
 
@@ -368,150 +366,136 @@ export default function CvBuilderPage() {
     );
   }
 
-  return (
-    <div className="container mx-auto p-4">
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-bold">CV Builder</h1>
-        <div className="flex flex-wrap gap-2">
-          <CvOptimizer
-            cvId={cvId}
-            onUpdateCv={(
-              updatedCvOrUpdater: Partial<Cv> | ((cv: Cv) => Cv),
-            ) => {
-              if (localCv) {
-                if (typeof updatedCvOrUpdater === 'function') {
-                  // Handle function updater
-                  setLocalCv(updatedCvOrUpdater(localCv));
-                } else {
-                  // Handle partial object update
-                  setLocalCv({ ...localCv, ...updatedCvOrUpdater });
-                }
-              }
-            }}
-          />
-        </div>
+  if (!cv || !cvId || !localCv) {
+    return (
+      <div className="py-8 text-center">
+        <h2 className="text-2xl font-bold">CV Not Found</h2>
+        <p className="text-gray-600">The requested CV could not be found.</p>
       </div>
+    );
+  }
 
-      <div className="relative flex h-full w-full">
-        <Head>
-          <title>CV Builder</title>
-          <meta
-            name="Cv Builder"
-            content="Beautifully designed CV builder where you can see the changes at the same time"
-          />
-          <link rel="icon" href="/fav.png" />
-        </Head>
-        <main className="m-auto flex">
-          <div className="relative m-auto mt-5 md:absolute md:top-0 md:right-0 md:bottom-0 md:left-0 md:flex md:h-fit md:w-fit">
-            <div>
-              <section
-                ref={cvRef}
-                className={`min-h-[1188px] w-[840px] bg-white p-8 transition-all md:rounded-md md:border md:border-slate-300 md:shadow-lg print:border-none print:shadow-none template-${template}`}
-                style={{
-                  transform: `scale(${scale})`,
-                  transformOrigin: 'top left',
-                  height: 'fit-content',
-                }}
-              >
-                {template === 1 ? (
-                  <CV
-                    cv={localCv}
-                    cvId={cvId}
-                    onUpdateCv={handleUpdateCv}
-                    onUploadImage={handleImageUpload}
-                    onAddTag={handleAddTag}
-                    onRemoveTag={handleRemoveTag}
-                    onAddExperience={handleAddExperience}
-                    onAddEducation={handleAddEducation}
-                    onAddCertification={handleAddCertification}
-                    onUpdateCertification={handleUpdateCertification}
-                    onDeleteCertification={handleDeleteCertification}
-                    onUpdateEducation={handleUpdateEducation}
-                    onDeleteEducation={handleDeleteEducation}
-                    onUpdateExperience={handleUpdateExperience}
-                    onDeleteExperience={handleDeleteExperience}
-                  />
-                ) : template === 2 ? (
-                  <CV2
-                    cv={localCv}
-                    cvId={cvId}
-                    onUpdateCv={handleUpdateCv}
-                    onUploadImage={handleImageUpload}
-                    onAddTag={handleAddTag}
-                    onRemoveTag={handleRemoveTag}
-                    onAddExperience={handleAddExperience}
-                    onAddEducation={handleAddEducation}
-                    onAddCertification={handleAddCertification}
-                    onUpdateCertification={handleUpdateCertification}
-                    onDeleteCertification={handleDeleteCertification}
-                    onUpdateEducation={handleUpdateEducation}
-                    onDeleteEducation={handleDeleteEducation}
-                    onUpdateExperience={handleUpdateExperience}
-                    onDeleteExperience={handleDeleteExperience}
-                  />
-                ) : template === 3 ? (
-                  <CV3
-                    cv={localCv}
-                    cvId={cvId}
-                    onUpdateCv={handleUpdateCv}
-                    onUploadImage={handleImageUpload}
-                    onAddTag={handleAddTag}
-                    onRemoveTag={handleRemoveTag}
-                    onAddExperience={handleAddExperience}
-                    onAddEducation={handleAddEducation}
-                    onAddCertification={handleAddCertification}
-                    onUpdateCertification={handleUpdateCertification}
-                    onDeleteCertification={handleDeleteCertification}
-                    onUpdateEducation={handleUpdateEducation}
-                    onDeleteEducation={handleDeleteEducation}
-                    onUpdateExperience={handleUpdateExperience}
-                    onDeleteExperience={handleDeleteExperience}
-                  />
-                ) : (
-                  <div className="text-center text-red-600">
-                    Invalid template selected
-                  </div>
-                )}
-              </section>
-            </div>
+  // Main render
+  return (
+    <div className="relative flex h-full w-full">
+      <Head>
+        <title>CV Builder</title>
+        <meta
+          name="Cv Builder"
+          content="Beautifully designed CV builder where you can see the changes at the same time"
+        />
+        <link rel="icon" href="/fav.png" />
+      </Head>
+      <main className="m-auto flex">
+        <div className="relative m-auto mt-5 md:absolute md:top-0 md:right-0 md:bottom-0 md:left-0 md:flex md:h-fit md:w-fit">
+          <div>
+            <section
+              ref={cvRef}
+              className={`min-h-[1188px] w-[840px] bg-white p-8 transition-all md:rounded-md md:border md:border-slate-300 md:shadow-lg print:border-none print:shadow-none template-${template}`}
+              style={{
+                transform: `scale(${scale})`,
+                transformOrigin: 'top left',
+                height: 'fit-content',
+              }}
+            >
+              {template === 1 ? (
+                <CV
+                  cv={localCv}
+                  cvId={cvId}
+                  onUpdateCv={handleUpdateCv}
+                  onUploadImage={handleImageUpload}
+                  onAddTag={handleAddTag}
+                  onRemoveTag={handleRemoveTag}
+                  onAddExperience={handleAddExperience}
+                  onAddEducation={handleAddEducation}
+                  onAddCertification={handleAddCertification}
+                  onUpdateCertification={handleUpdateCertification}
+                  onDeleteCertification={handleDeleteCertification}
+                  onUpdateEducation={handleUpdateEducation}
+                  onDeleteEducation={handleDeleteEducation}
+                  onUpdateExperience={handleUpdateExperience}
+                  onDeleteExperience={handleDeleteExperience}
+                />
+              ) : template === 2 ? (
+                <CV2
+                  cv={localCv}
+                  cvId={cvId}
+                  onUpdateCv={handleUpdateCv}
+                  onUploadImage={handleImageUpload}
+                  onAddTag={handleAddTag}
+                  onRemoveTag={handleRemoveTag}
+                  onAddExperience={handleAddExperience}
+                  onAddEducation={handleAddEducation}
+                  onAddCertification={handleAddCertification}
+                  onUpdateCertification={handleUpdateCertification}
+                  onDeleteCertification={handleDeleteCertification}
+                  onUpdateEducation={handleUpdateEducation}
+                  onDeleteEducation={handleDeleteEducation}
+                  onUpdateExperience={handleUpdateExperience}
+                  onDeleteExperience={handleDeleteExperience}
+                />
+              ) : template === 3 ? (
+                <CV3
+                  cv={localCv}
+                  cvId={cvId}
+                  onUpdateCv={handleUpdateCv}
+                  onUploadImage={handleImageUpload}
+                  onAddTag={handleAddTag}
+                  onRemoveTag={handleRemoveTag}
+                  onAddExperience={handleAddExperience}
+                  onAddEducation={handleAddEducation}
+                  onAddCertification={handleAddCertification}
+                  onUpdateCertification={handleUpdateCertification}
+                  onDeleteCertification={handleDeleteCertification}
+                  onUpdateEducation={handleUpdateEducation}
+                  onDeleteEducation={handleDeleteEducation}
+                  onUpdateExperience={handleUpdateExperience}
+                  onDeleteExperience={handleDeleteExperience}
+                />
+              ) : (
+                <div className="text-center text-red-600">
+                  Invalid template selected
+                </div>
+              )}
+            </section>
           </div>
-          <PageButtons
-            onPrint={handlePrint}
-            onSave={handleSave}
-            onReset={handleResetCv}
-            onSampleData={handleSetSampleData}
-            onScaleUp={handleScaleUp}
-            onScaleDown={handleScaleDown}
-            onShowSettings={() => setShowSettings(true)}
-          />
-        </main>
-        <div
-          className={`no-print fixed top-0 right-0 h-full w-[400px] transform overflow-y-auto border-l bg-white p-6 shadow-lg transition-transform dark:bg-gray-900 ${
-            showSettings ? 'translate-x-0' : 'translate-x-full'
-          }`}
-        >
-          <Settings
-            template={template}
-            onSetTemplate={handleSelectTemplate}
-            onSaveTemplate={handleSave}
-            onClose={() => setShowSettings(false)}
-            cv={localCv}
-            cvId={cvId}
-            onUpdateCv={handleUpdateCv}
-            onUploadImage={handleImageUpload}
-            onAddTag={handleAddTag}
-            onRemoveTag={handleRemoveTag}
-            onAddExperience={handleAddExperience}
-            onAddEducation={handleAddEducation}
-            onAddCertification={handleAddCertification}
-            onUpdateCertification={handleUpdateCertification}
-            onDeleteCertification={handleDeleteCertification}
-            onUpdateEducation={handleUpdateEducation}
-            onDeleteEducation={handleDeleteEducation}
-            onUpdateExperience={handleUpdateExperience}
-            onDeleteExperience={handleDeleteExperience}
-          />
         </div>
+        <PageButtons
+          onPrint={handlePrint}
+          onSave={handleSave}
+          onReset={handleResetCv}
+          onSampleData={handleSetSampleData}
+          onScaleUp={handleScaleUp}
+          onScaleDown={handleScaleDown}
+          onShowSettings={() => setShowSettings(true)}
+        />
+      </main>
+      <div
+        className={`no-print fixed top-0 right-0 h-full w-[400px] transform overflow-y-auto border-l bg-white p-6 shadow-lg transition-transform dark:bg-gray-900 ${
+          showSettings ? 'translate-x-0' : 'translate-x-full'
+        }`}
+      >
+        <Settings
+          template={template}
+          onSetTemplate={handleSelectTemplate}
+          onSaveTemplate={handleSave}
+          onClose={() => setShowSettings(false)}
+          cv={localCv}
+          cvId={cvId}
+          onUpdateCv={handleUpdateCv}
+          onUploadImage={handleImageUpload}
+          onAddTag={handleAddTag}
+          onRemoveTag={handleRemoveTag}
+          onAddExperience={handleAddExperience}
+          onAddEducation={handleAddEducation}
+          onAddCertification={handleAddCertification}
+          onUpdateCertification={handleUpdateCertification}
+          onDeleteCertification={handleDeleteCertification}
+          onUpdateEducation={handleUpdateEducation}
+          onDeleteEducation={handleDeleteEducation}
+          onUpdateExperience={handleUpdateExperience}
+          onDeleteExperience={handleDeleteExperience}
+        />
       </div>
     </div>
   );

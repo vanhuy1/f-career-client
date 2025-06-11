@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import ApplyDialog from '@/app/(public)/_components/apply-dialog';
+import { useUser } from '@/services/state/userSlice';
 
 interface ApplyJobButtonProps {
   jobTitle: string;
@@ -23,6 +24,15 @@ export default function ApplyJobButton({
 
   const openDialog = () => setIsDialogOpen(true);
   const closeDialog = () => setIsDialogOpen(false);
+  const user = useUser()
+
+  const ApplicantInfo = {
+    name: user?.data.name ?? "",
+    email: user?.data.email ?? "",
+    phone: user?.data.phone ?? "",
+    gender: user?.data.gender ?? "",
+    dateOfBirth: user?.data.dob ?? "",
+  }
 
   return (
     <>
@@ -41,6 +51,7 @@ export default function ApplyJobButton({
         location={location}
         jobType={jobType}
         jobId={jobId}
+        applicantInfo={ApplicantInfo}
       />
     </>
   );

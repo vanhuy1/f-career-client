@@ -1,0 +1,662 @@
+{
+    "applications": [
+        {
+            "id": "app-001",
+            "title": "Frontend Developer Application",
+            "dicription": "Application for the Frontend Developer position.",
+            "company": {
+                "id": "comp-001",
+                "companyName": "Tech Innovators",
+                "logoUrl": "https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.shutterstock.com%2Fsearch%2Fcompany-logo-png&psig=AOvVaw0yc7OZxkVr-4vQu3vADHAU&ust=1749111336746000&source=images&cd=vfe&opi=89978449&ved=0CBQQjRxqFwoTCODn19Gp140DFQAAAAAdAAAAABAE",
+                "address": [
+                    "123 Main St, City"
+                ],
+                "website": "https://techinnovators.com",
+                "industry": "Software",
+                "description": "A leading software company.",
+                "openPositions": [],
+                "createdAt": "2025-06-01T10:00:00Z",
+                "updatedAt": "2025-06-01T10:00:00Z"
+            },
+            "candidate": {
+                "id": "cand-001",
+                "name": "Jane Doe",
+                "title": "Frontend Developer",
+                "company": "Tech Innovators",
+                "location": "City",
+                "avatar": "https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.shutterstock.com%2Fsearch%2Fcompany-logo-png&psig=AOvVaw0yc7OZxkVr-4vQu3vADHAU&ust=1749111336746000&source=images&cd=vfe&opi=89978449&ved=0CBQQjRxqFwoTCODn19Gp140DFQAAAAAdAAAAABAE",
+                "coverImage": null,
+                "isOpenToOpportunities": true,
+                "about": "Passionate developer.",
+                "birthDate": "1995-05-10",
+                "contact": {
+                    "email": "jane@example.com",
+                    "phone": "123456789",
+                    "languages": [
+                        "English"
+                    ]
+                },
+                "social": {
+                    "instagram": "",
+                    "twitter": "",
+                    "website": ""
+                },
+                "experiences": [],
+                "education": [],
+                "skills": [
+                    "React",
+                    "TypeScript"
+                ],
+                "portfolios": []
+            },
+            "job": {
+                "id": "job-001",
+                "title": "Frontend Developer",
+                "category": {
+                    "id": "cat-001",
+                    "name": "Engineering"
+                },
+                "company": {
+                    "id": "comp-001",
+                    "companyName": "Tech Innovators",
+                    "logoUrl": "https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.shutterstock.com%2Fsearch%2Fcompany-logo-png&psig=AOvVaw0yc7OZxkVr-4vQu3vADHAU&ust=1749111336746000&source=images&cd=vfe&opi=89978449&ved=0CBQQjRxqFwoTCODn19Gp140DFQAAAAAdAAAAABAE",
+                    "address": "123 Main St, City"
+                },
+                "responsibility": [
+                    "Develop UI",
+                    "Collaborate with team"
+                ],
+                "jobFitAttributes": [
+                    "Team player"
+                ],
+                "niceToHave": [
+                    "GraphQL"
+                ],
+                "description": "Build and maintain web applications.",
+                "location": "Remote",
+                "salaryMin": 1000,
+                "salaryMax": 2000,
+                "skills": [],
+                "experienceYears": 2,
+                "status": "OPEN",
+                "isVip": false,
+                "deadline": "2025-07-01",
+                "typeOfEmployment": "FullTime",
+                "benefit": [
+                    "Health insurance"
+                ],
+                "createdAt": "2025-06-01T10:00:00Z",
+                "updatedAt": "2025-06-01T10:00:00Z"
+            },
+            "status": "IN_REVIEW",
+            "cvFile": "https://example.com/cv/jane-doe.pdf",
+            "createdAt": "2025-06-02T09:00:00Z",
+            "updatedAt": "2025-06-02T09:00:00Z"
+        },
+        {
+            "id": "app-002",
+            "title": "Backend Developer Application",
+            "dicription": "Application for the Backend Developer position.",
+            "company": {
+                "id": "comp-002",
+                "companyName": "Cloud Solutions",
+                "logoUrl": "https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.shutterstock.com%2Fsearch%2Fcompany-logo-png&psig=AOvVaw0yc7OZxkVr-4vQu3vADHAU&ust=1749111336746000&source=images&cd=vfe&opi=89978449&ved=0CBQQjRxqFwoTCODn19Gp140DFQAAAAAdAAAAABAE",
+                "address": [
+                    "456 Cloud Ave, Sky City"
+                ],
+                "website": "https://cloudsolutions.com",
+                "industry": "Cloud Computing",
+                "description": "Cloud infrastructure and services.",
+                "openPositions": [],
+                "createdAt": "2025-05-15T09:00:00Z",
+                "updatedAt": "2025-05-15T09:00:00Z"
+            },
+            "candidate": {
+                "id": "cand-002",
+                "name": "John Smith",
+                "title": "Backend Developer",
+                "company": "Cloud Solutions",
+                "location": "Sky City",
+                "avatar": "https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.shutterstock.com%2Fsearch%2Fcompany-logo-png&psig=AOvVaw0yc7OZxkVr-4vQu3vADHAU&ust=1749111336746000&source=images&cd=vfe&opi=89978449&ved=0CBQQjRxqFwoTCODn19Gp140DFQAAAAAdAAAAABAE",
+                "coverImage": null,
+                "isOpenToOpportunities": false,
+                "about": "Experienced backend engineer.",
+                "birthDate": "1990-03-22",
+                "contact": {
+                    "email": "john@example.com",
+                    "phone": "987654321",
+                    "languages": [
+                        "English",
+                        "German"
+                    ]
+                },
+                "social": {
+                    "instagram": "",
+                    "twitter": "",
+                    "website": ""
+                },
+                "experiences": [],
+                "education": [],
+                "skills": [
+                    "Node.js",
+                    "MongoDB"
+                ],
+                "portfolios": []
+            },
+            "job": {
+                "id": "job-002",
+                "title": "Backend Developer",
+                "category": {
+                    "id": "cat-002",
+                    "name": "Engineering"
+                },
+                "company": {
+                    "id": "comp-002",
+                    "companyName": "Cloud Solutions",
+                    "logoUrl": "https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.shutterstock.com%2Fsearch%2Fcompany-logo-png&psig=AOvVaw0yc7OZxkVr-4vQu3vADHAU&ust=1749111336746000&source=images&cd=vfe&opi=89978449&ved=0CBQQjRxqFwoTCODn19Gp140DFQAAAAAdAAAAABAE",
+                    "address": "456 Cloud Ave, Sky City"
+                },
+                "responsibility": [
+                    "Build APIs",
+                    "Database management"
+                ],
+                "jobFitAttributes": [
+                    "Problem solver"
+                ],
+                "niceToHave": [
+                    "AWS"
+                ],
+                "description": "Develop and maintain backend services.",
+                "location": "Onsite",
+                "salaryMin": 1200,
+                "salaryMax": 2500,
+                "skills": [],
+                "experienceYears": 3,
+                "status": "OPEN",
+                "isVip": false,
+                "deadline": "2025-08-01",
+                "typeOfEmployment": "FullTime",
+                "benefit": [
+                    "Flexible hours"
+                ],
+                "createdAt": "2025-05-15T09:00:00Z",
+                "updatedAt": "2025-05-15T09:00:00Z"
+            },
+            "status": "INTERVIEWING",
+            "cvFile": "https://example.com/cv/john-smith.pdf",
+            "createdAt": "2025-06-03T10:00:00Z",
+            "updatedAt": "2025-06-03T10:00:00Z"
+        },
+        {
+            "id": "app-003",
+            "title": "UI/UX Designer Application",
+            "dicription": "Application for the UI/UX Designer position.",
+            "company": {
+                "id": "comp-003",
+                "companyName": "Design Studio",
+                "logoUrl": "https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.shutterstock.com%2Fsearch%2Fcompany-logo-png&psig=AOvVaw0yc7OZxkVr-4vQu3vADHAU&ust=1749111336746000&source=images&cd=vfe&opi=89978449&ved=0CBQQjRxqFwoTCODn19Gp140DFQAAAAAdAAAAABAE",
+                "address": [
+                    "789 Art Blvd, Design City"
+                ],
+                "website": "https://designstudio.com",
+                "industry": "Design",
+                "description": "Creative design agency.",
+                "openPositions": [],
+                "createdAt": "2025-04-10T08:00:00Z",
+                "updatedAt": "2025-04-10T08:00:00Z"
+            },
+            "candidate": {
+                "id": "cand-003",
+                "name": "Emily Lee",
+                "title": "UI/UX Designer",
+                "company": "Design Studio",
+                "location": "Design City",
+                "avatar": "https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.shutterstock.com%2Fsearch%2Fcompany-logo-png&psig=AOvVaw0yc7OZxkVr-4vQu3vADHAU&ust=1749111336746000&source=images&cd=vfe&opi=89978449&ved=0CBQQjRxqFwoTCODn19Gp140DFQAAAAAdAAAAABAE",
+                "coverImage": null,
+                "isOpenToOpportunities": true,
+                "about": "Passionate about user experience.",
+                "birthDate": "1992-11-05",
+                "contact": {
+                    "email": "emily@example.com",
+                    "phone": "555123456",
+                    "languages": [
+                        "English",
+                        "French"
+                    ]
+                },
+                "social": {
+                    "instagram": "",
+                    "twitter": "",
+                    "website": ""
+                },
+                "experiences": [],
+                "education": [],
+                "skills": [
+                    "Figma",
+                    "Sketch"
+                ],
+                "portfolios": []
+            },
+            "job": {
+                "id": "job-003",
+                "title": "UI/UX Designer",
+                "category": {
+                    "id": "cat-003",
+                    "name": "Design"
+                },
+                "company": {
+                    "id": "comp-003",
+                    "companyName": "Design Studio",
+                    "logoUrl": "https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.shutterstock.com%2Fsearch%2Fcompany-logo-png&psig=AOvVaw0yc7OZxkVr-4vQu3vADHAU&ust=1749111336746000&source=images&cd=vfe&opi=89978449&ved=0CBQQjRxqFwoTCODn19Gp140DFQAAAAAdAAAAABAE",
+                    "address": "789 Art Blvd, Design City"
+                },
+                "responsibility": [
+                    "Design interfaces",
+                    "User research"
+                ],
+                "jobFitAttributes": [
+                    "Creative thinker"
+                ],
+                "niceToHave": [
+                    "Animation"
+                ],
+                "description": "Create user-friendly designs.",
+                "location": "Remote",
+                "salaryMin": 900,
+                "salaryMax": 1800,
+                "skills": [],
+                "experienceYears": 2,
+                "status": "OPEN",
+                "isVip": true,
+                "deadline": "2025-09-01",
+                "typeOfEmployment": "FullTime",
+                "benefit": [
+                    "Remote work"
+                ],
+                "createdAt": "2025-04-10T08:00:00Z",
+                "updatedAt": "2025-04-10T08:00:00Z"
+            },
+            "status": "ASSESSMENT",
+            "cvFile": "https://example.com/cv/emily-lee.pdf",
+            "createdAt": "2025-06-03T11:00:00Z",
+            "updatedAt": "2025-06-03T11:00:00Z"
+        },
+        {
+            "id": "app-004",
+            "title": "QA Engineer Application",
+            "dicription": "Application for the QA Engineer position.",
+            "company": {
+                "id": "comp-004",
+                "companyName": "Quality Matters",
+                "logoUrl": "https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.shutterstock.com%2Fsearch%2Fcompany-logo-png&psig=AOvVaw0yc7OZxkVr-4vQu3vADHAU&ust=1749111336746000&source=images&cd=vfe&opi=89978449&ved=0CBQQjRxqFwoTCODn19Gp140DFQAAAAAdAAAAABAE",
+                "address": [
+                    "321 Test Rd, QA City"
+                ],
+                "website": "https://qualitymatters.com",
+                "industry": "Quality Assurance",
+                "description": "Experts in software testing.",
+                "openPositions": [],
+                "createdAt": "2025-03-20T07:00:00Z",
+                "updatedAt": "2025-03-20T07:00:00Z"
+            },
+            "candidate": {
+                "id": "cand-004",
+                "name": "Michael Brown",
+                "title": "QA Engineer",
+                "company": "Quality Matters",
+                "location": "QA City",
+                "avatar": "https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.shutterstock.com%2Fsearch%2Fcompany-logo-png&psig=AOvVaw0yc7OZxkVr-4vQu3vADHAU&ust=1749111336746000&source=images&cd=vfe&opi=89978449&ved=0CBQQjRxqFwoTCODn19Gp140DFQAAAAAdAAAAABAE",
+                "coverImage": null,
+                "isOpenToOpportunities": false,
+                "about": "Detail-oriented QA engineer.",
+                "birthDate": "1988-07-19",
+                "contact": {
+                    "email": "michael@example.com",
+                    "phone": "444987654",
+                    "languages": [
+                        "English"
+                    ]
+                },
+                "social": {
+                    "instagram": "",
+                    "twitter": "",
+                    "website": ""
+                },
+                "experiences": [],
+                "education": [],
+                "skills": [
+                    "Selenium",
+                    "Jest"
+                ],
+                "portfolios": []
+            },
+            "job": {
+                "id": "job-004",
+                "title": "QA Engineer",
+                "category": {
+                    "id": "cat-004",
+                    "name": "Quality Assurance"
+                },
+                "company": {
+                    "id": "comp-004",
+                    "companyName": "Quality Matters",
+                    "logoUrl": "https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.shutterstock.com%2Fsearch%2Fcompany-logo-png&psig=AOvVaw0yc7OZxkVr-4vQu3vADHAU&ust=1749111336746000&source=images&cd=vfe&opi=89978449&ved=0CBQQjRxqFwoTCODn19Gp140DFQAAAAAdAAAAABAE",
+                    "address": "321 Test Rd, QA City"
+                },
+                "responsibility": [
+                    "Test software",
+                    "Report bugs"
+                ],
+                "jobFitAttributes": [
+                    "Attention to detail"
+                ],
+                "niceToHave": [
+                    "Automation"
+                ],
+                "description": "Ensure software quality.",
+                "location": "Onsite",
+                "salaryMin": 1100,
+                "salaryMax": 2100,
+                "skills": [],
+                "experienceYears": 4,
+                "status": "OPEN",
+                "isVip": false,
+                "deadline": "2025-10-01",
+                "typeOfEmployment": "FullTime",
+                "benefit": [
+                    "Health insurance",
+                    "Gym membership"
+                ],
+                "createdAt": "2025-03-20T07:00:00Z",
+                "updatedAt": "2025-03-20T07:00:00Z"
+            },
+            "status": "OFFERED",
+            "cvFile": "https://example.com/cv/michael-brown.pdf",
+            "createdAt": "2025-06-03T12:00:00Z",
+            "updatedAt": "2025-06-03T12:00:00Z"
+        },
+        {
+            "id": "app-005",
+            "title": "DevOps Engineer Application",
+            "dicription": "Application for the DevOps Engineer position.",
+            "company": {
+                "id": "comp-005",
+                "companyName": "Ops Experts",
+                "logoUrl": "https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.shutterstock.com%2Fsearch%2Fcompany-logo-png&psig=AOvVaw0yc7OZxkVr-4vQu3vADHAU&ust=1749111336746000&source=images&cd=vfe&opi=89978449&ved=0CBQQjRxqFwoTCODn19Gp140DFQAAAAAdAAAAABAE",
+                "address": [
+                    "654 Infra St, Ops City"
+                ],
+                "website": "https://opsexperts.com",
+                "industry": "IT Services",
+                "description": "DevOps and infrastructure specialists.",
+                "openPositions": [],
+                "createdAt": "2025-02-12T08:00:00Z",
+                "updatedAt": "2025-02-12T08:00:00Z"
+            },
+            "candidate": {
+                "id": "cand-005",
+                "name": "Sara Kim",
+                "title": "DevOps Engineer",
+                "company": "Ops Experts",
+                "location": "Ops City",
+                "avatar": "https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.shutterstock.com%2Fsearch%2Fcompany-logo-png&psig=AOvVaw0yc7OZxkVr-4vQu3vADHAU&ust=1749111336746000&source=images&cd=vfe&opi=89978449&ved=0CBQQjRxqFwoTCODn19Gp140DFQAAAAAdAAAAABAE",
+                "coverImage": null,
+                "isOpenToOpportunities": true,
+                "about": "DevOps enthusiast with cloud experience.",
+                "birthDate": "1993-09-14",
+                "contact": {
+                    "email": "sara@example.com",
+                    "phone": "333222111",
+                    "languages": [
+                        "English",
+                        "Korean"
+                    ]
+                },
+                "social": {
+                    "instagram": "",
+                    "twitter": "",
+                    "website": ""
+                },
+                "experiences": [],
+                "education": [],
+                "skills": [
+                    "Docker",
+                    "Kubernetes"
+                ],
+                "portfolios": []
+            },
+            "job": {
+                "id": "job-005",
+                "title": "DevOps Engineer",
+                "category": {
+                    "id": "cat-005",
+                    "name": "IT"
+                },
+                "company": {
+                    "id": "comp-005",
+                    "companyName": "Ops Experts",
+                    "logoUrl": "https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.shutterstock.com%2Fsearch%2Fcompany-logo-png&psig=AOvVaw0yc7OZxkVr-4vQu3vADHAU&ust=1749111336746000&source=images&cd=vfe&opi=89978449&ved=0CBQQjRxqFwoTCODn19Gp140DFQAAAAAdAAAAABAE",
+                    "address": "654 Infra St, Ops City"
+                },
+                "responsibility": [
+                    "Manage CI/CD",
+                    "Cloud infrastructure"
+                ],
+                "jobFitAttributes": [
+                    "Automation mindset"
+                ],
+                "niceToHave": [
+                    "Terraform"
+                ],
+                "description": "Maintain and automate infrastructure.",
+                "location": "Remote",
+                "salaryMin": 1300,
+                "salaryMax": 2300,
+                "skills": [],
+                "experienceYears": 3,
+                "status": "OPEN",
+                "isVip": false,
+                "deadline": "2025-11-01",
+                "typeOfEmployment": "FullTime",
+                "benefit": [
+                    "Remote work",
+                    "Stock options"
+                ],
+                "createdAt": "2025-02-12T08:00:00Z",
+                "updatedAt": "2025-02-12T08:00:00Z"
+            },
+            "status": "HIRED",
+            "cvFile": "https://example.com/cv/sara-kim.pdf",
+            "createdAt": "2025-06-03T13:00:00Z",
+            "updatedAt": "2025-06-03T13:00:00Z"
+        },
+        {
+            "id": "app-006",
+            "title": "Product Manager Application",
+            "dicription": "Application for the Product Manager position.",
+            "company": {
+                "id": "comp-006",
+                "companyName": "Productive Inc.",
+                "logoUrl": "https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.shutterstock.com%2Fsearch%2Fcompany-logo-png&psig=AOvVaw0yc7OZxkVr-4vQu3vADHAU&ust=1749111336746000&source=images&cd=vfe&opi=89978449&ved=0CBQQjRxqFwoTCODn19Gp140DFQAAAAAdAAAAABAE",
+                "address": [
+                    "987 Market St, Business City"
+                ],
+                "website": "https://productive.com",
+                "industry": "Product Management",
+                "description": "Leaders in product strategy.",
+                "openPositions": [],
+                "createdAt": "2025-01-20T09:00:00Z",
+                "updatedAt": "2025-01-20T09:00:00Z"
+            },
+            "candidate": {
+                "id": "cand-006",
+                "name": "Alex Turner",
+                "title": "Product Manager",
+                "company": "Productive Inc.",
+                "location": "Business City",
+                "avatar": "https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.shutterstock.com%2Fsearch%2Fcompany-logo-png&psig=AOvVaw0yc7OZxkVr-4vQu3vADHAU&ust=1749111336746000&source=images&cd=vfe&opi=89978449&ved=0CBQQjRxqFwoTCODn19Gp140DFQAAAAAdAAAAABAE",
+                "coverImage": null,
+                "isOpenToOpportunities": false,
+                "about": "Product leader with a tech background.",
+                "birthDate": "1987-12-02",
+                "contact": {
+                    "email": "alex@example.com",
+                    "phone": "222333444",
+                    "languages": [
+                        "English",
+                        "Spanish"
+                    ]
+                },
+                "social": {
+                    "instagram": "",
+                    "twitter": "",
+                    "website": ""
+                },
+                "experiences": [],
+                "education": [],
+                "skills": [
+                    "Agile",
+                    "Scrum"
+                ],
+                "portfolios": []
+            },
+            "job": {
+                "id": "job-006",
+                "title": "Product Manager",
+                "category": {
+                    "id": "cat-006",
+                    "name": "Product"
+                },
+                "company": {
+                    "id": "comp-006",
+                    "companyName": "Productive Inc.",
+                    "logoUrl": "https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.shutterstock.com%2Fsearch%2Fcompany-logo-png&psig=AOvVaw0yc7OZxkVr-4vQu3vADHAU&ust=1749111336746000&source=images&cd=vfe&opi=89978449&ved=0CBQQjRxqFwoTCODn19Gp140DFQAAAAAdAAAAABAE",
+                    "address": "987 Market St, Business City"
+                },
+                "responsibility": [
+                    "Define roadmap",
+                    "Lead teams"
+                ],
+                "jobFitAttributes": [
+                    "Leadership"
+                ],
+                "niceToHave": [
+                    "UX knowledge"
+                ],
+                "description": "Drive product vision and execution.",
+                "location": "Onsite",
+                "salaryMin": 2000,
+                "salaryMax": 3500,
+                "skills": [],
+                "experienceYears": 5,
+                "status": "OPEN",
+                "isVip": true,
+                "deadline": "2025-12-01",
+                "typeOfEmployment": "FullTime",
+                "benefit": [
+                    "Leadership training"
+                ],
+                "createdAt": "2025-01-20T09:00:00Z",
+                "updatedAt": "2025-01-20T09:00:00Z"
+            },
+            "status": "REJECTED",
+            "cvFile": "https://example.com/cv/alex-turner.pdf",
+            "createdAt": "2025-06-03T14:00:00Z",
+            "updatedAt": "2025-06-03T14:00:00Z"
+        },
+        {
+            "id": "app-007",
+            "title": "Mobile Developer Application",
+            "dicription": "Application for the Mobile Developer position.",
+            "company": {
+                "id": "comp-007",
+                "companyName": "App Creators",
+                "logoUrl": "https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.shutterstock.com%2Fsearch%2Fcompany-logo-png&psig=AOvVaw0yc7OZxkVr-4vQu3vADHAU&ust=1749111336746000&source=images&cd=vfe&opi=89978449&ved=0CBQQjRxqFwoTCODn19Gp140DFQAAAAAdAAAAABAE",
+                "address": [
+                    "321 Mobile Rd, App City"
+                ],
+                "website": "https://appcreators.com",
+                "industry": "Mobile Development",
+                "description": "Building next-gen mobile apps.",
+                "openPositions": [],
+                "createdAt": "2025-03-05T10:00:00Z",
+                "updatedAt": "2025-03-05T10:00:00Z"
+            },
+            "candidate": {
+                "id": "cand-007",
+                "name": "Priya Patel",
+                "title": "Mobile Developer",
+                "company": "App Creators",
+                "location": "App City",
+                "avatar": "https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.shutterstock.com%2Fsearch%2Fcompany-logo-png&psig=AOvVaw0yc7OZxkVr-4vQu3vADHAU&ust=1749111336746000&source=images&cd=vfe&opi=89978449&ved=0CBQQjRxqFwoTCODn19Gp140DFQAAAAAdAAAAABAE",
+                "coverImage": null,
+                "isOpenToOpportunities": true,
+                "about": "Mobile developer with Flutter expertise.",
+                "birthDate": "1996-04-18",
+                "contact": {
+                    "email": "priya@example.com",
+                    "phone": "777888999",
+                    "languages": [
+                        "English",
+                        "Hindi"
+                    ]
+                },
+                "social": {
+                    "instagram": "",
+                    "twitter": "",
+                    "website": ""
+                },
+                "experiences": [],
+                "education": [],
+                "skills": [
+                    "Flutter",
+                    "Dart"
+                ],
+                "portfolios": []
+            },
+            "job": {
+                "id": "job-007",
+                "title": "Mobile Developer",
+                "category": {
+                    "id": "cat-007",
+                    "name": "Mobile"
+                },
+                "company": {
+                    "id": "comp-007",
+                    "companyName": "App Creators",
+                    "logoUrl": "https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.shutterstock.com%2Fsearch%2Fcompany-logo-png&psig=AOvVaw0yc7OZxkVr-4vQu3vADHAU&ust=1749111336746000&source=images&cd=vfe&opi=89978449&ved=0CBQQjRxqFwoTCODn19Gp140DFQAAAAAdAAAAABAE",
+                    "address": "321 Mobile Rd, App City"
+                },
+                "responsibility": [
+                    "Develop mobile apps",
+                    "Collaborate with designers"
+                ],
+                "jobFitAttributes": [
+                    "Creative problem solver"
+                ],
+                "niceToHave": [
+                    "iOS/Android native"
+                ],
+                "description": "Create and maintain mobile applications.",
+                "location": "Remote",
+                "salaryMin": 1200,
+                "salaryMax": 2200,
+                "skills": [],
+                "experienceYears": 2,
+                "status": "OPEN",
+                "isVip": false,
+                "deadline": "2025-12-15",
+                "typeOfEmployment": "FullTime",
+                "benefit": [
+                    "Flexible schedule"
+                ],
+                "createdAt": "2025-03-05T10:00:00Z",
+                "updatedAt": "2025-03-05T10:00:00Z"
+            },
+            "status": "IN_REVIEW",
+            "cvFile": "https://example.com/cv/priya-patel.pdf",
+            "createdAt": "2025-06-03T15:00:00Z",
+            "updatedAt": "2025-06-03T15:00:00Z"
+        }
+    ]
+}
