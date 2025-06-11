@@ -75,7 +75,7 @@ const Skills = ({ cv, onAddTag, onRemoveTag }: SkillsProps) => {
           className="mt-1"
         />
         <div className="mt-2 flex flex-wrap gap-2">
-          {cv.languages.map((lang, index) => (
+          {(cv.languages || []).map((lang, index) => (
             <div
               key={index}
               className="flex items-center rounded bg-gray-100 px-2 py-1"

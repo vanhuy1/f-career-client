@@ -14,7 +14,6 @@ import {
   Github,
   Linkedin,
   Phone,
-  Building2,
   MapPin,
   User,
   Edit,
@@ -225,7 +224,7 @@ const CV = ({
             <div>
               <h3 className="text-xs font-medium">Languages</h3>
               <div className="mt-2 flex flex-wrap gap-1">
-                {cv.languages.map((language, index) => (
+                {(cv.languages || []).map((language, index) => (
                   <Badge
                     key={index}
                     variant="secondary"
@@ -261,7 +260,7 @@ const CV = ({
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="mb-2 flex items-center gap-2">
-                          <Building2 className="h-4 w-4 text-blue-600" />
+                          {/* <Building2 className="h-4 w-4 text-blue-600" /> */}
                           <h3 className="text-lg font-semibold text-gray-900">
                             {experience.company}
                           </h3>
@@ -270,7 +269,7 @@ const CV = ({
                       </div>
                       <Badge
                         variant="secondary"
-                        className="border-blue-200 bg-blue-50 text-blue-700"
+                        className="border-blue-200 text-black"
                       >
                         {experience.employmentType}
                       </Badge>
