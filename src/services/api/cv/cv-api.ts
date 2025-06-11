@@ -16,35 +16,6 @@ interface CvResponse {
   meta?: string;
 }
 
-interface CvOptimizationResponse {
-  data: {
-    optimizedCv: Cv;
-    suggestions: {
-      summary?: {
-        suggestion: string;
-        reason: string;
-      };
-      skills?: {
-        suggestions: string[];
-        reason: string;
-      };
-      experience?: {
-        index: number;
-        field: string;
-        suggestion: string;
-        reason: string;
-      }[];
-      education?: {
-        index: number;
-        field: string;
-        suggestion: string;
-        reason: string;
-      }[];
-    };
-  };
-  meta?: string;
-}
-
 class CvService {
   private rb = new RequestBuilder().setResourcePath('cvs');
 
@@ -121,26 +92,6 @@ class CvService {
       url,
       typeCheck: (data) => ({ success: true, data }),
     });
-  }
-
-  async optimizeCv(
-    cvId: string,
-    jobTitle?: string,
-    jobDescription?: string,
-  ): Promise<CvOptimizationResponse> {
-    const url = this.rb.buildUrl(`${cvId}/optimize`);
-    const response = await httpClient.post<
-      CvOptimizationResponse,
-      { jobTitle?: string; jobDescription?: string }
-    >({
-      url,
-      body: { jobTitle, jobDescription },
-      typeCheck: (data) => {
-        const optimizationResponse = data as CvOptimizationResponse;
-        return { success: true, data: optimizationResponse };
-      },
-    });
-    return response;
   }
 }
 

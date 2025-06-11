@@ -4,6 +4,7 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   images: {
     remotePatterns: [
+      // Allow all https and http images (wildcard)
       {
         protocol: 'https',
         hostname: '**',
@@ -16,16 +17,44 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**',
       },
+      // Explicitly add your previous domains for clarity (optional)
+      {
+        protocol: 'https',
+        hostname: 'github.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'githubusercontent.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'cloudinary.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'lh3.googleusercontent.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'storage.googleapis.com',
+        pathname: '/**',
+      },
     ],
-    domains: [
-      'github.com',
-      'githubusercontent.com',
-      'cloudinary.com',
-      'res.cloudinary.com',
-      'images.unsplash.com',
-      'lh3.googleusercontent.com',
-      'storage.googleapis.com',
-    ],
+    // Remove the deprecated 'domains' property
   },
 };
 

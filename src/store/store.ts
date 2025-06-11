@@ -5,6 +5,7 @@ import caProfileReducer from '@/services/state/caProfileSlice';
 import jobReducer from '@/services/state/jobSlice';
 import companyReducer from '@/services/state/companySlice';
 import cvReducer from '@/services/state/cvSlice';
+import applicationReducer from '@/services/state/applicationsSlice';
 
 export const makeStore = () => {
   return configureStore({
@@ -15,6 +16,7 @@ export const makeStore = () => {
       job: jobReducer,
       company: companyReducer,
       cv: cvReducer,
+      application: applicationReducer,
     },
   });
 };
