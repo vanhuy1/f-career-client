@@ -25,6 +25,19 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import { useUser } from '@/services/state/userSlice';
+import {
+  useCompanyDetailById,
+  useCompanyDetailLoadingState,
+  setCompanyDetailStart,
+  setCompanyDetailSuccess,
+  setCompanyDetailFailure,
+} from '@/services/state/companySlice';
+import { companyService } from '@/services/api/company/company-api';
+import { LoadingState } from '@/store/store.model';
+import { useDispatch } from 'react-redux';
+
+const RequiredIndicator = () => <span className="ml-1 text-red-500">*</span>;
 
 export default function Step1({
   skills,
@@ -49,6 +62,39 @@ export default function Step1({
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(false);
   const [isSkillDialogOpen, setIsSkillDialogOpen] = useState(false);
+  const [salaryType, setSalaryType] = useState<'range' | 'min' | 'max'>(
+    'range',
+  );
+
+  // Get company data from Redux store
+  const dispatch = useDispatch();
+  const user = useUser();
+  const companyId = user?.data?.companyId;
+  const company = useCompanyDetailById(companyId || '');
+  const companyLoadingState = useCompanyDetailLoadingState();
+  const isCompanyLoading = companyLoadingState === LoadingState.loading;
+  const companyLocations = company?.address || [];
+
+  // Fetch company data if not available
+  useEffect(() => {
+    const fetchCompanyData = async () => {
+      if (!companyId || company) return;
+
+      try {
+        dispatch(setCompanyDetailStart());
+        const data = await companyService.findOne(companyId);
+        dispatch(setCompanyDetailSuccess(data));
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error
+            ? error.message
+            : 'Failed to load company data';
+        dispatch(setCompanyDetailFailure(errorMessage));
+      }
+    };
+
+    fetchCompanyData();
+  }, [companyId, company, dispatch]);
 
   // Fetch categories from API
   useEffect(() => {
@@ -84,18 +130,46 @@ export default function Step1({
         {/* Job Title */}
         <div className="grid grid-cols-1 gap-4 py-6 md:grid-cols-3 md:gap-8">
           <div>
-            <h3 className="font-medium">Job Title</h3>
+            <h3 className="font-medium">
+              Job Title
+              <RequiredIndicator />
+            </h3>
             <p className="mt-1 text-sm text-gray-500">
-              Job titles must describe one position
+              Job titles must be describe one position
             </p>
           </div>
           <div className="w-full md:col-span-2 md:w-[70%]">
             <Input
               placeholder="e.g. Software Engineer"
               value={jobTitle}
-              onChange={(e) => setJobTitle(e.target.value)}
+              onChange={(e) => {
+                const value = e.target.value;
+                if (value.length <= 100) {
+                  setJobTitle(value);
+                }
+              }}
+              required
+              className={
+                jobTitle && (jobTitle.length < 5 || jobTitle.length > 100)
+                  ? 'border-red-500'
+                  : ''
+              }
             />
-            <p className="mt-1 text-xs text-gray-500">At least 80 characters</p>
+            {jobTitle && jobTitle.length < 5 && (
+              <p className="mt-1 text-xs text-red-500">
+                Title must be at least 5 characters
+              </p>
+            )}
+            {jobTitle && jobTitle.length > 100 && (
+              <p className="mt-1 text-xs text-red-500">
+                Title must not exceed 100 characters
+              </p>
+            )}
+            <p className="mt-1 text-xs text-gray-500">
+              {jobTitle
+                ? `${jobTitle.length}/100 characters`
+                : 'At least 5 characters'}
+            </p>
           </div>
         </div>
 
@@ -150,53 +224,121 @@ export default function Step1({
         {/* Salary */}
         <div className="grid grid-cols-1 gap-4 py-6 md:grid-cols-3 md:gap-8">
           <div>
-            <h3 className="font-medium">Salary</h3>
+            <h3 className="font-medium">
+              Salary
+              <RequiredIndicator />
+            </h3>
             <p className="mt-1 text-sm text-gray-500">
-              Please specify the estimated salary range for the role. You can
-              leave this blank
+              Please specify the estimated salary for the role
             </p>
           </div>
           <div className="w-full md:col-span-2 md:w-[70%]">
-            <div className="mb-2 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
+            <div className="mb-4">
+              <Select
+                value={salaryType}
+                onValueChange={(value: 'range' | 'min' | 'max') =>
+                  setSalaryType(value)
+                }
+              >
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="Select salary type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="range">Salary Range</SelectItem>
+                  <SelectItem value="min">Minimum Salary</SelectItem>
+                  <SelectItem value="max">Maximum Salary</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {salaryType === 'range' && (
+              <>
+                <div className="mb-2 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
+                  <div className="flex w-full items-center sm:w-auto">
+                    <span className="mr-1">$</span>
+                    <Input
+                      value={salaryRange[0]}
+                      onChange={(e) => {
+                        const value = Number.parseInt(e.target.value);
+                        if (value >= 0) {
+                          setSalaryRange([value, salaryRange[1]]);
+                        }
+                      }}
+                      className="w-full sm:w-24"
+                      type="number"
+                      min={0}
+                      required
+                    />
+                  </div>
+                  <span className="hidden sm:inline">to</span>
+                  <div className="flex w-full items-center sm:w-auto">
+                    <span className="mr-1">$</span>
+                    <Input
+                      value={salaryRange[1]}
+                      onChange={(e) => {
+                        const value = Number.parseInt(e.target.value);
+                        if (value >= 0) {
+                          setSalaryRange([salaryRange[0], value]);
+                        }
+                      }}
+                      className="w-full sm:w-24"
+                      type="number"
+                      min={0}
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="py-4">
+                  <Slider
+                    defaultValue={salaryRange}
+                    min={0}
+                    max={50000}
+                    step={1000}
+                    value={salaryRange}
+                    onValueChange={setSalaryRange}
+                    className="my-2"
+                  />
+                </div>
+              </>
+            )}
+
+            {salaryType === 'min' && (
               <div className="flex w-full items-center sm:w-auto">
-                <span className="mr-1">$</span>
+                <span className="mr-1">From $</span>
                 <Input
                   value={salaryRange[0]}
-                  onChange={(e) =>
-                    setSalaryRange([
-                      Number.parseInt(e.target.value),
-                      salaryRange[1],
-                    ])
-                  }
+                  onChange={(e) => {
+                    const value = Number.parseInt(e.target.value);
+                    if (value >= 0) {
+                      setSalaryRange([value, 999999]);
+                    }
+                  }}
                   className="w-full sm:w-24"
+                  type="number"
+                  min={0}
+                  required
                 />
               </div>
-              <span className="hidden sm:inline">to</span>
+            )}
+
+            {salaryType === 'max' && (
               <div className="flex w-full items-center sm:w-auto">
-                <span className="mr-1">$</span>
+                <span className="mr-1">Up to $</span>
                 <Input
                   value={salaryRange[1]}
-                  onChange={(e) =>
-                    setSalaryRange([
-                      salaryRange[0],
-                      Number.parseInt(e.target.value),
-                    ])
-                  }
+                  onChange={(e) => {
+                    const value = Number.parseInt(e.target.value);
+                    if (value >= 0) {
+                      setSalaryRange([0, value]);
+                    }
+                  }}
                   className="w-full sm:w-24"
+                  type="number"
+                  min={0}
+                  required
                 />
               </div>
-            </div>
-            <div className="py-4">
-              <Slider
-                defaultValue={salaryRange}
-                min={0}
-                max={50000}
-                step={1000}
-                value={salaryRange}
-                onValueChange={setSalaryRange}
-                className="my-2"
-              />
-            </div>
+            )}
           </div>
         </div>
 
@@ -222,24 +364,40 @@ export default function Step1({
         {/* Deadline */}
         <div className="grid grid-cols-1 gap-4 py-6 md:grid-cols-3 md:gap-8">
           <div>
-            <h3 className="font-medium">Application Deadline</h3>
+            <h3 className="font-medium">
+              Application Deadline
+              <RequiredIndicator />
+            </h3>
             <p className="mt-1 text-sm text-gray-500">
               When should applications close?
             </p>
           </div>
           <div className="w-full md:col-span-2 md:w-[70%]">
             <Input
-              type="datetime-local"
-              value={deadline}
-              onChange={(e) => setDeadline(e.target.value)}
+              type="date"
+              value={deadline ? deadline.split('T')[0] : ''}
+              onChange={(e) => {
+                // Set time to 00:00:00
+                const selectedDate = new Date(e.target.value);
+                selectedDate.setUTCHours(0, 0, 0, 0);
+                setDeadline(selectedDate.toISOString());
+              }}
+              min={new Date().toISOString().split('T')[0]} // Set minimum date to today
+              className="w-full"
             />
+            <p className="mt-1 text-xs text-gray-500">
+              Applications will close at 00:00 (midnight) on the selected date
+            </p>
           </div>
         </div>
 
         {/* Categories */}
         <div className="grid grid-cols-1 gap-4 py-6 md:grid-cols-3 md:gap-8">
           <div>
-            <h3 className="font-medium">Categories</h3>
+            <h3 className="font-medium">
+              Categories
+              <RequiredIndicator />
+            </h3>
             <p className="mt-1 text-sm text-gray-500">
               You can select multiple job categories
             </p>
@@ -273,17 +431,44 @@ export default function Step1({
         {/* Location */}
         <div className="grid grid-cols-1 gap-4 py-6 md:grid-cols-3 md:gap-8">
           <div>
-            <h3 className="font-medium">Location</h3>
+            <h3 className="font-medium">
+              Location
+              <RequiredIndicator />
+            </h3>
             <p className="mt-1 text-sm text-gray-500">
-              Where is this job located?
+              Select the office location for this job
             </p>
           </div>
           <div className="w-full md:col-span-2 md:w-[70%]">
-            <Input
-              placeholder="e.g. New York, NY"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-            />
+            <Select value={location} onValueChange={setLocation}>
+              <SelectTrigger className="w-full">
+                <SelectValue
+                  placeholder={
+                    isCompanyLoading
+                      ? 'Loading locations...'
+                      : 'Select office location'
+                  }
+                />
+              </SelectTrigger>
+              <SelectContent>
+                {isCompanyLoading ? (
+                  <SelectItem value="loading" disabled>
+                    Loading office locations...
+                  </SelectItem>
+                ) : companyLocations.length > 0 ? (
+                  companyLocations.map((addr, index) => (
+                    <SelectItem key={index} value={addr}>
+                      {addr} {index === 0 && '(Head Quarters)'}
+                    </SelectItem>
+                  ))
+                ) : (
+                  <SelectItem value="no-locations" disabled>
+                    No office locations found. Please add locations in company
+                    profile.
+                  </SelectItem>
+                )}
+              </SelectContent>
+            </Select>
           </div>
         </div>
 

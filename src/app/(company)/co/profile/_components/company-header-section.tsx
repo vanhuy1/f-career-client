@@ -31,6 +31,31 @@ import Image from 'next/image';
 import { toast } from 'react-toastify';
 import { useRouter } from 'next/navigation';
 
+// Thêm hàm helper để lấy ngày hiện tại ở định dạng YYYY-MM-DD
+const getCurrentDate = () => {
+  const today = new Date();
+  return today.toISOString().split('T')[0];
+};
+
+// Thêm hàm helper để validate URL
+const isValidUrl = (url: string) => {
+  try {
+    new URL(url);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+// Thêm hàm helper để format URL
+const formatUrl = (url: string) => {
+  if (!url) return '';
+  if (!url.startsWith('http://') && !url.startsWith('https://')) {
+    return `https://${url}`;
+  }
+  return url;
+};
+
 interface CompanyHeaderSectionProps {
   company: Company;
   onUpdateCompany: (data: Partial<Company>) => Promise<void>;
@@ -41,6 +66,7 @@ export default function CompanyHeaderSection({
   onUpdateCompany,
 }: CompanyHeaderSectionProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [websiteError, setWebsiteError] = useState('');
   const router = useRouter();
 
   const {
@@ -73,6 +99,16 @@ export default function CompanyHeaderSection({
 
   const onSubmit: SubmitHandler<CompanyDetailsInput> = async (data) => {
     try {
+      // Validate website URL
+      if (data.website) {
+        const formattedUrl = formatUrl(data.website);
+        if (!isValidUrl(formattedUrl)) {
+          setWebsiteError('Please enter a valid website URL');
+          return;
+        }
+        data.website = formattedUrl;
+      }
+
       const newAddresses = company.address
         ? [data.location, ...company.address.slice(1)]
         : [data.location];
@@ -197,114 +233,198 @@ export default function CompanyHeaderSection({
 
       {/* Profile Settings Modal */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Edit Profile Settings</DialogTitle>
-            <DialogDescription>
-              Update your companys profile information below.
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[800px]">
+          <DialogHeader className="border-b pb-4">
+            <DialogTitle className="text-2xl font-semibold text-gray-900">
+              Edit Company Profile
+            </DialogTitle>
+            <DialogDescription className="mt-2 text-gray-500">
+              Update your company`&apos;`s profile information below. Fields
+              marked with <span className="text-red-500">*</span> are required.
             </DialogDescription>
           </DialogHeader>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            {/* Company Name */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Company Name
-              </label>
-              <input
-                {...register('name')}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-              />
-              {errors.name && (
-                <p className="mt-1 text-sm text-red-600">
-                  {errors.name.message}
-                </p>
-              )}
+
+          <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-8">
+            {/* Basic Information Section */}
+            <div className="space-y-6">
+              <div className="flex items-center gap-2">
+                <Building className="h-5 w-5 text-blue-500" />
+                <h3 className="text-lg font-medium text-gray-900">
+                  Basic Information
+                </h3>
+              </div>
+              <div className="grid grid-cols-2 gap-6">
+                {/* Company Name */}
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Company Name
+                    <span className="ml-1 text-red-500">*</span>
+                  </label>
+                  <input
+                    {...register('name')}
+                    className="mt-2 block w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 shadow-sm transition-colors hover:border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                    maxLength={100}
+                    minLength={3}
+                    required
+                    placeholder="Enter company name"
+                  />
+                  {errors.name && (
+                    <p className="mt-1.5 text-sm text-red-500">
+                      {errors.name.message}
+                    </p>
+                  )}
+                  <p className="mt-1.5 text-xs text-gray-500">
+                    Company name should be between 3 and 100 characters
+                  </p>
+                </div>
+
+                {/* Industry */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Industry
+                    <span className="ml-1 text-red-500">*</span>
+                  </label>
+                  <input
+                    {...register('industry')}
+                    className="mt-2 block w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 shadow-sm transition-colors hover:border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                    required
+                    placeholder="e.g. Technology, Healthcare, etc."
+                  />
+                  {errors.industry && (
+                    <p className="mt-1.5 text-sm text-red-500">
+                      {errors.industry.message}
+                    </p>
+                  )}
+                </div>
+
+                {/* Founded Date */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Founded Date
+                  </label>
+                  <input
+                    type="date"
+                    {...register('founded')}
+                    max={getCurrentDate()}
+                    className="mt-2 block w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 shadow-sm transition-colors hover:border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                  />
+                  {errors.founded && (
+                    <p className="mt-1.5 text-sm text-red-500">
+                      {errors.founded.message}
+                    </p>
+                  )}
+                </div>
+              </div>
             </div>
 
-            {/* Website */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Website
-              </label>
-              <input
-                {...register('website')}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-              />
-              {errors.website && (
-                <p className="mt-1 text-sm text-red-600">
-                  {errors.website.message}
-                </p>
-              )}
+            {/* Contact Information Section */}
+            <div className="space-y-6">
+              <div className="flex items-center gap-2">
+                <MapPin className="h-5 w-5 text-blue-500" />
+                <h3 className="text-lg font-medium text-gray-900">
+                  Contact Information
+                </h3>
+              </div>
+              <div className="grid grid-cols-2 gap-6">
+                {/* Website */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Website
+                  </label>
+                  <input
+                    {...register('website')}
+                    className={`mt-2 block w-full rounded-lg border bg-white px-4 py-2.5 shadow-sm transition-colors hover:border-gray-300 focus:ring-2 focus:ring-blue-500/20 ${
+                      websiteError
+                        ? 'border-red-500 focus:border-red-500'
+                        : 'border-gray-200 focus:border-blue-500'
+                    }`}
+                    placeholder="e.g. www.company.com"
+                    onChange={(e) => {
+                      const { value } = e.target;
+                      if (value && !isValidUrl(formatUrl(value))) {
+                        setWebsiteError('Please enter a valid website URL');
+                      } else {
+                        setWebsiteError('');
+                      }
+                    }}
+                  />
+                  {websiteError && (
+                    <p className="mt-1.5 text-sm text-red-500">
+                      {websiteError}
+                    </p>
+                  )}
+                  <p className="mt-1.5 text-xs text-gray-500">
+                    If protocol is not specified, https:// will be added
+                    automatically
+                  </p>
+                </div>
+
+                {/* Number of Employees */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Number of Employees
+                  </label>
+                  <input
+                    {...register('employees')}
+                    className="mt-2 block w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 shadow-sm transition-colors hover:border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                    type="number"
+                    min="0"
+                    placeholder="e.g. 100"
+                    onKeyDown={(e) => {
+                      if (e.key === '-') {
+                        e.preventDefault();
+                      }
+                    }}
+                    onChange={(e) => {
+                      const value = parseInt(e.target.value);
+                      if (value < 0) {
+                        e.target.value = '0';
+                      }
+                    }}
+                  />
+                  {errors.employees && (
+                    <p className="mt-1.5 text-sm text-red-500">
+                      {errors.employees.message}
+                    </p>
+                  )}
+                </div>
+
+                {/* Location */}
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Location
+                    <span className="ml-1 text-red-500">*</span>
+                  </label>
+                  <input
+                    {...register('location')}
+                    className="mt-2 block w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 shadow-sm transition-colors hover:border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                    required
+                    placeholder="e.g. Ho Chi Minh City, Vietnam"
+                  />
+                  {errors.location && (
+                    <p className="mt-1.5 text-sm text-red-500">
+                      {errors.location.message}
+                    </p>
+                  )}
+                </div>
+              </div>
             </div>
 
-            {/* Founded */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Founded
-              </label>
-              <input
-                type="date"
-                {...register('founded')}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-              />
-              {errors.founded && (
-                <p className="mt-1 text-sm text-red-600">
-                  {errors.founded.message}
-                </p>
-              )}
-            </div>
-
-            {/* Employees */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Number Employees
-              </label>
-              <input
-                {...register('employees')}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                type="number"
-              />
-              {errors.employees && (
-                <p className="mt-1 text-sm text-red-600">
-                  {errors.employees.message}
-                </p>
-              )}
-            </div>
-
-            {/* Location */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Location
-              </label>
-              <input
-                {...register('location')}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-              />
-              {errors.location && (
-                <p className="mt-1 text-sm text-red-600">
-                  {errors.location.message}
-                </p>
-              )}
-            </div>
-
-            {/* Industry */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Industry
-              </label>
-              <input
-                {...register('industry')}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-              />
-              {errors.industry && (
-                <p className="mt-1 text-sm text-red-600">
-                  {errors.industry.message}
-                </p>
-              )}
-            </div>
-
-            <DialogFooter>
-              <Button type="submit">Save changes</Button>
+            <DialogFooter className="mt-8 flex items-center justify-end gap-3 border-t pt-6">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsModalOpen(false)}
+                className="px-6 hover:bg-gray-50"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                className="bg-blue-600 px-6 hover:bg-blue-700"
+              >
+                Save changes
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>

@@ -40,6 +40,20 @@ export default function ContactSection({
 
   const contactFields: FormField[] = [
     {
+      id: 'email',
+      label: 'Email',
+      type: 'email',
+      defaultValue: contactInfo.email || '',
+      placeholder: 'Enter company email',
+    },
+    {
+      id: 'phone',
+      label: 'Phone',
+      type: 'text',
+      defaultValue: contactInfo.phone || '',
+      placeholder: 'Enter company phone number',
+    },
+    {
       id: 'address',
       label: 'Address',
       type: 'text',
@@ -51,7 +65,7 @@ export default function ContactSection({
       label: 'Website',
       type: 'url',
       defaultValue: contactInfo.website || '',
-      placeholder: 'Enter company website',
+      placeholder: 'Enter company website (e.g., https://example.com)',
     },
   ];
 
@@ -59,6 +73,20 @@ export default function ContactSection({
     if (!company) return;
 
     try {
+      // Validate email format
+      const emailRegex = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i;
+      if (data.email && !emailRegex.test(data.email)) {
+        toast.error('Please enter a valid email address');
+        return;
+      }
+
+      // Validate phone format (at least 8 digits, can contain +, -, (, ), and spaces)
+      const phoneRegex = /^[0-9+\-\s()]{8,}$/;
+      if (data.phone && !phoneRegex.test(data.phone)) {
+        toast.error('Please enter a valid phone number');
+        return;
+      }
+
       // Create a new address array, updating only the first element (HQ)
       const newAddresses =
         company.address && Array.isArray(company.address)
@@ -69,13 +97,17 @@ export default function ContactSection({
       await onUpdateCompany({
         address: newAddresses,
         website: data.website,
+        email: data.email,
+        phone: Number(data.phone.replace(/\D/g, '')), // Convert to number by removing non-digits
       });
 
-      // Update local state (keep email and phone unchanged)
+      // Update local state with all fields
       setContactInfo((prev) => ({
         ...prev,
         address: data.address,
         website: data.website,
+        email: data.email,
+        phone: data.phone,
       }));
 
       toast.success('Contact information updated successfully');
@@ -132,7 +164,7 @@ export default function ContactSection({
                   className="block truncate text-sm font-medium"
                   title={contactInfo.phone}
                 >
-                  {contactInfo.phone}
+                  0{contactInfo.phone}
                 </a>
               ) : (
                 <div className="text-sm font-medium text-gray-500">N/A</div>
