@@ -102,13 +102,13 @@ export default function JobPostingForm() {
           .split('\n')
           .filter((item) => item.trim() !== ''),
         benefit: benefits.map((benefit) => benefit.description),
-        location: location || 'New York',
+        location: location,
         salaryMin: salaryRange[0],
         salaryMax: salaryRange[1],
         experienceYears: experienceYears,
         isVip: isVip,
         status: jobStatus,
-        deadline: deadline || '2024-12-31T00:00:00.000Z',
+        deadline: deadline,
         typeOfEmployment: typeOfEmployment,
       };
 

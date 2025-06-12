@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Plus, X } from 'lucide-react';
 
+const RequiredIndicator = () => <span className="ml-1 text-red-500">*</span>;
+
 export default function Step2({
   jobDescription,
   setJobDescription,
@@ -134,7 +136,10 @@ export default function Step2({
         {/* Job Description */}
         <div className="grid grid-cols-1 gap-4 py-6 md:grid-cols-3 md:gap-8">
           <div>
-            <h3 className="font-medium">Job Description</h3>
+            <h3 className="font-medium">
+              Job Description
+              <RequiredIndicator />
+            </h3>
             <p className="mt-1 text-sm text-gray-500">
               Describe the role in detail
             </p>

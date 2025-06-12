@@ -291,44 +291,69 @@ export default function OfficeLocationsSection({
 
       {/* Edit Locations Dialog */}
       <Dialog open={isEditPopupOpen} onOpenChange={setIsEditPopupOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
-            <DialogTitle>Edit Office Locations</DialogTitle>
-            <DialogDescription>
-              Manage your companys office locations.
+            <DialogTitle className="text-xl font-semibold text-gray-900">
+              Edit Office Locations
+            </DialogTitle>
+            <DialogDescription className="text-gray-500">
+              Manage your company`&apos;`s office locations. At least one
+              location must be marked as Head Quarters.
             </DialogDescription>
           </DialogHeader>
-          <div className="max-h-[400px] space-y-4 overflow-y-auto">
+
+          <div className="mt-4 max-h-[400px] space-y-4 overflow-y-auto pr-2">
             {editingLocations.map((location, index) => (
               <div
                 key={index}
-                className="flex items-center gap-3 rounded-lg border p-3"
+                className="group relative flex items-start gap-4 rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition-all hover:border-gray-300 hover:shadow-md"
               >
-                <div className="text-2xl">{location.emoji}</div>
-                <div className="flex-1">
-                  <Input
-                    value={location.country}
-                    onChange={(e) => handleEditLocation(index, e.target.value)}
-                    className="mb-2"
-                  />
-                  <div className="flex items-center gap-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-50 text-2xl">
+                  {location.emoji}
+                </div>
+
+                <div className="flex-1 space-y-3">
+                  <div className="relative">
+                    <Input
+                      value={location.country}
+                      onChange={(e) =>
+                        handleEditLocation(index, e.target.value)
+                      }
+                      className="w-full border-gray-200 bg-white px-4 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                      placeholder="Enter office location"
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <input
-                        type="radio"
-                        checked={location.isHQ}
-                        onChange={() => handleToggleHQ(index)}
-                        className="h-4 w-4 text-indigo-600"
-                      />
-                      <label className="text-sm text-gray-600">
-                        Head Quarters
-                      </label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="radio"
+                          checked={location.isHQ}
+                          onChange={() => handleToggleHQ(index)}
+                          className="h-4 w-4 text-blue-600 focus:ring-blue-500"
+                          id={`hq-${index}`}
+                        />
+                        <label
+                          htmlFor={`hq-${index}`}
+                          className="cursor-pointer text-sm font-medium text-gray-700 hover:text-gray-900"
+                        >
+                          Head Quarters
+                        </label>
+                      </div>
+                      {location.isHQ && (
+                        <span className="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-700">
+                          Primary Location
+                        </span>
+                      )}
                     </div>
+
                     <Button
                       type="button"
                       variant="ghost"
                       size="sm"
-                      className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
                       onClick={() => handleDeleteLocation(index)}
+                      className="text-gray-400 opacity-0 transition-opacity duration-200 group-hover:opacity-100 hover:text-red-600"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -337,18 +362,34 @@ export default function OfficeLocationsSection({
               </div>
             ))}
           </div>
-          <DialogFooter>
+
+          {editingLocations.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-6 text-center">
+              <div className="rounded-full bg-gray-100 p-3">
+                <Plus className="h-6 w-6 text-gray-400" />
+              </div>
+              <h3 className="mt-2 text-sm font-medium text-gray-900">
+                No locations
+              </h3>
+              <p className="mt-1 text-sm text-gray-500">
+                Add your first office location to get started
+              </p>
+            </div>
+          )}
+
+          <DialogFooter className="mt-6 flex items-center justify-end gap-2">
             <Button
               type="button"
               variant="outline"
               onClick={() => setIsEditPopupOpen(false)}
+              className="border-gray-300 text-gray-700 hover:bg-gray-50"
             >
               Cancel
             </Button>
             <Button
               type="button"
-              className="bg-indigo-600 text-white hover:bg-indigo-700"
               onClick={handleSaveLocations}
+              className="bg-blue-600 text-white hover:bg-blue-700"
             >
               Save Changes
             </Button>
