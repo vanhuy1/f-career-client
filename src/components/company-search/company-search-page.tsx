@@ -45,7 +45,6 @@ export default function CompanySearchPage() {
     }
   }, [page, limit, dispatch, companies?.length, companies]);
 
-
   const totalPages = Math.ceil(count / limit);
 
   if (isLoading) {

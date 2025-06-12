@@ -102,7 +102,7 @@ export default function JobDetailPage() {
                 <div>
                   <h3 className="text-sm text-gray-500">Current Status</h3>
                   <div className="mt-1">
-                    <StatusBadge status={"OK"} />
+                    <StatusBadge status={'OFFERED'} />
                   </div>
                 </div>
                 <div>
