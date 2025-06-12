@@ -24,15 +24,15 @@ export default function ApplyJobButton({
 
   const openDialog = () => setIsDialogOpen(true);
   const closeDialog = () => setIsDialogOpen(false);
-  const user = useUser()
+  const user = useUser();
 
   const ApplicantInfo = {
-    name: user?.data.name ?? "",
-    email: user?.data.email ?? "",
-    phone: user?.data.phone ?? "",
-    gender: user?.data.gender ?? "",
-    dateOfBirth: user?.data.dob ?? "",
-  }
+    name: user?.data.name ?? '',
+    email: user?.data.email ?? '',
+    phone: user?.data.phone ?? '',
+    gender: user?.data.gender ?? '',
+    dateOfBirth: user?.data.dob ?? '',
+  };
 
   return (
     <>

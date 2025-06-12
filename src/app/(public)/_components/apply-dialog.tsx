@@ -1,70 +1,90 @@
-"use client"
+'use client';
 
-import { useState } from "react"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { z } from "zod"
-import { X, Paperclip, Loader2, User, Mail, Phone, Calendar, Users } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
-import FileUploader from "@/components/common/FileUploader"
-import { SupabaseBucket, SupabaseFolder } from "@/enums/supabase"
-import { applicationService } from "@/services/api/applications/application-api"
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import {
+  X,
+  Paperclip,
+  Loader2,
+  User,
+  Mail,
+  Phone,
+  Calendar,
+  Users,
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
+import FileUploader from '@/components/common/FileUploader';
+import { SupabaseBucket, SupabaseFolder } from '@/enums/supabase';
+import { applicationService } from '@/services/api/applications/application-api';
 
 // Updated validation schema to use URL instead of File object
 const applicationSchema = z.object({
   coverLetter: z
     .string()
-    .min(1, "Description is required")
-    .min(10, "Description must be at least 10 characters")
-    .max(500, "Description must not exceed 500 characters"),
-  cvId: z
-    .string()
-    .min(1, "CV file is required")
-})
+    .min(1, 'Description is required')
+    .min(10, 'Description must be at least 10 characters')
+    .max(500, 'Description must not exceed 500 characters'),
+  cvId: z.string().min(1, 'CV file is required'),
+});
 
-export type ApplicationFormData = z.infer<typeof applicationSchema>
+export type ApplicationFormData = z.infer<typeof applicationSchema>;
 
 interface ApplicantInfo {
-  name: string
-  email: string
-  phone: string
-  gender: string
-  dateOfBirth: string
+  name: string;
+  email: string;
+  phone: string;
+  gender: string;
+  dateOfBirth: string;
 }
 
 interface ApplyDialogProps {
-  isOpen: boolean
-  onClose: () => void
-  jobTitle: string
-  company: string
-  location: string
-  jobType: string
-  jobId?: string
-  applicantInfo: ApplicantInfo
+  isOpen: boolean;
+  onClose: () => void;
+  jobTitle: string;
+  company: string;
+  location: string;
+  jobType: string;
+  jobId?: string;
+  applicantInfo: ApplicantInfo;
 }
 
 const formatDate = (dateString: string) => {
-  const date = new Date(dateString)
-  return date.toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  })
-}
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+};
 
 const formatGender = (gender: string) => {
   const genderMap: { [key: string]: string } = {
-    MALE: "Male",
-    FEMALE: "Female",
-    OTHER: "Other",
-    "Prefer not to say": "Prefer not to say",
-  }
-  return genderMap[gender] || gender
-}
+    MALE: 'Male',
+    FEMALE: 'Female',
+    OTHER: 'Other',
+    'Prefer not to say': 'Prefer not to say',
+  };
+  return genderMap[gender] || gender;
+};
 
 export default function ApplyDialog({
   isOpen,
@@ -76,60 +96,66 @@ export default function ApplyDialog({
   jobId,
   applicantInfo,
 }: ApplyDialogProps) {
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState<{
-    type: "success" | "error"
-    text: string
-  } | null>(null)
+    type: 'success' | 'error';
+    text: string;
+  } | null>(null);
 
   const form = useForm<ApplicationFormData>({
     resolver: zodResolver(applicationSchema),
     defaultValues: {
-      coverLetter: "",
-      cvId: "",
+      coverLetter: '',
+      cvId: '',
     },
-  })
+  });
 
-  const watchedDescription = form.watch("coverLetter")
-  const charCount = watchedDescription?.length || 0
-  const maxChars = 500
+  const watchedDescription = form.watch('coverLetter');
+  const charCount = watchedDescription?.length || 0;
+  const maxChars = 500;
 
   const onSubmit = async (data: ApplicationFormData) => {
-    setIsSubmitting(true)
-    setSubmitMessage(null)
+    setIsSubmitting(true);
+    setSubmitMessage(null);
 
     try {
       if (!jobId) {
-        throw new Error("Job ID is missing")
+        throw new Error('Job ID is missing');
       }
 
       // Use the actual API service
-      await applicationService.applyJob(data, Number(jobId))
-      setSubmitMessage({ type: "success", text: "Application submitted successfully!" })
+      await applicationService.applyJob(data, Number(jobId));
+      setSubmitMessage({
+        type: 'success',
+        text: 'Application submitted successfully!',
+      });
 
       // Close dialog after successful submission
       setTimeout(() => {
-        onClose()
-        form.reset()
-        setSubmitMessage(null)
-      }, 2000)
+        onClose();
+        form.reset();
+        setSubmitMessage(null);
+      }, 2000);
     } catch (error) {
       setSubmitMessage({
-        type: "error",
-        text: error instanceof Error ? error.message : "An unexpected error occurred",
-      })
+        type: 'error',
+        text:
+          error instanceof Error
+            ? error.message
+            : 'An unexpected error occurred',
+      });
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
-  }
+  };
 
   const handleClose = () => {
     if (!isSubmitting) {
-      onClose()
-      form.reset()
-      setSubmitMessage(null)
+      onClose();
+      form.reset();
+      setSubmitMessage(null);
     }
-  }
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -151,7 +177,9 @@ export default function ApplyDialog({
                 </div>
               </div>
               <div>
-                <DialogTitle className="text-xl font-semibold text-gray-900">{jobTitle}</DialogTitle>
+                <DialogTitle className="text-xl font-semibold text-gray-900">
+                  {jobTitle}
+                </DialogTitle>
                 <div className="mt-1 flex items-center gap-2 text-sm text-gray-600">
                   <span>{company}</span>
                   <span>•</span>
@@ -164,24 +192,30 @@ export default function ApplyDialog({
           </div>
 
           <div className="p-6">
-            <h3 className="mb-4 text-xl font-semibold">Submit your application</h3>
+            <h3 className="mb-4 text-xl font-semibold">
+              Submit your application
+            </h3>
             <p className="mb-6 text-sm text-gray-600">
               The following is required and will only be shared with {company}
             </p>
 
             {submitMessage && (
               <div
-                className={`mb-4 rounded-md p-3 ${submitMessage.type === "success"
-                  ? "border border-green-200 bg-green-50 text-green-800"
-                  : "border border-red-200 bg-red-50 text-red-800"
-                  }`}
+                className={`mb-4 rounded-md p-3 ${
+                  submitMessage.type === 'success'
+                    ? 'border border-green-200 bg-green-50 text-green-800'
+                    : 'border border-red-200 bg-red-50 text-red-800'
+                }`}
               >
                 {submitMessage.text}
               </div>
             )}
 
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-6"
+              >
                 <div className="border-b bg-gray-50 p-6">
                   <Accordion type="single" collapsible className="w-full">
                     <AccordionItem value="applicant-info">
@@ -195,7 +229,9 @@ export default function ApplyDialog({
                               <User className="h-4 w-4 text-blue-600" />
                             </div>
                             <div>
-                              <p className="text-sm font-medium text-gray-900">{applicantInfo.name}</p>
+                              <p className="text-sm font-medium text-gray-900">
+                                {applicantInfo.name}
+                              </p>
                               <p className="text-xs text-gray-500">Full Name</p>
                             </div>
                           </div>
@@ -205,8 +241,12 @@ export default function ApplyDialog({
                               <Mail className="h-4 w-4 text-green-600" />
                             </div>
                             <div>
-                              <p className="text-sm font-medium text-gray-900">{applicantInfo.email}</p>
-                              <p className="text-xs text-gray-500">Email Address</p>
+                              <p className="text-sm font-medium text-gray-900">
+                                {applicantInfo.email}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                Email Address
+                              </p>
                             </div>
                           </div>
 
@@ -215,8 +255,12 @@ export default function ApplyDialog({
                               <Phone className="h-4 w-4 text-purple-600" />
                             </div>
                             <div>
-                              <p className="text-sm font-medium text-gray-900">{applicantInfo.phone}</p>
-                              <p className="text-xs text-gray-500">Phone Number</p>
+                              <p className="text-sm font-medium text-gray-900">
+                                {applicantInfo.phone}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                Phone Number
+                              </p>
                             </div>
                           </div>
 
@@ -225,7 +269,9 @@ export default function ApplyDialog({
                               <Users className="h-4 w-4 text-orange-600" />
                             </div>
                             <div>
-                              <p className="text-sm font-medium text-gray-900">{formatGender(applicantInfo.gender)}</p>
+                              <p className="text-sm font-medium text-gray-900">
+                                {formatGender(applicantInfo.gender)}
+                              </p>
                               <p className="text-xs text-gray-500">Gender</p>
                             </div>
                           </div>
@@ -235,8 +281,12 @@ export default function ApplyDialog({
                               <Calendar className="h-4 w-4 text-red-600" />
                             </div>
                             <div>
-                              <p className="text-sm font-medium text-gray-900">{formatDate(applicantInfo.dateOfBirth)}</p>
-                              <p className="text-xs text-gray-500">Date of Birth</p>
+                              <p className="text-sm font-medium text-gray-900">
+                                {formatDate(applicantInfo.dateOfBirth)}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                Date of Birth
+                              </p>
                             </div>
                           </div>
                         </div>
@@ -312,8 +362,10 @@ export default function ApplyDialog({
                     <FormItem>
                       <FormLabel>Cover Letter</FormLabel>
                       <FormDescription>
-                        1. On a scale of 1 to 10, how would you rate your English proficiency? (1 = Beginner, 10 = Fluent)
-                        2. Which position level are you applying for? (Fresher, Junior, Standard, Standard++, Senior, Senior++, or Lead)
+                        1. On a scale of 1 to 10, how would you rate your
+                        English proficiency? (1 = Beginner, 10 = Fluent) 2.
+                        Which position level are you applying for? (Fresher,
+                        Junior, Standard, Standard++, Senior, Senior++, or Lead)
                       </FormDescription>
                       <FormControl>
                         <Textarea
@@ -345,17 +397,17 @@ export default function ApplyDialog({
                       Submitting Application...
                     </>
                   ) : (
-                    "Submit Application"
+                    'Submit Application'
                   )}
                 </Button>
 
                 <div className="text-center text-sm text-gray-600">
                   <p>
-                    By sending the request you confirm that you accept our{" "}
+                    By sending the request you confirm that you accept our{' '}
                     <a href="#" className="text-indigo-600 hover:underline">
                       Terms of Service
-                    </a>{" "}
-                    and{" "}
+                    </a>{' '}
+                    and{' '}
                     <a href="#" className="text-indigo-600 hover:underline">
                       Privacy Policy
                     </a>
@@ -367,5 +419,5 @@ export default function ApplyDialog({
         </div>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
