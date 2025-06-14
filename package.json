@@ -82,6 +82,7 @@
     "@types/react-dom": "^19",
     "@types/react-toastify": "^4.1.0",
     "@types/simple-peer": "^9.11.8",
+    "@types/socket.io-client": "^3.0.0",
     "@typescript-eslint/eslint-plugin": "^8.29.1",
     "@typescript-eslint/parser": "^8.29.1",
     "eslint": "^9.24.0",

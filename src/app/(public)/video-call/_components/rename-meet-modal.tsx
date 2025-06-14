@@ -1,42 +1,51 @@
-"use client"
-import { useState, useEffect } from "react"
-import { useTranslation } from "react-i18next"
-import { Edit, X } from "lucide-react"
+'use client';
+import { useState, useEffect } from 'react';
+import { Edit } from 'lucide-react';
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Button } from "./ui-button"
-import { Input } from "./ui-input"
-import { videoCallText } from "../utils/text"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Button } from './ui-button';
+import { Input } from './ui-input';
+import { videoCallText } from '../utils/text';
 
 export interface RenameMeetModalProps {
-  visible: boolean
-  defaultName?: string
-  onClose: () => void
-  onSubmit: (newName: string) => void
+  visible: boolean;
+  defaultName?: string;
+  onClose: () => void;
+  onSubmit: (newName: string) => void;
 }
 
-export function RenameMeetModal({ visible, defaultName = "", onClose, onSubmit }: RenameMeetModalProps) {
-  const [meetName, setMeetName] = useState<string>("")
-  const [isLoading, setIsLoading] = useState<boolean>(false)
+export function RenameMeetModal({
+  visible,
+  defaultName = '',
+  onClose,
+  onSubmit,
+}: RenameMeetModalProps) {
+  const [meetName, setMeetName] = useState<string>('');
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const handleChangeName = () => {
-    if (!meetName.trim()) return
-    
-    setIsLoading(true)
+    if (!meetName.trim()) return;
+
+    setIsLoading(true);
     try {
-      onSubmit(meetName)
+      onSubmit(meetName);
     } catch (error) {
-      console.error("Error renaming meet:", error)
+      console.error('Error renaming meet:', error);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
     if (visible) {
-      setMeetName(defaultName)
+      setMeetName(defaultName);
     }
-  }, [visible, defaultName])
+  }, [visible, defaultName]);
 
   return (
     <Dialog open={visible} onOpenChange={(open) => !open && onClose()}>
@@ -65,5 +74,5 @@ export function RenameMeetModal({ visible, defaultName = "", onClose, onSubmit }
         </div>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

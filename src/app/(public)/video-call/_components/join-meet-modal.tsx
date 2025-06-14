@@ -1,31 +1,39 @@
-"use client"
-import { useEffect } from "react"
-import { useFormik } from "formik"
-import * as Yup from "yup"
-import { AtSignIcon as At, Mail, User, X } from "lucide-react"
+'use client';
+import { useEffect } from 'react';
+import { useFormik } from 'formik';
+import * as Yup from 'yup';
+import { AtSignIcon as At, Mail, User } from 'lucide-react';
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Button } from "./ui-button"
-import { Input } from "./ui-input"
-import { IconButton } from "./icon-button"
-import useMeetContext from "../contexts/MeetContext"
-import { toast } from "react-toastify"
-import { videoCallText } from "../utils/text"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Button } from './ui-button';
+import { Input } from './ui-input';
+import useMeetContext from '../contexts/MeetContext';
+import { toast } from 'react-toastify';
+import { videoCallText } from '../utils/text';
 
 interface JoinMeetModalProps {
-  visible: boolean
-  defaultMeetId?: string
-  onClose: () => void
+  visible: boolean;
+  defaultMeetId?: string;
+  onClose: () => void;
 }
 
-export function JoinMeetModal({ visible, defaultMeetId, onClose }: JoinMeetModalProps) {
+export function JoinMeetModal({
+  visible,
+  defaultMeetId,
+  onClose,
+}: JoinMeetModalProps) {
   const { joinMeet } = useMeetContext();
 
   const form = useFormik({
     initialValues: {
-      userName: "",
-      userEmail: "",
-      meetId: "",
+      userName: '',
+      userEmail: '',
+      meetId: '',
     },
     validationSchema: Yup.object().shape({
       userName: Yup.string()
@@ -35,8 +43,9 @@ export function JoinMeetModal({ visible, defaultMeetId, onClose }: JoinMeetModal
       userEmail: Yup.string()
         .email(videoCallText.formValidations.userEmail.invalid)
         .required(videoCallText.formValidations.userEmail.required),
-      meetId: Yup.string()
-        .required(videoCallText.formValidations.meetId.required),
+      meetId: Yup.string().required(
+        videoCallText.formValidations.meetId.required,
+      ),
     }),
     onSubmit: (values) => {
       try {
@@ -44,26 +53,26 @@ export function JoinMeetModal({ visible, defaultMeetId, onClose }: JoinMeetModal
         joinMeet(values.userName, values.userEmail, values.meetId);
         handleCloseModal();
       } catch (error) {
-        console.error("Error joining meet:", error);
+        console.error('Error joining meet:', error);
         toast(videoCallText.toastMessage.errorWhileStartingMeet, {
-          type: "error",
-          position: "top-right",
+          type: 'error',
+          position: 'top-right',
         });
       } finally {
         form.setSubmitting(false);
       }
     },
-  })
+  });
 
   const handleCloseModal = () => {
-    form.resetForm()
-    onClose()
-  }
+    form.resetForm();
+    onClose();
+  };
 
   useEffect(() => {
-    if (defaultMeetId) form.setFieldValue("meetId", defaultMeetId)
+    if (defaultMeetId) form.setFieldValue('meetId', defaultMeetId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [defaultMeetId])
+  }, [defaultMeetId]);
 
   return (
     <Dialog open={visible} onOpenChange={(open) => !open && handleCloseModal()}>
@@ -76,10 +85,14 @@ export function JoinMeetModal({ visible, defaultMeetId, onClose }: JoinMeetModal
             testId="joinMeetModalUserNameInput"
             name="userName"
             placeholder={videoCallText.inputPlaceholder.userName}
-            error={form.errors.userName && form.touched.userName ? form.errors.userName : undefined}
+            error={
+              form.errors.userName && form.touched.userName
+                ? form.errors.userName
+                : undefined
+            }
             value={form.values.userName}
             onBlur={form.handleBlur}
-            onChangeValue={(value) => form.setFieldValue("userName", value)}
+            onChangeValue={(value) => form.setFieldValue('userName', value)}
             icon={User}
           />
           <Input
@@ -87,20 +100,28 @@ export function JoinMeetModal({ visible, defaultMeetId, onClose }: JoinMeetModal
             name="userEmail"
             type="email"
             placeholder={videoCallText.inputPlaceholder.email}
-            error={form.errors.userEmail && form.touched.userEmail ? form.errors.userEmail : undefined}
+            error={
+              form.errors.userEmail && form.touched.userEmail
+                ? form.errors.userEmail
+                : undefined
+            }
             value={form.values.userEmail}
             onBlur={form.handleBlur}
-            onChangeValue={(value) => form.setFieldValue("userEmail", value)}
+            onChangeValue={(value) => form.setFieldValue('userEmail', value)}
             icon={Mail}
           />
           <Input
             testId="meetIdInput"
             name="meetId"
             placeholder={videoCallText.inputPlaceholder.meetId}
-            error={form.errors.meetId && form.touched.meetId ? form.errors.meetId : undefined}
+            error={
+              form.errors.meetId && form.touched.meetId
+                ? form.errors.meetId
+                : undefined
+            }
             value={form.values.meetId}
             onBlur={form.handleBlur}
-            onChangeValue={(value) => form.setFieldValue("meetId", value)}
+            onChangeValue={(value) => form.setFieldValue('meetId', value)}
             icon={At}
           />
           <Button
@@ -115,7 +136,5 @@ export function JoinMeetModal({ visible, defaultMeetId, onClose }: JoinMeetModal
         </form>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
-
-
