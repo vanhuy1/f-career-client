@@ -55,6 +55,9 @@ export function Chat() {
   useEffect(() => {
     if (!socketRef.current) return;
 
+    // Copy the socket reference
+    const socket = socketRef.current;
+
     const handleReceivedMessage = (message: string) => {
       const newMessage: Message = {
         id: Date.now().toString(),
@@ -65,10 +68,10 @@ export function Chat() {
       setMessages((prev) => [...prev, newMessage]);
     };
 
-    socketRef.current.on('received-message', handleReceivedMessage);
+    socket.on('received-message', handleReceivedMessage);
 
     return () => {
-      socketRef.current?.off('received-message', handleReceivedMessage);
+      socket.off('received-message', handleReceivedMessage);
     };
   }, [socketRef]);
 

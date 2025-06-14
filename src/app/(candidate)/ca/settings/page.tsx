@@ -62,7 +62,7 @@ export default function SettingsPage() {
         // ignore formatting errors
       }
     }
-  }, [form.watch('dob')]);
+  }, [form]);
 
   // Handler for the date picker
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -175,7 +175,7 @@ export default function SettingsPage() {
               "
               buttonClassName="flex flex-col items-center"
             >
-              {/* All of this is the “children” inside the clickable area */}
+              {/* All of this is the "children" inside the clickable area */}
               <ImageIcon className="h-6 w-6 text-indigo-600" />
               <p className="mt-2 font-medium text-indigo-600">
                 Click to replace

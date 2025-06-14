@@ -175,7 +175,7 @@ export default function Meet() {
     return () => {
       document.removeEventListener('fullscreenchange', handleFullscreenChange);
     };
-  }, [otherUserData]);
+  }, [otherUserData, userData, router, getUserStream]);
 
   // Auto-hide header on mobile after 3 seconds
   useEffect(() => {

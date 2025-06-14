@@ -5,6 +5,7 @@ import React, {
   useEffect,
   useContext,
   createContext,
+  useCallback,
 } from 'react';
 import { useRouter } from 'next/navigation';
 import SimplePeer from 'simple-peer';
@@ -147,13 +148,9 @@ export const MeetProvider: React.FC<{
 
       return stream;
     } catch (error) {
-      console.error('Failed to get user stream:', error);
+      console.log('Failed to get user stream:', error);
       setIsUsingVideo(false);
       setIsUsingMicrophone(false);
-      toast(
-        videoCallText.toastMessage.allowGetVideoAndAudio,
-        TOAST_DEFAULT_CONFIG,
-      );
       return undefined;
     }
   };
@@ -332,13 +329,13 @@ export const MeetProvider: React.FC<{
     clearMeetData();
   };
 
-  const cancelMeetRequest = () => {
+  const cancelMeetRequest = useCallback(() => {
     socketRef.current!.emit('cancel-meet-request', callingOtherUserData.id);
     if (peerRef.current) {
       peerRef.current.destroy();
     }
     clearMeetData();
-  };
+  }, [callingOtherUserData.id]);
 
   const renameMeet = (newMeetName: string) => {
     socketRef.current!.emit('meet-new-name', {
@@ -459,6 +456,13 @@ export const MeetProvider: React.FC<{
     }
   };
 
+  const handleLinkNotAvailable = React.useCallback(() => {
+    cancelMeetRequest();
+    userStream?.getTracks().forEach((track) => track.stop());
+    router.replace('/video-call?stopStream=true');
+    toast(videoCallText.toastMessage.linkNotAvailable, TOAST_DEFAULT_CONFIG);
+  }, [cancelMeetRequest, userStream, router]);
+
   useEffect(() => {
     const handleSocketConnection = async () => {
       try {
@@ -477,13 +481,7 @@ export const MeetProvider: React.FC<{
         });
 
         socketRef.current.on('link-not-available', () => {
-          cancelMeetRequest();
-          userStream?.getTracks().forEach((track) => track.stop());
-          router.replace('/video-call?stopStream=true');
-          toast(
-            videoCallText.toastMessage.linkNotAvailable,
-            TOAST_DEFAULT_CONFIG,
-          );
+          handleLinkNotAvailable();
         });
 
         socketRef.current.on(
@@ -629,7 +627,7 @@ export const MeetProvider: React.FC<{
         socketRef.current.off('new-message');
       }
     };
-  }, []); // Intentionally empty to run once on mount
+  }, [handleLinkNotAvailable, otherUserData.id, cancelMeetRequest, router]);
 
   useEffect(() => {
     if (isReceivingMeetRequest) {
