@@ -1,12 +1,12 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { useTranslation } from "react-i18next"
 import { Send } from "lucide-react"
 
 import { Button } from "./ui-button"
-import  useMeetContext  from "../contexts/MeetContext"
+import useMeetContext from "../contexts/MeetContext"
 import { cn } from "@/lib/utils"
+import { videoCallText } from "../utils/text"
 
 interface Message {
   id: string
@@ -16,7 +16,6 @@ interface Message {
 }
 
 export function Chat() {
-  const { t } = useTranslation()
   const { socketRef, userData, otherUserData } = useMeetContext()
   
   const [messages, setMessages] = useState<Message[]>([])
@@ -81,13 +80,13 @@ export function Chat() {
   return (
     <div className="flex h-full flex-col">
       <div className="px-4 py-2 text-center border-b">
-        <h3 className="font-medium">{t("chat.title")}</h3>
+        <h3 className="font-medium">{videoCallText.page.meet.chat.title}</h3>
       </div>
       
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
         {messages.length === 0 ? (
           <p className="text-center text-sm text-muted-foreground">
-            {t("chat.noMessages")}
+            No messages yet
           </p>
         ) : (
           messages.map((message) => (
@@ -124,7 +123,7 @@ export function Chat() {
         <div className="flex items-center gap-2">
           <textarea
             className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-            placeholder={t("chat.inputPlaceholder")}
+            placeholder={videoCallText.inputPlaceholder.sendMessage}
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={handleKeyDown}
@@ -136,7 +135,7 @@ export function Chat() {
             disabled={!inputValue.trim()}
           >
             <Send className="h-4 w-4" />
-            <span className="sr-only">{t("chat.send")}</span>
+            <span className="sr-only">Send</span>
           </Button>
         </div>
       </div>

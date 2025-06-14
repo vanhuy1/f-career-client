@@ -1,7 +1,5 @@
 'use client'
 import React, { useRef, useState, useEffect, useContext, createContext } from 'react';
-import { useTranslation } from 'react-i18next';
-
 import { useRouter } from 'next/navigation';
 
 import SimplePeer from 'simple-peer';
@@ -11,6 +9,7 @@ import { toast } from 'react-toastify';
 import { TCallAcceptedEventData, TRequestMeetConnectionEventData, TUser } from '../utils/types';
 import { PEER_CONFIGS, TOAST_DEFAULT_CONFIG, SOCKET_URL, SOCKET_OPTIONS } from '../utils/constants';
 import { isEmpty } from '../utils/functions';
+import { videoCallText } from '../utils/text';
 
 export interface MeetContextProps {
 	socketRef: React.RefObject<any>;
@@ -56,7 +55,6 @@ const MeetContext: React.Context<MeetContextProps> = createContext({} as MeetCon
 export const MeetProvider: React.FC<{ testData?: any, children: any }> = ({ testData, children }) => {
 
 	const router = useRouter();
-	const { t } = useTranslation();
 
 	const peerRef = useRef<any>(null);
 	const socketRef = useRef<any>(null);
@@ -119,7 +117,7 @@ export const MeetProvider: React.FC<{ testData?: any, children: any }> = ({ test
 			setIsUsingVideo(false);
 			setIsUsingMicrophone(false);
 
-			toast(t('toastMessage.allowGetVideoAndAudio'), TOAST_DEFAULT_CONFIG);
+			toast(videoCallText.toastMessage.allowGetVideoAndAudio, TOAST_DEFAULT_CONFIG);
 		}
 	}
 
@@ -195,7 +193,7 @@ export const MeetProvider: React.FC<{ testData?: any, children: any }> = ({ test
 			});
 
 			peerRef.current = peer;
-			router.push('/meet');
+			router.push('/video-call/meet');
 		} catch (error) {
 			console.log('Error: ', error);
 		}
@@ -330,7 +328,7 @@ export const MeetProvider: React.FC<{ testData?: any, children: any }> = ({ test
 
 	const updateScreenSharing = async () => {
 		try {
-			if (isEmpty(otherUserData)) return toast(t('toastMessage.canNotshareScreen'), TOAST_DEFAULT_CONFIG);
+			if (isEmpty(otherUserData)) return toast(videoCallText.toastMessage.canNotshareScreen, TOAST_DEFAULT_CONFIG);
 
 			const hasNoStream = await checkUserStream();
 			if (hasNoStream) return;
@@ -370,7 +368,7 @@ export const MeetProvider: React.FC<{ testData?: any, children: any }> = ({ test
 
 			peerRef.current.replaceTrack(oldTrack, newTrack, oldStream);
 		} catch (error) {
-			toast(t('toastMessage.sharingScreenError'), TOAST_DEFAULT_CONFIG);
+			toast(videoCallText.toastMessage.sharingScreenError, TOAST_DEFAULT_CONFIG);
 		}
 	}
 
@@ -387,7 +385,7 @@ export const MeetProvider: React.FC<{ testData?: any, children: any }> = ({ test
 
 				socketRef.current.on('connect_error', (error: Error) => {
 					console.error('Socket connection error:', error.message);
-					toast(t('toastMessage.connectionError'), TOAST_DEFAULT_CONFIG);
+					toast("Connection error. Please check your internet connection.", TOAST_DEFAULT_CONFIG);
 				});
 
 				// Generic events
@@ -398,12 +396,12 @@ export const MeetProvider: React.FC<{ testData?: any, children: any }> = ({ test
 					tracks?.forEach(track => track.stop());
 
 					router.replace('/video-call?stopStream=true');
-					toast(t('toastMessage.linkNotAvailable'), TOAST_DEFAULT_CONFIG);
+					toast(videoCallText.toastMessage.linkNotAvailable, TOAST_DEFAULT_CONFIG);
 				});
 
 				socketRef.current.on('meet-name-updated', ({ meetId, name }: { meetId: string, name: string }) => {
 					setMeetName(name);
-					toast(t('toastMessage.meetNameUpdated'), TOAST_DEFAULT_CONFIG);
+					toast(videoCallText.toastMessage.meetNameUpdated, TOAST_DEFAULT_CONFIG);
 				});
 
 				// Disconnections events
@@ -418,7 +416,7 @@ export const MeetProvider: React.FC<{ testData?: any, children: any }> = ({ test
 					peerRef.current.destroy();
 					
 					router.replace('/video-call?stopStream=true');
-					toast(t('toastMessage.userRemovedFromMeet'), TOAST_DEFAULT_CONFIG);
+					toast(videoCallText.toastMessage.userRemovedFromMeet, TOAST_DEFAULT_CONFIG);
 				});
 
 				socketRef.current.on('other-user-left-meet', () => {
@@ -426,7 +424,7 @@ export const MeetProvider: React.FC<{ testData?: any, children: any }> = ({ test
 					clearMeetData();
 					peerRef.current.destroy();
 
-					toast(t('toastMessage.otherUserLeftMeet'), TOAST_DEFAULT_CONFIG);
+					toast(videoCallText.toastMessage.otherUserLeftMeet, TOAST_DEFAULT_CONFIG);
 				});
 
 				// Meet stream events
@@ -469,7 +467,7 @@ export const MeetProvider: React.FC<{ testData?: any, children: any }> = ({ test
 					clearMeetData();
 					peerRef.current.destroy();
 
-					toast(t('toastMessage.requestDeclined'), TOAST_DEFAULT_CONFIG);
+					toast(videoCallText.toastMessage.requestDeclined, TOAST_DEFAULT_CONFIG);
 				});
 
 				socketRef.current.on('call-canceled', () => {
@@ -478,7 +476,7 @@ export const MeetProvider: React.FC<{ testData?: any, children: any }> = ({ test
 
 				socketRef.current.on('other-user-already-in-meet', () => {
 					cancelMeetRequest();
-					toast(t('toastMessage.otherUserInMeet'), TOAST_DEFAULT_CONFIG);
+					toast(videoCallText.toastMessage.otherUserInMeet, TOAST_DEFAULT_CONFIG);
 				});
 
 				// Chat messages
@@ -490,7 +488,7 @@ export const MeetProvider: React.FC<{ testData?: any, children: any }> = ({ test
 
 			} catch (error) {
 				console.error('Could not initialize socket connection:', error);
-				toast(t('toastMessage.connectionError'), TOAST_DEFAULT_CONFIG);
+				toast("Connection error. Please try again later.", TOAST_DEFAULT_CONFIG);
 			}
 		}
 
@@ -535,7 +533,7 @@ export const MeetProvider: React.FC<{ testData?: any, children: any }> = ({ test
 				clearMeetData();
 				peerRef.current.destroy();
 
-				toast(t('toastMessage.otherUserLeftMeet'), TOAST_DEFAULT_CONFIG);
+				toast(videoCallText.toastMessage.otherUserLeftMeet, TOAST_DEFAULT_CONFIG);
 			} else {
 				setDisconnectedOtherUserId('');
 			}

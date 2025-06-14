@@ -2,19 +2,18 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { BiCompass, BiUser, BiEnvelope, BiAt } from 'react-icons/bi';
+import { BiCompass } from 'react-icons/bi';
 import { useFormik } from 'formik';
-import { useTranslation } from 'react-i18next';
 import { useRouter } from 'next/navigation';
 import Head from 'next/head';
 import toast from 'react-hot-toast'
 import { Button } from "./_components/ui-button"
 import { Input } from "./_components/ui-input"
 import { JoinMeetModal } from "./_components/join-meet-modal"
-import { LanguageSwitch } from "./_components/language-switch"
-import  useMeetContext  from "./contexts/MeetContext"
+import useMeetContext from "./contexts/MeetContext"
 import { Loader2 } from 'lucide-react';
 import * as Yup from 'yup';
+import { videoCallText } from './utils/text';
 
 type TFormValues = {
   userName: string;
@@ -23,23 +22,21 @@ type TFormValues = {
 };
 
 const formValidations = Yup.object().shape({
-	userName: Yup.string()
-	  .min(3, 'formValidations.userName.tooShort')
-	  .max(50, 'formValidations.userName.tooLong')
-	  .required('formValidations.userName.required'),
-	userEmail: Yup.string()
-		.email('formValidations.userEmail.invalid')
-		.required('formValidations.userEmail.required'),
-	meetName: Yup.string()
-		.min(3, 'formValidations.meetName.tooShort')
-		.max(50, 'formValidations.meetName.tooLong')
-		.required('formValidations.meetName.required'),
+  userName: Yup.string()
+    .min(3, videoCallText.formValidations.userName.tooShort)
+    .max(50, videoCallText.formValidations.userName.tooLong)
+    .required(videoCallText.formValidations.userName.required),
+  userEmail: Yup.string()
+    .email(videoCallText.formValidations.userEmail.invalid)
+    .required(videoCallText.formValidations.userEmail.required),
+  meetName: Yup.string()
+    .min(3, videoCallText.formValidations.meetName.tooShort)
+    .max(50, videoCallText.formValidations.meetName.tooLong)
+    .required(videoCallText.formValidations.meetName.required),
 });
 
 const HomePage = () => {
   const router = useRouter();
-  const { t } = useTranslation();
-
   const { userStream, startNewMeet, clearUserStream } = useMeetContext();
 
   const [defaultMeetId, setDefaultMeetId] = useState('');
@@ -50,7 +47,7 @@ const HomePage = () => {
     const hadSuccess = startNewMeet(values.userName, values.userEmail, values.meetName);
 
     form.setSubmitting(false);
-    if (!hadSuccess) return toast.error(t('toastMessage.errorWhileStartingMeet'));
+    if (!hadSuccess) return toast.error(videoCallText.toastMessage.errorWhileStartingMeet);
 
     router.push('/video-call/meet');
   };
@@ -98,21 +95,21 @@ const HomePage = () => {
       <main className="flex-1 flex flex-col items-center justify-center px-6 py-10 space-y-6">
         <div className="flex flex-col items-center space-y-2 text-center">
           <BiCompass className="text-4xl text-primary" />
-          <h1 className="text-2xl font-bold">{t('page.home.title')}</h1>
-          <p className="text-sm text-muted-foreground">{t('page.home.subtitle')}</p>
+          <h1 className="text-2xl font-bold">{videoCallText.page.home.title}</h1>
+          <p className="text-sm text-muted-foreground">{videoCallText.page.home.subtitle}</p>
         </div>
 
         <form onSubmit={form.handleSubmit} className="w-full max-w-md space-y-4">
           <div>
             <Input
               name="userName"
-              placeholder={t('inputPlaceholder.userName')}
+              placeholder={videoCallText.inputPlaceholder.userName}
               value={form.values.userName}
               onBlur={form.handleBlur}
               onChange={form.handleChange}
             />
             {form.errors.userName && form.touched.userName && (
-              <p className="text-sm text-red-500 mt-1">{t(form.errors.userName)}</p>
+              <p className="text-sm text-red-500 mt-1">{form.errors.userName}</p>
             )}
           </div>
 
@@ -120,66 +117,55 @@ const HomePage = () => {
             <Input
               name="userEmail"
               type="email"
-              placeholder={t('inputPlaceholder.email')}
+              placeholder={videoCallText.inputPlaceholder.email}
               value={form.values.userEmail}
               onBlur={form.handleBlur}
               onChange={form.handleChange}
             />
             {form.errors.userEmail && form.touched.userEmail && (
-              <p className="text-sm text-red-500 mt-1">{t(form.errors.userEmail)}</p>
+              <p className="text-sm text-red-500 mt-1">{form.errors.userEmail}</p>
             )}
           </div>
 
           <div>
             <Input
               name="meetName"
-              placeholder={t('inputPlaceholder.meetName')}
+              placeholder={videoCallText.inputPlaceholder.meetName}
               value={form.values.meetName}
               onBlur={form.handleBlur}
               onChange={form.handleChange}
             />
             {form.errors.meetName && form.touched.meetName && (
-              <p className="text-sm text-red-500 mt-1">{t(form.errors.meetName)}</p>
+              <p className="text-sm text-red-500 mt-1">{form.errors.meetName}</p>
             )}
           </div>
 
-          <Button type="submit"  testId="startMeetButton" disabled={!form.isValid || form.isSubmitting} className="w-full">
+          <Button type="submit" testId="startMeetButton" disabled={!form.isValid || form.isSubmitting} className="w-full">
             {form.isSubmitting ? (
               <Loader2 className="animate-spin h-4 w-4" />
             ) : (
-              t('page.home.button')
+              videoCallText.page.home.button
             )}
           </Button>
         </form>
 
         <div className="flex items-center gap-2 text-muted-foreground text-sm">
           <div className="flex-1 h-px bg-border" />
-          {t('page.home.or')}
+          {videoCallText.page.home.or}
           <div className="flex-1 h-px bg-border" />
         </div>
 
         <div className="text-sm">
-          {t('page.home.joinMeet')}{' '}
+          {videoCallText.page.home.joinMeet}
           <button
             type="button"
             className="text-primary underline ml-1"
             onClick={() => setIsJoinMeetModalVisible(true)}
           >
-            {t('page.home.joinMeetLink')}
+            {videoCallText.page.home.joinMeetLink}
           </button>
         </div>
       </main>
-
-      <div className="absolute top-4 right-4">
-          <LanguageSwitch 
-          selectedLanguage="en" 
-          changeSelectedLanguage={
-            () =>{
-
-            }
-          }
-        />
-      </div>
 
       <JoinMeetModal
         visible={isJoinMeetModalVisible}

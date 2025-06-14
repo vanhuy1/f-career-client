@@ -6,7 +6,7 @@ import { Edit, X } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "./ui-button"
 import { Input } from "./ui-input"
-import { IconButton } from "./icon-button"
+import { videoCallText } from "../utils/text"
 
 export interface RenameMeetModalProps {
   visible: boolean
@@ -16,7 +16,6 @@ export interface RenameMeetModalProps {
 }
 
 export function RenameMeetModal({ visible, defaultName = "", onClose, onSubmit }: RenameMeetModalProps) {
-  const { t } = useTranslation()
   const [meetName, setMeetName] = useState<string>("")
   const [isLoading, setIsLoading] = useState<boolean>(false)
 
@@ -43,14 +42,13 @@ export function RenameMeetModal({ visible, defaultName = "", onClose, onSubmit }
     <Dialog open={visible} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-md" data-testid="renameMeetModal">
         <DialogHeader className="flex flex-row items-center justify-between">
-          <DialogTitle>{t("renameMeetModal.title")}</DialogTitle>
-          <IconButton icon={<X className="h-4 w-4" />} onClick={onClose} />
+          <DialogTitle>{videoCallText.renameMeetModal.title}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 pt-4">
           <Input
             testId="meetNameInput"
             name="meetName"
-            placeholder={t("inputPlaceholder.meetName")}
+            placeholder={videoCallText.inputPlaceholder.meetName}
             value={meetName}
             onChangeValue={setMeetName}
             icon={Edit}
@@ -62,7 +60,7 @@ export function RenameMeetModal({ visible, defaultName = "", onClose, onSubmit }
             onClick={handleChangeName}
             className="w-full"
           >
-            {t("renameMeetModal.button")}
+            {videoCallText.renameMeetModal.rename}
           </Button>
         </div>
       </DialogContent>
