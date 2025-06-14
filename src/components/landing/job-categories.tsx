@@ -72,15 +72,15 @@ export default function JobCategories() {
   ];
 
   return (
-    <div className="bg-[#1a1d26] px-4 py-12 md:px-8 lg:px-12">
+    <div className="bg-[#ffffff] px-4 py-12 md:px-8 lg:px-12">
       <div className="mx-auto max-w-7xl">
         <div className="mb-8 flex items-center justify-between">
-          <h2 className="text-4xl font-bold text-white">
+          <h2 className="text-4xl font-bold text-gray-800">
             Explore by <span className="text-blue-500">category</span>
           </h2>
           <Link
             href="#"
-            className="group flex items-center gap-2 text-indigo-500 hover:text-indigo-400"
+            className="group flex items-center gap-2 text-blue-600 hover:text-blue-700"
           >
             Show all jobs
             <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
@@ -92,30 +92,24 @@ export default function JobCategories() {
             <Link
               key={category.name}
               href={category.href}
-              className={`block rounded-lg p-6 transition-transform hover:scale-[1.02] ${
-                category.active ? 'bg-indigo-600' : 'bg-white'
+              className={`block rounded-lg border-1 p-6 transition-transform hover:scale-[1.02] ${
+                category.active ? 'bg-blue-600' : 'bg-white'
               }`}
             >
               <div className="mb-4">{category.icon}</div>
               <h3
-                className={`mb-2 text-xl font-bold ${
-                  category.active ? 'text-white' : 'text-gray-900'
-                }`}
+                className={`mb-2 text-xl font-bold ${category.active ? 'text-white' : 'text-gray-900'}`}
               >
                 {category.name}
               </h3>
               <div className="flex items-center justify-between">
                 <span
-                  className={`${
-                    category.active ? 'text-indigo-200' : 'text-gray-500'
-                  }`}
+                  className={`${category.active ? 'text-blue-100' : 'text-gray-500'}`}
                 >
                   {category.jobs} jobs available
                 </span>
                 <ArrowRight
-                  className={`h-4 w-4 ${
-                    category.active ? 'text-white' : 'text-gray-500'
-                  }`}
+                  className={`h-4 w-4 ${category.active ? 'text-white' : 'text-gray-500'}`}
                 />
               </div>
             </Link>

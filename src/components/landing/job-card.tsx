@@ -15,7 +15,7 @@ interface JobProps {
 
 export default function JobCard({ job }: JobProps) {
   return (
-    <div className="rounded-lg bg-white p-6 shadow-sm transition-shadow hover:shadow-md">
+    <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md">
       <div className="flex items-start gap-4">
         <div className="relative h-12 w-12 flex-shrink-0">
           <Image

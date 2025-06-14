@@ -5,8 +5,6 @@ import {
   Home,
   MessageSquare,
   FileText,
-  Search,
-  Building2,
   User,
   Settings,
   HelpCircle,
@@ -63,7 +61,7 @@ export default function Sidebar() {
             label="My Applications"
             active={pathname === ROUTES.CA.HOME.APPLICATIONLIST.path}
           />
-          <NavItem
+          {/* <NavItem
             href={ROUTES.CA.HOME.FINDJOB.path}
             icon={<Search />}
             label="Find Jobs"
@@ -74,7 +72,7 @@ export default function Sidebar() {
             icon={<Building2 />}
             label="Browse Companies"
             active={pathname === ROUTES.CA.HOME.BROWSECOMPANY.path}
-          />
+          /> */}
           <NavItem
             href={ROUTES.CA.HOME.PROFILE.path}
             icon={<User />}
