@@ -9,7 +9,7 @@ import { io } from 'socket.io-client';
 import { toast } from 'react-toastify';
 
 import { TCallAcceptedEventData, TRequestMeetConnectionEventData, TUser } from '../utils/types';
-import { PEER_CONFIGS, TOAST_DEFAULT_CONFIG } from '../utils/constants';
+import { PEER_CONFIGS, TOAST_DEFAULT_CONFIG, SOCKET_URL, SOCKET_OPTIONS } from '../utils/constants';
 import { isEmpty } from '../utils/functions';
 
 export interface MeetContextProps {
@@ -137,7 +137,13 @@ export const MeetProvider: React.FC<{ testData?: any, children: any }> = ({ test
 	const startNewMeet = (userName: string, userEmail: string, meet: string) => {
 		try {
 			const user = { id: socketRef.current.id, name: userName, email: userEmail };
-			socketRef.current.emit('save-user-data', user);
+			socketRef.current.emit('save-user-data', user, (response: any) => {
+				if (response && response.success) {
+					console.log('User data saved successfully');
+				} else {
+					console.error('Failed to save user data:', response?.error);
+				}
+			});
 			
 			setUserData(user);
 			setMeetName(meet);		
@@ -161,7 +167,12 @@ export const MeetProvider: React.FC<{ testData?: any, children: any }> = ({ test
 			});
 
 			const user = { id: socketRef.current.id, name: userName, email: userEmail };
-			socketRef.current.emit('save-user-data', user);
+			socketRef.current.emit('save-user-data', user, (response: any) => {
+				if (!response || !response.success) {
+					console.error('Failed to save user data:', response?.error);
+				}
+			});
+			
 			socketRef.current.emit('check-meet-link', userToCallId);
 			
 			setUserData(user);
@@ -172,6 +183,10 @@ export const MeetProvider: React.FC<{ testData?: any, children: any }> = ({ test
 					to: userToCallId,
 					from: user,
 					signal: data,
+				}, (response: any) => {
+					if (!response || !response.success) {
+						console.error('Call failed:', response?.error);
+					}
 				});
 			})
 		
@@ -209,10 +224,19 @@ export const MeetProvider: React.FC<{ testData?: any, children: any }> = ({ test
 
 		peer.on('signal', data => {
 			socketRef.current.emit('accept-call', {
-				from: userData,
 				to: otherUser.data.id,
+				from: userData,
 				signal: data,
 				meetName
+			}, (response: any) => {
+				if (response && response.success) {
+					// Join the meeting with the returned meetId if provided
+					if (response.meetId) {
+						console.log('Joined meeting with ID:', response.meetId);
+					}
+				} else {
+					console.error('Failed to accept call:', response?.error);
+				}
 			});
 		});
 
@@ -228,19 +252,26 @@ export const MeetProvider: React.FC<{ testData?: any, children: any }> = ({ test
 	}
 
 	const rejectMeetRequest = () => {
-		socketRef.current.emit('reject-call', callingOtherUserData.id);
+		socketRef.current.emit('reject-call', {
+			to: callingOtherUserData.id,
+			from: userData
+		});
 		clearMeetData();
 	}
 
 	const cancelMeetRequest = () => {
 		socketRef.current.emit('cancel-meet-request', callingOtherUserData.id);
-		peerRef.current.destroy();
-
+		if (peerRef.current) {
+			peerRef.current.destroy();
+		}
 		clearMeetData();
 	}
 
 	const renameMeet = (newMeetName: string) => {
-		socketRef.current.emit('meet-new-name', { to: otherUserData.id, newMeetName });
+		socketRef.current.emit('meet-new-name', { 
+			to: otherUserData.id, 
+			newMeetName 
+		});
 		setMeetName(newMeetName);
 	}
 
@@ -259,7 +290,11 @@ export const MeetProvider: React.FC<{ testData?: any, children: any }> = ({ test
 			setMeetName('');
 		}
 
-		socketRef.current.emit('left-meet', otherUserData.id);
+		socketRef.current.emit('left-meet', {
+			userId: userData.id,
+			meetId: meetName
+		});
+		
 		if (peerRef.current) peerRef.current.destroy();
 		userVideoRef.current?.remove();
 		
@@ -273,7 +308,11 @@ export const MeetProvider: React.FC<{ testData?: any, children: any }> = ({ test
 		const hasNoStream = await checkUserStream();
 		if (hasNoStream) return;
 
-		socketRef.current.emit('update-user-audio', { to: otherUserData.id, shouldMute: isUsingMicrophone });
+		socketRef.current.emit('update-user-audio', { 
+			userId: userData.id,
+			meetId: meetName,
+			status: !isUsingMicrophone
+		});
 		setIsUsingMicrophone(!isUsingMicrophone);
 	}
 
@@ -281,7 +320,11 @@ export const MeetProvider: React.FC<{ testData?: any, children: any }> = ({ test
 		const hasNoStream = await checkUserStream();
 		if (hasNoStream) return;
 
-		socketRef.current.emit('update-user-video', { to: otherUserData.id, shouldStop: isUsingVideo });
+		socketRef.current.emit('update-user-video', { 
+			userId: userData.id,
+			meetId: meetName,
+			status: !isUsingVideo
+		});
 		setIsUsingVideo(!isUsingVideo);
 	}
 
@@ -298,12 +341,20 @@ export const MeetProvider: React.FC<{ testData?: any, children: any }> = ({ test
 				stream = userStream;
 				setIsSharingScreen(false);
 
-				socketRef.current.emit('update-screen-sharing', { to: otherUserData.id, isSharing: false })
+				socketRef.current.emit('update-screen-sharing', { 
+					userId: userData.id,
+					meetId: meetName,
+					status: false
+				});
 			} else {
 				stream = await navigator.mediaDevices.getDisplayMedia();
 				setIsSharingScreen(true);
 
-				socketRef.current.emit('update-screen-sharing', { to: otherUserData.id, isSharing: true })
+				socketRef.current.emit('update-screen-sharing', { 
+					userId: userData.id,
+					meetId: meetName,
+					status: true
+				});
 			}
 
 			const [ oldStream ] = peerRef.current.streams;
@@ -326,9 +377,18 @@ export const MeetProvider: React.FC<{ testData?: any, children: any }> = ({ test
 	useEffect(() => {
 		const handleSocketConnection = async () => {
 			try {
-				
-				await fetch('/api/socket');
-				socketRef.current = io();
+				// Connect to the external Socket.IO server
+				socketRef.current = io(SOCKET_URL, SOCKET_OPTIONS);
+
+				// Connection events
+				socketRef.current.on('connect', () => {
+					console.log('Connected to video call server');
+				});
+
+				socketRef.current.on('connect_error', (error: Error) => {
+					console.error('Socket connection error:', error.message);
+					toast(t('toastMessage.connectionError'), TOAST_DEFAULT_CONFIG);
+				});
 
 				// Generic events
 				socketRef.current.on('link-not-available', () => {
@@ -341,14 +401,14 @@ export const MeetProvider: React.FC<{ testData?: any, children: any }> = ({ test
 					toast(t('toastMessage.linkNotAvailable'), TOAST_DEFAULT_CONFIG);
 				});
 
-				socketRef.current.on('update-meet-name', (newMeetName: string) => {
-					setMeetName(newMeetName);
+				socketRef.current.on('meet-name-updated', ({ meetId, name }: { meetId: string, name: string }) => {
+					setMeetName(name);
 					toast(t('toastMessage.meetNameUpdated'), TOAST_DEFAULT_CONFIG);
 				});
 
 				// Disconnections events
-				socketRef.current.on('user-left', (userDisconnectedId: string) => {
-					setDisconnectedOtherUserId(userDisconnectedId);
+				socketRef.current.on('user-left', ({ userId, meetId }: { userId: string, meetId: string }) => {
+					setDisconnectedOtherUserId(userId);
 				});
 
 				socketRef.current.on('removed-from-meet', () => {
@@ -370,23 +430,27 @@ export const MeetProvider: React.FC<{ testData?: any, children: any }> = ({ test
 				});
 
 				// Meet stream events
-				socketRef.current.on('update-other-user-audio', (shouldMute: boolean) => {
-					if (otherUserVideoRef.current) {
-						otherUserVideoRef.current.muted = shouldMute;
-						setIsOtherUserMuted(shouldMute);
+				socketRef.current.on('user-audio-update', ({ userId, status }: { userId: string, status: boolean }) => {
+					if (userId === otherUserData.id && otherUserVideoRef.current) {
+						otherUserVideoRef.current.muted = !status;
+						setIsOtherUserMuted(!status);
 					}
 				});
 
-				socketRef.current.on('update-other-user-video', (shouldStop: boolean) => {
-					setIsOtherUserVideoStopped(shouldStop);
+				socketRef.current.on('user-video-update', ({ userId, status }: { userId: string, status: boolean }) => {
+					if (userId === otherUserData.id) {
+						setIsOtherUserVideoStopped(!status);
+					}
 				});
 
-				socketRef.current.on('update-other-user-screen-sharing', (isSharing: boolean) => {
-					setIsOtherUserSharingScreen(isSharing);
+				socketRef.current.on('screen-sharing-update', ({ userId, status }: { userId: string, status: boolean }) => {
+					if (userId === otherUserData.id) {
+						setIsOtherUserSharingScreen(status);
+					}
 				});
 
 				// Meet initiation events
-				socketRef.current.on('request-meet-connection', (data: TRequestMeetConnectionEventData) => {
+				socketRef.current.on('incoming-call', (data: TRequestMeetConnectionEventData) => {
 					setIsReceivingMeetRequest(true);
 					setCallingOtherUserData(data.from);
 					setCallingOtherUserSignal(data.signal);
@@ -417,8 +481,16 @@ export const MeetProvider: React.FC<{ testData?: any, children: any }> = ({ test
 					toast(t('toastMessage.otherUserInMeet'), TOAST_DEFAULT_CONFIG);
 				});
 
+				// Chat messages
+				socketRef.current.on('new-message', ({ from, message, timestamp }: { from: TUser, message: string, timestamp: string }) => {
+					// Handle incoming chat messages
+					console.log(`Message from ${from.name}: ${message}`);
+					// You would typically update a chat messages state here
+				});
+
 			} catch (error) {
-				// Could not init socket connection!
+				console.error('Could not initialize socket connection:', error);
+				toast(t('toastMessage.connectionError'), TOAST_DEFAULT_CONFIG);
 			}
 		}
 
@@ -426,22 +498,26 @@ export const MeetProvider: React.FC<{ testData?: any, children: any }> = ({ test
 
 		return () => {
 			if (socketRef.current) {
+				// Disconnect from socket
+				socketRef.current.disconnect();
+				
+				// Clean up event listeners
+				socketRef.current.off('connect');
+				socketRef.current.off('connect_error');
 				socketRef.current.off('link-not-available');
-				socketRef.current.off('update-meet-name');
-
+				socketRef.current.off('meet-name-updated');
 				socketRef.current.off('user-left');
 				socketRef.current.off('removed-from-meet');
 				socketRef.current.off('other-user-left-meet');
-
-				socketRef.current.off('update-other-user-audio');
-				socketRef.current.off('update-other-user-video');
-				socketRef.current.off('update-other-user-screen-sharing');
-
-				socketRef.current.off('request-meet-connection');
+				socketRef.current.off('user-audio-update');
+				socketRef.current.off('user-video-update');
+				socketRef.current.off('screen-sharing-update');
+				socketRef.current.off('incoming-call');
 				socketRef.current.off('call-accepted');
 				socketRef.current.off('call-rejected');
 				socketRef.current.off('call-canceled');
 				socketRef.current.off('other-user-already-in-meet');
+				socketRef.current.off('new-message');
 			}
 		};
 	}, []);
@@ -512,7 +588,6 @@ export const MeetProvider: React.FC<{ testData?: any, children: any }> = ({ test
 			{ children }
 		</MeetContext.Provider>
 	);
-
 }
 
 const useMeetContext = () => useContext(MeetContext);

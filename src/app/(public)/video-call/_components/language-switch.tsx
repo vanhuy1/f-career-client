@@ -18,13 +18,6 @@ export function LanguageSwitch({ selectedLanguage, changeSelectedLanguage, class
         className,
       )}
     >
-      <Image
-        width={20}
-        height={20}
-        src={`/assets/images/${selectedLanguage === "en" ? "usa" : "brazil"}-icon.png`}
-        alt={selectedLanguage === "en" ? "United States flag" : "Brazil flag"}
-        className="h-5 w-5 rounded-full"
-      />
       <span className="text-xs font-medium uppercase">{selectedLanguage}</span>
     </button>
   )

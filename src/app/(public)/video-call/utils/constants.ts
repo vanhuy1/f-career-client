@@ -1,5 +1,11 @@
 import type { ToastOptions } from "react-toastify"
 
+// Backend connection configuration
+export const BACKEND_URL = 'http://localhost:8000';
+export const SOCKET_NAMESPACE = '/video-call';
+export const SOCKET_URL = `${BACKEND_URL}${SOCKET_NAMESPACE}`;
+
+// WebRTC peer configuration
 export const PEER_CONFIGS = {
   iceServers: [
     {
@@ -23,17 +29,21 @@ export const PEER_CONFIGS = {
   ],
 }
 
+// Socket.IO configuration
+export const SOCKET_OPTIONS = {
+  withCredentials: true,
+  transports: ['websocket']
+};
+
 export const TOAST_DEFAULT_CONFIG: ToastOptions = {
   theme: "dark",
-  bodyStyle: {
+  style: {
     fontFamily: "var(--font-sans)",
     fontSize: "0.875rem",
     fontWeight: 500,
     textAlign: "center",
   },
-  progressStyle: {
-    backgroundColor: "hsl(var(--primary))",
-  },
+  progressClassName: "bg-primary",
 }
 
 export const LOTTIE_OPTIONS = {
