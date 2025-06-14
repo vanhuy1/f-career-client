@@ -90,11 +90,11 @@ const jobs: Job[] = [
 
 export default function JobBoardS() {
   return (
-    <main className="min-h-screen bg-[#1a1d25] px-4 py-16 text-white md:px-8">
+    <main className="min-h-screen bg-[#f8f8fd] px-4 py-16 text-white md:px-8">
       <div className="mx-auto max-w-7xl">
         <div>
           <div className="mb-8 flex items-center justify-between">
-            <h1 className="text-4xl font-bold md:text-5xl">
+            <h1 className="text-4xl font-bold text-gray-800 md:text-5xl">
               Latest <span className="text-[#3b82f6]">jobs open</span>
             </h1>
             <a

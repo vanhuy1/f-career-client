@@ -4,11 +4,11 @@ import { Button } from '../ui/button';
 
 export function HeroSection() {
   return (
-    <div className="bg-[#1a1d29] text-white">
+    <div className="bg-[#f8f8fd] text-gray-900">
       <div className="container mx-auto px-4 py-16">
         {/* Hero Text */}
         <div className="max-w-3xl">
-          <h1 className="mb-2 text-5xl font-bold md:text-6xl">
+          <h1 className="mb-2 text-5xl font-bold text-gray-800 md:text-6xl">
             Discover
             <br />
             more than
@@ -31,7 +31,7 @@ export function HeroSection() {
             </div>
           </div>
 
-          <p className="mb-8 max-w-lg text-gray-300">
+          <p className="mb-8 max-w-lg text-gray-600">
             Great platform for the job seeker that searching for new career
             heights and passionate about startups.
           </p>
@@ -66,9 +66,9 @@ export function HeroSection() {
           </div>
 
           {/* Popular Searches */}
-          <div className="mt-4 text-sm text-gray-300">
+          <div className="mt-4 text-sm text-gray-500">
             <span className="mr-2">Popular :</span>
-            <span className="text-white">
+            <span className="text-gray-700">
               UI Designer, UX Researcher, Android, Admin
             </span>
           </div>
