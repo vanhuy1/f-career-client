@@ -1,133 +1,145 @@
 "use client"
 
-import type * as React from "react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useTranslation } from "react-i18next"
-import { Send, X } from "lucide-react"
+import { Send } from "lucide-react"
 
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { IconButton } from "./icon-button"
+import { Button } from "./ui-button"
+import  useMeetContext  from "../contexts/MeetContext"
 import { cn } from "@/lib/utils"
 
-interface ChatProps {
-  visible: boolean
-  onClose: () => void
-  socketRef: React.MutableRefObject<any>
-  otherUserData: {
-    id: string
-  }
+interface Message {
+  id: string
+  text: string
+  isMine: boolean
+  timestamp: Date
 }
 
-export function Chat({ visible, onClose, socketRef, otherUserData }: ChatProps) {
+export function Chat() {
   const { t } = useTranslation()
-  const [chatMessage, setChatMessage] = useState<string>("")
+  const { socketRef, userData, otherUserData } = useMeetContext()
+  
+  const [messages, setMessages] = useState<Message[]>([])
+  const [inputValue, setInputValue] = useState("")
+  const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  const isEmpty = (obj: any) => {
-    return !obj || Object.keys(obj).length === 0
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }
 
-  const isLink = (text: string) => {
-    const pattern = new RegExp(
-      "^(https?:\\/\\/)?" + // protocol
-        "((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|" + // domain name
-        "((\\d{1,3}\\.){3}\\d{1,3}))" + // OR ip (v4) address
-        "(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*" + // port and path
-        "(\\?[;&a-z\\d%_.~+=-]*)?" + // query string
-        "(\\#[-a-z\\d_]*)?$",
-      "i",
-    )
-    return pattern.test(text)
-  }
+  const handleSendMessage = () => {
+    if (!inputValue.trim() || !socketRef.current) return
 
-  const handleAddMessage = (message: string, side: "left" | "right") => {
-    const chatContent = document.getElementById("chat-content")
-
-    if (chatContent) {
-      const isMessageLink = isLink(message)
-      const element = document.createElement(isMessageLink ? "a" : "p")
-
-      if (isMessageLink) {
-        element.setAttribute("href", message)
-        element.setAttribute("target", "_blank")
-      }
-
-      element.className = cn(
-        "mb-2 max-w-[80%] rounded-lg px-3 py-2 text-sm",
-        side === "left"
-          ? "self-start bg-secondary text-secondary-foreground"
-          : "self-end bg-primary text-primary-foreground",
-        isMessageLink && "underline",
-      )
-      element.append(message)
-
-      chatContent.append(element)
-      chatContent.scrollTop = chatContent.scrollHeight
+    const newMessage: Message = {
+      id: Date.now().toString(),
+      text: inputValue,
+      isMine: true,
+      timestamp: new Date(),
     }
-  }
 
-  const handleSendMessage = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!chatMessage.trim()) return
-
+    setMessages([...messages, newMessage])
     socketRef.current.emit("send-message", {
       to: otherUserData.id,
-      message: chatMessage,
+      message: inputValue,
     })
-    handleAddMessage(chatMessage, "right")
-    setChatMessage("")
+    setInputValue("")
   }
 
-  useEffect(() => {
-    const socket = socketRef
-
-    if (socket.current) {
-      socket.current.on("received-message", (message: string) => {
-        handleAddMessage(message, "left")
-      })
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault()
+      handleSendMessage()
     }
+  }
+
+  // Listen for incoming messages
+  useEffect(() => {
+    if (!socketRef.current) return
+
+    const handleReceivedMessage = (message: string) => {
+      const newMessage: Message = {
+        id: Date.now().toString(),
+        text: message,
+        isMine: false,
+        timestamp: new Date(),
+      }
+      setMessages((prev) => [...prev, newMessage])
+    }
+
+    socketRef.current.on("received-message", handleReceivedMessage)
 
     return () => {
-      if (socket.current) socket.current.off("received-message")
+      socketRef.current?.off("received-message", handleReceivedMessage)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [socketRef])
 
+  // Scroll to bottom when messages change
   useEffect(() => {
-    if (isEmpty(otherUserData)) {
-      const chatContent = document.getElementById("chat-content")
-      if (!chatContent) return
-
-      while (chatContent.firstChild) {
-        chatContent.removeChild(chatContent.firstChild)
-      }
-    }
-  }, [otherUserData])
+    scrollToBottom()
+  }, [messages])
 
   return (
-    <Sheet open={visible} onOpenChange={(open) => !open && onClose()}>
-      <SheetContent side="right" data-testid="chat" className="flex flex-col p-0">
-        <SheetHeader className="border-b px-4 py-3">
-          <div className="flex items-center justify-between">
-            <SheetTitle>{t("page.meet.chat.title")}</SheetTitle>
-            <IconButton onClick={onClose} icon={<X className="h-4 w-4" />} />
-          </div>
-        </SheetHeader>
-        <div id="chat-content" className="flex flex-1 flex-col overflow-y-auto p-4"></div>
-        <form onSubmit={handleSendMessage} className="flex items-center gap-2 border-t p-4">
-          <Input
-            data-testid="chatMessage"
-            placeholder={t("inputPlaceholder.sendMessage")}
-            value={chatMessage}
-            onChange={(e) => setChatMessage(e.target.value)}
-            className="flex-1"
+    <div className="flex h-full flex-col">
+      <div className="px-4 py-2 text-center border-b">
+        <h3 className="font-medium">{t("chat.title")}</h3>
+      </div>
+      
+      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+        {messages.length === 0 ? (
+          <p className="text-center text-sm text-muted-foreground">
+            {t("chat.noMessages")}
+          </p>
+        ) : (
+          messages.map((message) => (
+            <div
+              key={message.id}
+              className={cn(
+                "flex w-full",
+                message.isMine ? "justify-end" : "justify-start"
+              )}
+            >
+              <div
+                className={cn(
+                  "max-w-[75%] rounded-lg px-3 py-2 text-sm",
+                  message.isMine
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted"
+                )}
+              >
+                <p>{message.text}</p>
+                <span className="mt-1 block text-right text-xs opacity-70">
+                  {message.timestamp.toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </span>
+              </div>
+            </div>
+          ))
+        )}
+        <div ref={messagesEndRef} />
+      </div>
+
+      <div className="border-t p-2">
+        <div className="flex items-center gap-2">
+          <textarea
+            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            placeholder={t("chat.inputPlaceholder")}
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            onKeyDown={handleKeyDown}
+            rows={1}
           />
-          <Button type="submit" size="icon" data-testid="sendChatMessage" disabled={!chatMessage.trim()}>
+          <Button
+            className="h-10 w-10 rounded-full p-0"
+            onClick={handleSendMessage}
+            disabled={!inputValue.trim()}
+          >
             <Send className="h-4 w-4" />
+            <span className="sr-only">{t("chat.send")}</span>
           </Button>
-        </form>
-      </SheetContent>
-    </Sheet>
+        </div>
+      </div>
+    </div>
   )
 }

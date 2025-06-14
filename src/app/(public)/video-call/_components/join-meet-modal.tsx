@@ -9,7 +9,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "./ui-button"
 import { Input } from "./ui-input"
 import { IconButton } from "./icon-button"
-import useMeetContext from "../contexts/MeetContext"
+import  useMeetContext from "../contexts/MeetContext"
+import { toast } from "react-toastify"
 
 interface JoinMeetModalProps {
   visible: boolean
@@ -36,9 +37,19 @@ export function JoinMeetModal({ visible, defaultMeetId, onClose }: JoinMeetModal
       meetId: Yup.string().required("formValidations.meetId.required"),
     }),
     onSubmit: (values) => {
-      form.setSubmitting(true)
-      joinMeet(values.userName, values.userEmail, values.meetId)
-      form.setSubmitting(false)
+      try {
+        form.setSubmitting(true);
+        joinMeet(values.userName, values.userEmail, values.meetId);
+        handleCloseModal();
+      } catch (error) {
+        console.error("Error joining meet:", error);
+        toast(t("toastMessage.errorJoiningMeet"), {
+          type: "error",
+          position: "top-right",
+        });
+      } finally {
+        form.setSubmitting(false);
+      }
     },
   })
 
@@ -96,6 +107,7 @@ export function JoinMeetModal({ visible, defaultMeetId, onClose }: JoinMeetModal
             testId="joinMeetButton"
             disabled={!form.isValid || form.isSubmitting}
             className="w-full"
+            isLoading={form.isSubmitting}
           >
             {t("joinMeetModal.button")}
           </Button>

@@ -1,62 +1,70 @@
 "use client"
-import { useFormik } from "formik"
-import * as Yup from "yup"
+import { useState, useEffect } from "react"
 import { useTranslation } from "react-i18next"
-import { AtSignIcon as At, X } from "lucide-react"
+import { Edit, X } from "lucide-react"
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "./ui-button"
 import { Input } from "./ui-input"
 import { IconButton } from "./icon-button"
 
-interface RenameMeetModalProps {
+export interface RenameMeetModalProps {
   visible: boolean
+  defaultName?: string
   onClose: () => void
-  renameMeet: (newName: string) => void
+  onSubmit: (newName: string) => void
 }
 
-export function RenameMeetModal({ visible, onClose, renameMeet }: RenameMeetModalProps) {
+export function RenameMeetModal({ visible, defaultName = "", onClose, onSubmit }: RenameMeetModalProps) {
   const { t } = useTranslation()
+  const [meetName, setMeetName] = useState<string>("")
+  const [isLoading, setIsLoading] = useState<boolean>(false)
 
-  const form = useFormik({
-    initialValues: {
-      newMeetName: "",
-    },
-    validationSchema: Yup.object().shape({
-      newMeetName: Yup.string()
-        .min(3, "formValidations.meetName.tooShort")
-        .max(50, "formValidations.meetName.tooLong")
-        .required("formValidations.meetName.required"),
-    }),
-    onSubmit: (values) => {
-      renameMeet(values.newMeetName)
-      form.resetForm()
-      onClose()
-    },
-  })
+  const handleChangeName = () => {
+    if (!meetName.trim()) return
+    
+    setIsLoading(true)
+    try {
+      onSubmit(meetName)
+    } catch (error) {
+      console.error("Error renaming meet:", error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (visible) {
+      setMeetName(defaultName)
+    }
+  }, [visible, defaultName])
 
   return (
     <Dialog open={visible} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-md" data-testid="renameMeetModal">
         <DialogHeader className="flex flex-row items-center justify-between">
           <DialogTitle>{t("renameMeetModal.title")}</DialogTitle>
-          <IconButton testId="closeRenameMeetModalButton" icon={<X className="h-4 w-4" />} onClick={onClose} />
+          <IconButton icon={<X className="h-4 w-4" />} onClick={onClose} />
         </DialogHeader>
-        <form onSubmit={form.handleSubmit} className="space-y-4">
+        <div className="space-y-4 pt-4">
           <Input
-            testId="renameMeetInput"
-            name="newMeetName"
-            placeholder={t("inputPlaceholder.newMeetName")}
-            error={form.errors.newMeetName && form.touched.newMeetName ? t(form.errors.newMeetName as string): undefined}
-            value={form.values.newMeetName}
-            onBlur={form.handleBlur}
-            onChangeValue={(value) => form.setFieldValue("newMeetName", value)}
-            icon={At}
+            testId="meetNameInput"
+            name="meetName"
+            placeholder={t("inputPlaceholder.meetName")}
+            value={meetName}
+            onChangeValue={setMeetName}
+            icon={Edit}
           />
-          <Button testId="renameMeetButton" type="submit" disabled={!form.isValid} className="w-full">
-            {t("renameMeetModal.rename")}
+          <Button
+            testId="changeMeetNameButton"
+            disabled={!meetName.trim()}
+            isLoading={isLoading}
+            onClick={handleChangeName}
+            className="w-full"
+          >
+            {t("renameMeetModal.button")}
           </Button>
-        </form>
+        </div>
       </DialogContent>
     </Dialog>
   )
