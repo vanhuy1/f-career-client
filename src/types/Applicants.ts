@@ -4,11 +4,11 @@ export interface Applicant {
   avatar: string;
   score: number;
   hiringStage:
-    | 'Interview'
-    | 'Shortlisted'
-    | 'Declined'
-    | 'Hired'
-    | 'Interviewed';
+  | 'Interview1'
+  | 'Shortlisted'
+  | 'Declined'
+  | 'Hired'
+  | 'Interviewed';
   appliedDate: string;
   jobRole: string;
 }
