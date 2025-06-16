@@ -131,7 +131,7 @@ export default function ApplicationDetailPage() {
               )}
             </div>
             <div>
-              <h1 className="text-2xl font-bold">{application.user.id}</h1>
+              <h1 className="text-2xl font-bold">{application.job.title}</h1>
               <div className="mt-1 flex items-center gap-2">
                 <span className="text-gray-600">
                   {application.job?.company.companyName}

@@ -60,13 +60,13 @@ export default function Header() {
             className="group flex items-center gap-3"
           >
             <div className="relative">
-              <div className="rounded-xl bg-gradient-to-br from-[#5e5cff] to-[#4b49ff] p-2 shadow-lg transition-all duration-200 group-hover:shadow-xl">
+              <div className="rounded-xl bg-gradient-to-br from-blue-700 to-blue-900 p-2 shadow-lg transition-all duration-200 group-hover:shadow-xl">
                 <CheckCircle size={20} color="white" />
               </div>
               <div className="absolute -top-1 -right-1 h-3 w-3 rounded-full border-2 border-white bg-green-400"></div>
             </div>
             <div className="flex flex-col">
-              <span className="text-xl font-bold text-gray-900 transition-colors group-hover:text-[#5e5cff]">
+              <span className="text-xl font-bold text-gray-900 transition-colors group-hover:text-blue-800">
                 FCareerConnect
               </span>
               <span className="-mt-1 text-xs text-gray-500">
@@ -81,26 +81,26 @@ export default function Header() {
               href={ROUTES.HOMEPAGE.JOB.path}
               className={`relative rounded-lg px-3 py-2 font-medium transition-all duration-200 ${
                 pathname === ROUTES.HOMEPAGE.JOB.path
-                  ? 'bg-[#5e5cff]/10 text-[#5e5cff]'
-                  : 'text-gray-700 hover:bg-gray-100 hover:text-[#5e5cff]'
+                  ? 'bg-[#5e5cff]/10 text-blue-700'
+                  : 'text-gray-700 hover:bg-gray-100 hover:text-blue-700'
               }`}
             >
               {ROUTES.HOMEPAGE.JOB.name}
               {pathname === ROUTES.HOMEPAGE.JOB.path && (
-                <div className="absolute bottom-0 left-1/2 h-1 w-1 -translate-x-1/2 transform rounded-full bg-[#5e5cff]"></div>
+                <div className="absolute bottom-0 left-1/2 h-1 w-1 -translate-x-1/2 transform rounded-full bg-blue-700"></div>
               )}
             </Link>
             <Link
               href={ROUTES.HOMEPAGE.COMPANY.path}
               className={`relative rounded-lg px-3 py-2 font-medium transition-all duration-200 ${
                 pathname === ROUTES.HOMEPAGE.COMPANY.path
-                  ? 'bg-[#5e5cff]/10 text-[#5e5cff]'
-                  : 'text-gray-700 hover:bg-gray-100 hover:text-[#5e5cff]'
+                  ? 'bg-[#5e5cff]/10 text-blue-700'
+                  : 'text-gray-700 hover:bg-gray-100 hover:text-blue-700'
               }`}
             >
               {ROUTES.HOMEPAGE.COMPANY.name}
               {pathname === ROUTES.HOMEPAGE.COMPANY.path && (
-                <div className="absolute bottom-0 left-1/2 h-1 w-1 -translate-x-1/2 transform rounded-full bg-[#5e5cff]"></div>
+                <div className="absolute bottom-0 left-1/2 h-1 w-1 -translate-x-1/2 transform rounded-full bg-blue-700"></div>
               )}
             </Link>
           </nav>
@@ -122,7 +122,7 @@ export default function Header() {
                         src="/logo-landing/udacity.png"
                         alt={user.data.name}
                       />
-                      <AvatarFallback className="bg-gradient-to-br from-[#5e5cff] to-[#4b49ff] font-semibold text-white">
+                      <AvatarFallback className="bg-gradient-to-br from-blue-700 to-blue-900 font-semibold text-white">
                         {user.data.name
                           .split(' ')
                           .map((n) => n[0])
@@ -147,7 +147,7 @@ export default function Header() {
                             src="/logo-landing/udacity.png"
                             alt={user.data.name}
                           />
-                          <AvatarFallback className="bg-gradient-to-br from-[#5e5cff] to-[#4b49ff] text-white">
+                          <AvatarFallback className="bg-gradient-to-br from-blue-500 to-blue-700 text-white">
                             {user.data.name
                               .split(' ')
                               .map((n) => n[0])
@@ -228,7 +228,7 @@ export default function Header() {
                         className="flex items-center gap-2 p-2"
                       >
                         <div className="flex h-4 w-4 items-center justify-center rounded bg-purple-100">
-                          <div className="h-2 w-2 rounded-full bg-purple-500"></div>
+                          <div className="h-2 w-2 rounded-full bg-blue-600"></div>
                         </div>
                         {user?.data.roles[0] === ROLES.USER
                           ? ROUTES.CA.HOME.name
@@ -257,12 +257,12 @@ export default function Header() {
               <div className="flex items-center gap-3">
                 <Link
                   href={ROUTES.AUTH.SIGNIN.path}
-                  className="rounded-lg px-4 py-2 font-medium text-[#5e5cff] transition-colors hover:bg-[#5e5cff]/5 hover:text-[#4b49ff]"
+                  className="rounded-lg px-4 py-2 font-medium text-blue-800 transition-colors hover:bg-[#5e5cff]/5 hover:text-blue-900"
                 >
                   {ROUTES.AUTH.SIGNIN.name}
                 </Link>
                 <Link href={ROUTES.AUTH.SIGNUP.path}>
-                  <Button className="bg-gradient-to-r from-[#5e5cff] to-[#4b49ff] px-6 text-white shadow-lg transition-all duration-200 hover:from-[#4b49ff] hover:to-[#3d3bff] hover:shadow-xl">
+                  <Button className="bg-gradient-to-r from-blue-500 to-blue-700 px-6 text-white shadow-lg transition-all duration-200 hover:from-blue-600 hover:to-blue-900 hover:shadow-xl">
                     {ROUTES.AUTH.SIGNUP.name}
                   </Button>
                 </Link>
@@ -289,8 +289,8 @@ export default function Header() {
                 href={ROUTES.HOMEPAGE.JOB.path}
                 className={`rounded-lg px-4 py-3 font-medium transition-all ${
                   pathname === ROUTES.HOMEPAGE.JOB.path
-                    ? 'bg-[#5e5cff]/10 text-[#5e5cff]'
-                    : 'text-gray-700 hover:bg-gray-100 hover:text-[#5e5cff]'
+                    ? 'bg-[#5e5cff]/10 text-blue-600'
+                    : 'text-gray-700 hover:bg-gray-100 hover:text-blue-600'
                 }`}
                 onClick={() => setIsMobileMenuOpen(false)}
               >
@@ -300,8 +300,8 @@ export default function Header() {
                 href={ROUTES.HOMEPAGE.COMPANY.path}
                 className={`rounded-lg px-4 py-3 font-medium transition-all ${
                   pathname === ROUTES.HOMEPAGE.COMPANY.path
-                    ? 'bg-[#5e5cff]/10 text-[#5e5cff]'
-                    : 'text-gray-700 hover:bg-gray-100 hover:text-[#5e5cff]'
+                    ? 'bg-[#5e5cff]/10 text-blue-600'
+                    : 'text-gray-700 hover:bg-gray-100 hover:text-blue-600'
                 }`}
                 onClick={() => setIsMobileMenuOpen(false)}
               >

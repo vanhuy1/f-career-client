@@ -14,8 +14,8 @@ const Navigation = ({
       onClick={() => onTabChange?.('jobseeker')}
       className={`rounded-full px-6 py-2 transition-all ${
         activeTab === 'jobseeker'
-          ? 'bg-indigo-600 text-white'
-          : 'text-gray-500 hover:text-indigo-600'
+          ? 'bg-blue-600 text-white'
+          : 'text-gray-500 hover:text-blue-600'
       }`}
     >
       Job Seeker
@@ -24,8 +24,8 @@ const Navigation = ({
       onClick={() => onTabChange?.('company')}
       className={`rounded-full px-6 py-2 transition-all ${
         activeTab === 'company'
-          ? 'bg-indigo-600 text-white'
-          : 'text-gray-500 hover:text-indigo-600'
+          ? 'bg-blue-600 text-white'
+          : 'text-gray-500 hover:text-blue-600'
       }`}
     >
       Company
