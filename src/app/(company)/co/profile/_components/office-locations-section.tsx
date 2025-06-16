@@ -16,6 +16,7 @@ import { Company } from '@/types/Company';
 import { toast } from 'react-toastify';
 import { CreateCompanyReq } from '@/types/Company';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 interface OfficeLocationsSectionProps {
   company: Company;
@@ -238,52 +239,66 @@ export default function OfficeLocationsSection({
 
       {/* Add Location Dialog */}
       <Dialog open={isAddPopupOpen} onOpenChange={setIsAddPopupOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Add New Location</DialogTitle>
-            <DialogDescription>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader className="border-b pb-4">
+            <DialogTitle className="text-xl font-semibold text-gray-900">
+              Add New Location
+            </DialogTitle>
+            <DialogDescription className="mt-2 text-gray-500">
               Add a new office location for your company.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Location
-              </label>
-              <Input
-                value={newLocation}
-                onChange={(e) => setNewLocation(e.target.value)}
-                placeholder="Enter office location"
-                className="mt-1"
-              />
-            </div>
+          <div className="space-y-6 py-6">
+            <div className="grid gap-4">
+              <div>
+                <Label
+                  htmlFor="location"
+                  className="text-sm font-medium text-gray-700"
+                >
+                  Location
+                  <span className="ml-1 text-red-500">*</span>
+                </Label>
+                <Input
+                  id="location"
+                  value={newLocation}
+                  onChange={(e) => setNewLocation(e.target.value)}
+                  placeholder="Enter office location"
+                  className="mt-1.5"
+                />
+              </div>
 
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={isHQ}
-                onChange={(e) => setIsHQ(e.target.checked)}
-                className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-              />
-              <label className="text-sm font-medium text-gray-700">
-                Mark as Head Quarters
-              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={isHQ}
+                  onChange={(e) => setIsHQ(e.target.checked)}
+                  className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                  id="isHQ"
+                />
+                <Label
+                  htmlFor="isHQ"
+                  className="text-sm font-medium text-gray-700"
+                >
+                  Mark as Head Quarters
+                </Label>
+              </div>
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="border-t pt-4">
             <Button
               type="button"
               variant="outline"
               onClick={() => setIsAddPopupOpen(false)}
+              className="px-6"
             >
               Cancel
             </Button>
             <Button
               type="button"
-              className="bg-indigo-600 text-white hover:bg-indigo-700"
+              className="bg-indigo-600 px-6 text-white hover:bg-indigo-700"
               onClick={handleAddLocationSubmit}
             >
-              Add
+              Add Location
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -292,17 +307,17 @@ export default function OfficeLocationsSection({
       {/* Edit Locations Dialog */}
       <Dialog open={isEditPopupOpen} onOpenChange={setIsEditPopupOpen}>
         <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
+          <DialogHeader className="border-b pb-4">
             <DialogTitle className="text-xl font-semibold text-gray-900">
               Edit Office Locations
             </DialogTitle>
-            <DialogDescription className="text-gray-500">
-              Manage your company`&apos;`s office locations. At least one
-              location must be marked as Head Quarters.
+            <DialogDescription className="mt-2 text-gray-500">
+              Manage your company office locations. At least one location must
+              be marked as Head Quarters.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="mt-4 max-h-[400px] space-y-4 overflow-y-auto pr-2">
+          <div className="mt-6 max-h-[400px] space-y-4 overflow-y-auto pr-2">
             {editingLocations.map((location, index) => (
               <div
                 key={index}
@@ -331,7 +346,7 @@ export default function OfficeLocationsSection({
                           type="radio"
                           checked={location.isHQ}
                           onChange={() => handleToggleHQ(index)}
-                          className="h-4 w-4 text-blue-600 focus:ring-blue-500"
+                          className="h-4 w-4 text-indigo-600 focus:ring-indigo-500"
                           id={`hq-${index}`}
                         />
                         <label
@@ -342,7 +357,7 @@ export default function OfficeLocationsSection({
                         </label>
                       </div>
                       {location.isHQ && (
-                        <span className="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-700">
+                        <span className="inline-flex items-center rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-medium text-indigo-700">
                           Primary Location
                         </span>
                       )}
@@ -377,19 +392,19 @@ export default function OfficeLocationsSection({
             </div>
           )}
 
-          <DialogFooter className="mt-6 flex items-center justify-end gap-2">
+          <DialogFooter className="mt-6 border-t pt-4">
             <Button
               type="button"
               variant="outline"
               onClick={() => setIsEditPopupOpen(false)}
-              className="border-gray-300 text-gray-700 hover:bg-gray-50"
+              className="px-6"
             >
               Cancel
             </Button>
             <Button
               type="button"
+              className="bg-indigo-600 px-6 text-white hover:bg-indigo-700"
               onClick={handleSaveLocations}
-              className="bg-blue-600 text-white hover:bg-blue-700"
             >
               Save Changes
             </Button>

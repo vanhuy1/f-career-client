@@ -7,11 +7,11 @@ import { toast } from 'react-toastify';
 import CompanyHeaderSection from './_components/company-header-section';
 import CompanyProfileSection from './_components/company-profile-section';
 import WorkingAtSection from './_components/working-at-section';
-import BenefitsSection from './_components/benefits-section';
 import OpenPositionsSection from './_components/open-positions-section';
 import ContactSection from './_components/contact-section';
 import OfficeLocationsSection from './_components/office-locations-section';
 import TeamSection from './_components/team-section';
+import MapSection from './_components/map-section';
 import { useDispatch } from 'react-redux';
 import {
   setCompanyDetailStart,
@@ -102,7 +102,7 @@ const PublicCompanyDetailPage = () => {
             <CompanyProfileSection company={company} />
             <WorkingAtSection workImageUrl={company.workImageUrl} />
             <TeamSection company={company} />
-            <BenefitsSection company={company} />
+            <MapSection company={company} />
             <OpenPositionsSection companyJob={company.openPositions || []} />
           </div>
 

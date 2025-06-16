@@ -108,7 +108,12 @@ export default function EditFormDialog({
             >
               Cancel
             </Button>
-            <Button type="submit">Save changes</Button>
+            <Button
+              type="submit"
+              className="bg-indigo-600 text-white hover:bg-indigo-700"
+            >
+              Save changes
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

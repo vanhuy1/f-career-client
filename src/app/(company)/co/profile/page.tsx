@@ -10,8 +10,8 @@ import ContactSection from './_components/contact-section';
 import WorkingAtNomadSection from './_components/working-at-section';
 import OfficeLocationsSection from './_components/office-locations-section';
 import TeamSection from './_components/team-section';
-import BenefitsSection from './_components/benefits-section';
 import OpenPositionsSection from './_components/open-positions-section';
+import MapSection from './_components/map-section';
 import { useUser } from '@/services/state/userSlice';
 
 // Main component
@@ -23,8 +23,7 @@ const CompanyProfilePage = () => {
 
   // Fetch company data
   const fetchCompanyData = useCallback(async () => {
-    // Skip if no companyId or already fetched
-    if (!user?.data?.companyId || company) {
+    if (!user?.data?.companyId) {
       setIsLoading(false);
       return;
     }
@@ -45,7 +44,7 @@ const CompanyProfilePage = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [user?.data?.companyId, company]);
+  }, [user?.data?.companyId]);
 
   const updateCompanyData = useCallback(
     async (updatedData: Partial<CreateCompanyReq>) => {
@@ -57,11 +56,8 @@ const CompanyProfilePage = () => {
       }
 
       try {
-        const updatedCompany = await companyService.update(
-          company.id,
-          updatedData,
-        );
-        setCompany(updatedCompany);
+        await companyService.update(company.id, updatedData);
+        await fetchCompanyData();
         toast.success('Company information updated successfully', {
           toastId: 'company-update-success',
         });
@@ -73,7 +69,7 @@ const CompanyProfilePage = () => {
         throw err;
       }
     },
-    [company],
+    [company, fetchCompanyData],
   );
 
   useEffect(() => {
@@ -128,7 +124,7 @@ const CompanyProfilePage = () => {
             />
             <WorkingAtNomadSection workImageUrl={company.workImageUrl} />
             <TeamSection company={company} />
-            <BenefitsSection company={company} />
+            <MapSection company={company} />
             <OpenPositionsSection companyJob={company.openPositions || []} />
           </div>
 

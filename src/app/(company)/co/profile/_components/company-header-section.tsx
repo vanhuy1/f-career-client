@@ -235,12 +235,12 @@ export default function CompanyHeaderSection({
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[800px]">
           <DialogHeader className="border-b pb-4">
-            <DialogTitle className="text-2xl font-semibold text-gray-900">
+            <DialogTitle className="text-xl font-semibold text-gray-900">
               Edit Company Profile
             </DialogTitle>
             <DialogDescription className="mt-2 text-gray-500">
-              Update your company`&apos;`s profile information below. Fields
-              marked with <span className="text-red-500">*</span> are required.
+              Update your company profile information. Fields marked with
+              <span className="text-red-500">*</span> are required.
             </DialogDescription>
           </DialogHeader>
 
@@ -248,7 +248,7 @@ export default function CompanyHeaderSection({
             {/* Basic Information Section */}
             <div className="space-y-6">
               <div className="flex items-center gap-2">
-                <Building className="h-5 w-5 text-blue-500" />
+                <Building className="h-5 w-5 text-indigo-500" />
                 <h3 className="text-lg font-medium text-gray-900">
                   Basic Information
                 </h3>
@@ -262,7 +262,7 @@ export default function CompanyHeaderSection({
                   </label>
                   <input
                     {...register('name')}
-                    className="mt-2 block w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 shadow-sm transition-colors hover:border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                    className="mt-1.5 block w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 shadow-sm transition-colors hover:border-gray-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
                     maxLength={100}
                     minLength={3}
                     required
@@ -286,7 +286,7 @@ export default function CompanyHeaderSection({
                   </label>
                   <input
                     {...register('industry')}
-                    className="mt-2 block w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 shadow-sm transition-colors hover:border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                    className="mt-1.5 block w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 shadow-sm transition-colors hover:border-gray-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
                     required
                     placeholder="e.g. Technology, Healthcare, etc."
                   />
@@ -306,7 +306,7 @@ export default function CompanyHeaderSection({
                     type="date"
                     {...register('founded')}
                     max={getCurrentDate()}
-                    className="mt-2 block w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 shadow-sm transition-colors hover:border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                    className="mt-1.5 block w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 shadow-sm transition-colors hover:border-gray-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
                   />
                   {errors.founded && (
                     <p className="mt-1.5 text-sm text-red-500">
@@ -320,7 +320,7 @@ export default function CompanyHeaderSection({
             {/* Contact Information Section */}
             <div className="space-y-6">
               <div className="flex items-center gap-2">
-                <MapPin className="h-5 w-5 text-blue-500" />
+                <MapPin className="h-5 w-5 text-indigo-500" />
                 <h3 className="text-lg font-medium text-gray-900">
                   Contact Information
                 </h3>
@@ -333,10 +333,10 @@ export default function CompanyHeaderSection({
                   </label>
                   <input
                     {...register('website')}
-                    className={`mt-2 block w-full rounded-lg border bg-white px-4 py-2.5 shadow-sm transition-colors hover:border-gray-300 focus:ring-2 focus:ring-blue-500/20 ${
+                    className={`mt-1.5 block w-full rounded-lg border bg-white px-4 py-2.5 shadow-sm transition-colors hover:border-gray-300 focus:ring-2 focus:ring-indigo-500/20 ${
                       websiteError
                         ? 'border-red-500 focus:border-red-500'
-                        : 'border-gray-200 focus:border-blue-500'
+                        : 'border-gray-200 focus:border-indigo-500'
                     }`}
                     placeholder="e.g. www.company.com"
                     onChange={(e) => {
@@ -366,7 +366,7 @@ export default function CompanyHeaderSection({
                   </label>
                   <input
                     {...register('employees')}
-                    className="mt-2 block w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 shadow-sm transition-colors hover:border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                    className="mt-1.5 block w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 shadow-sm transition-colors hover:border-gray-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
                     type="number"
                     min="0"
                     placeholder="e.g. 100"
@@ -397,7 +397,7 @@ export default function CompanyHeaderSection({
                   </label>
                   <input
                     {...register('location')}
-                    className="mt-2 block w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 shadow-sm transition-colors hover:border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                    className="mt-1.5 block w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 shadow-sm transition-colors hover:border-gray-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
                     required
                     placeholder="e.g. Ho Chi Minh City, Vietnam"
                   />
@@ -410,20 +410,20 @@ export default function CompanyHeaderSection({
               </div>
             </div>
 
-            <DialogFooter className="mt-8 flex items-center justify-end gap-3 border-t pt-6">
+            <DialogFooter className="mt-8 flex items-center justify-end gap-3 border-t pt-4">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => setIsModalOpen(false)}
-                className="px-6 hover:bg-gray-50"
+                className="px-6"
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
-                className="bg-blue-600 px-6 hover:bg-blue-700"
+                className="bg-indigo-600 px-6 text-white hover:bg-indigo-700"
               >
-                Save changes
+                Save Changes
               </Button>
             </DialogFooter>
           </form>

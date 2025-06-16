@@ -30,18 +30,32 @@ import FileUploader from '@/components/common/FileUploader';
 import { SupabaseBucket, SupabaseFolder } from '@/enums/supabase';
 import Image from 'next/image';
 
+const countryCodes = [
+  { code: '+84', country: 'Vietnam', flag: '🇻🇳' },
+  { code: '+1', country: 'United States', flag: '🇺🇸' },
+  { code: '+44', country: 'United Kingdom', flag: '🇬🇧' },
+  { code: '+81', country: 'Japan', flag: '🇯🇵' },
+  { code: '+82', country: 'South Korea', flag: '🇰🇷' },
+  { code: '+65', country: 'Singapore', flag: '🇸🇬' },
+  { code: '+86', country: 'China', flag: '🇨🇳' },
+  { code: '+91', country: 'India', flag: '🇮🇳' },
+  { code: '+61', country: 'Australia', flag: '🇦🇺' },
+  { code: '+49', country: 'Germany', flag: '🇩🇪' },
+];
+
 export default function SettingsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const dispatch = useDispatch();
   const user = useUser();
   const [formattedDob, setFormattedDob] = useState('');
+  const [selectedCountryCode, setSelectedCountryCode] = useState('+84');
 
   // Set up React Hook Form with Zod
   const form = useForm<z.infer<typeof ProfileFormSchema>>({
     resolver: zodResolver(ProfileFormSchema),
     defaultValues: {
       name: user?.data.name,
-      phone: user?.data.phone,
+      phone: user?.data.phone?.replace(/^\+84/, '') || '',
       email: user?.data.email,
       dob: user?.data.dob ? new Date(user.data.dob).toISOString() : '',
       gender: user?.data.gender,
@@ -86,9 +100,12 @@ export default function SettingsPage() {
     try {
       setIsSubmitting(true);
 
+      // Remove any non-digit characters from phone number
+      const cleanPhone = data.phone.replace(/\D/g, '');
+
       const requestData = {
         name: data.name,
-        phone: data.phone,
+        phone: selectedCountryCode + cleanPhone,
         email: data.email,
         gender: data.gender,
         dob: data.dob,
@@ -175,7 +192,7 @@ export default function SettingsPage() {
               "
               buttonClassName="flex flex-col items-center"
             >
-              {/* All of this is the “children” inside the clickable area */}
+              {/* All of this is the "children" inside the clickable area */}
               <ImageIcon className="h-6 w-6 text-indigo-600" />
               <p className="mt-2 font-medium text-indigo-600">
                 Click to replace
@@ -221,7 +238,58 @@ export default function SettingsPage() {
             >
               Phone Number
             </Label>
-            <Input id="phone" {...form.register('phone')} className="mt-1" />
+            <div className="mt-1 flex gap-2">
+              <Select
+                value={selectedCountryCode}
+                onValueChange={setSelectedCountryCode}
+              >
+                <SelectTrigger className="w-[120px]">
+                  <SelectValue placeholder="Select country">
+                    {selectedCountryCode && (
+                      <span className="flex items-center gap-2">
+                        {
+                          countryCodes.find(
+                            (c) => c.code === selectedCountryCode,
+                          )?.flag
+                        }
+                        <span className="ml-1">{selectedCountryCode}</span>
+                      </span>
+                    )}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {countryCodes.map((country) => (
+                    <SelectItem key={country.code} value={country.code}>
+                      <span className="flex items-center gap-2">
+                        {country.flag}
+                        <span className="ml-1">{country.code}</span>
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Input
+                id="phone"
+                {...form.register('phone', {
+                  onChange: (e) => {
+                    // Only allow digits
+                    const value = e.target.value.replace(/\D/g, '');
+                    e.target.value = value;
+                    form.setValue('phone', value, {
+                      shouldValidate: true,
+                      shouldDirty: true,
+                      shouldTouch: true,
+                    });
+                  },
+                  setValueAs: (value) => value.replace(/\D/g, ''),
+                })}
+                className="flex-1"
+                placeholder="Enter phone number (digits only)"
+                type="tel"
+                inputMode="numeric"
+                pattern="[0-9]*"
+              />
+            </div>
             {form.formState.errors.phone && (
               <p className="mt-1 text-sm text-red-500">
                 {form.formState.errors.phone.message}
