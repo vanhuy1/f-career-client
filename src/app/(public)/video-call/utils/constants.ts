@@ -2,8 +2,7 @@ import type { ToastOptions } from 'react-toastify';
 
 // Backend connection configuration
 export const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || '';
-export const SOCKET_NAMESPACE = '/video-call';
-export const SOCKET_URL = `${BACKEND_URL}${SOCKET_NAMESPACE}`;
+export const SOCKET_URL = process.env.SOCKET_URL || '';
 
 // WebRTC peer configuration
 export const PEER_CONFIGS = {
