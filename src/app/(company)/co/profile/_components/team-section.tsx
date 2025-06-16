@@ -198,68 +198,92 @@ export default function TeamSection({ company }: TeamSectionProps) {
 
       {/* Dialog for Adding/Editing Team Member */}
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              {isEditMode ? 'Chỉnh sửa thành viên' : 'Thêm thành viên mới'}
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader className="border-b pb-4">
+            <DialogTitle className="text-xl font-semibold text-gray-900">
+              {isEditMode ? 'Edit Team Member' : 'Add New Member'}
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="mt-2 text-gray-500">
               {isEditMode
-                ? 'Cập nhật thông tin thành viên.'
-                : 'Điền thông tin để thêm thành viên mới vào team.'}
+                ? 'Update team member information.'
+                : 'Fill in the information to add a new team member.'}
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 py-2">
-            <div>
-              <Label htmlFor="name">Tên</Label>
-              <Input
-                id="name"
-                value={newMember.name}
-                onChange={(e) =>
-                  setNewMember({ ...newMember, name: e.target.value })
-                }
-                placeholder="Nhập tên thành viên"
-              />
-            </div>
-            <div>
-              <Label htmlFor="position">Chức vụ</Label>
-              <Input
-                id="position"
-                value={newMember.position}
-                onChange={(e) =>
-                  setNewMember({ ...newMember, position: e.target.value })
-                }
-                placeholder="Nhập chức vụ"
-              />
-            </div>
-            <div>
-              <Label htmlFor="imageUrl">URL Ảnh (không bắt buộc)</Label>
-              <Input
-                id="imageUrl"
-                value={newMember.imageUrl}
-                onChange={(e) =>
-                  setNewMember({ ...newMember, imageUrl: e.target.value })
-                }
-                placeholder="Nhập URL ảnh hoặc để trống"
-              />
+          <div className="space-y-6 py-6">
+            <div className="grid gap-4">
+              <div>
+                <Label
+                  htmlFor="name"
+                  className="text-sm font-medium text-gray-700"
+                >
+                  Name
+                  <span className="ml-1 text-red-500">*</span>
+                </Label>
+                <Input
+                  id="name"
+                  value={newMember.name}
+                  onChange={(e) =>
+                    setNewMember({ ...newMember, name: e.target.value })
+                  }
+                  placeholder="Enter member name"
+                  className="mt-1.5"
+                />
+              </div>
+              <div>
+                <Label
+                  htmlFor="position"
+                  className="text-sm font-medium text-gray-700"
+                >
+                  Position
+                  <span className="ml-1 text-red-500">*</span>
+                </Label>
+                <Input
+                  id="position"
+                  value={newMember.position}
+                  onChange={(e) =>
+                    setNewMember({ ...newMember, position: e.target.value })
+                  }
+                  placeholder="Enter position"
+                  className="mt-1.5"
+                />
+              </div>
+              <div>
+                <Label
+                  htmlFor="imageUrl"
+                  className="text-sm font-medium text-gray-700"
+                >
+                  Image URL
+                  <span className="ml-1 text-gray-400">(optional)</span>
+                </Label>
+                <Input
+                  id="imageUrl"
+                  value={newMember.imageUrl}
+                  onChange={(e) =>
+                    setNewMember({ ...newMember, imageUrl: e.target.value })
+                  }
+                  placeholder="Enter image URL or leave empty"
+                  className="mt-1.5"
+                />
+              </div>
             </div>
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="border-t pt-4">
             <Button
+              type="button"
               variant="outline"
-              onClick={() => {
-                setOpen(false);
-                setEditingMember(null);
-                setIsEditMode(false);
-                setNewMember({ name: '', position: '', imageUrl: '' });
-              }}
+              onClick={() => setOpen(false)}
+              className="px-6"
             >
-              Hủy
+              Cancel
             </Button>
-            <Button onClick={handleSaveMember}>
-              {isEditMode ? 'Cập nhật' : 'Lưu'}
+            <Button
+              type="button"
+              className="bg-indigo-600 px-6 text-white hover:bg-indigo-700"
+              onClick={handleSaveMember}
+            >
+              {isEditMode ? 'Save Changes' : 'Add Member'}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -1,9 +1,7 @@
-const CompanySettingsPage = () => {
-  return (
-    <div>
-      <h1>Company Settings</h1>
-      <p>Manage your company settings here.</p>
-    </div>
-  );
-};
-export default CompanySettingsPage;
+'use client';
+
+import SettingsPage from '@/app/(candidate)/ca/settings/page';
+
+export default function CompanySettingsPage() {
+  return <SettingsPage />;
+}

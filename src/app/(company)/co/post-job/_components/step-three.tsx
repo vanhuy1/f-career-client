@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { X, Plus, Heart, Waves, Video } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -29,6 +29,39 @@ const benefitIcons = {
   development: <Video className="h-6 w-6" />,
 };
 
+const defaultBenefits = [
+  {
+    id: 1,
+    title: 'Health Insurance',
+    description: 'Comprehensive health coverage for you and your family',
+    icon: 'healthcare',
+  },
+  {
+    id: 2,
+    title: 'Paid Time Off',
+    description: '20 days of paid vacation and holidays per year',
+    icon: 'vacation',
+  },
+  {
+    id: 3,
+    title: 'Learning & Development',
+    description: 'Access to courses, workshops, and conferences',
+    icon: 'development',
+  },
+  {
+    id: 4,
+    title: 'Flexible Work Hours',
+    description: 'Work-life balance with flexible scheduling options',
+    icon: 'vacation',
+  },
+  {
+    id: 5,
+    title: 'Professional Growth',
+    description: 'Clear career path and growth opportunities',
+    icon: 'development',
+  },
+];
+
 export default function Step3({ benefits = [], setBenefits }: StepProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -37,6 +70,13 @@ export default function Step3({ benefits = [], setBenefits }: StepProps) {
     description: '',
     icon: 'healthcare',
   });
+
+  // Initialize default benefits if none exist
+  useEffect(() => {
+    if (benefits.length === 0 && setBenefits) {
+      setBenefits(defaultBenefits);
+    }
+  }, [benefits.length, setBenefits]);
 
   const handleAddBenefit = () => {
     if (setBenefits && newBenefit.title && newBenefit.description) {

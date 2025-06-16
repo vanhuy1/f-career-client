@@ -65,6 +65,7 @@ export default function Step1({
   const [salaryType, setSalaryType] = useState<'range' | 'min' | 'max'>(
     'range',
   );
+  const [skillSearch, setSkillSearch] = useState('');
 
   // Get company data from Redux store
   const dispatch = useDispatch();
@@ -116,6 +117,12 @@ export default function Step1({
   const handleEmploymentTypeChange = (type: EmploymentType) => {
     setTypeOfEmployment(type);
   };
+
+  const filteredSkills = availableSkills.filter((skill) =>
+    skill.name.toLowerCase().includes(skillSearch.toLowerCase()),
+  );
+
+  const displayedSkills = filteredSkills.slice(0, 6);
 
   return (
     <div className="w-full">
@@ -498,8 +505,16 @@ export default function Step1({
                 <DialogHeader>
                   <DialogTitle>Select Skills</DialogTitle>
                 </DialogHeader>
+                <div className="mb-4">
+                  <Input
+                    placeholder="Search skills..."
+                    value={skillSearch}
+                    onChange={(e) => setSkillSearch(e.target.value)}
+                    className="w-full"
+                  />
+                </div>
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                  {availableSkills.map((skill) => (
+                  {displayedSkills.map((skill) => (
                     <Button
                       key={skill.id}
                       variant={
@@ -519,6 +534,11 @@ export default function Step1({
                     </Button>
                   ))}
                 </div>
+                {filteredSkills.length === 0 && (
+                  <p className="mt-4 text-center text-sm text-gray-500">
+                    No skills found matching your search
+                  </p>
+                )}
               </DialogContent>
             </Dialog>
 
