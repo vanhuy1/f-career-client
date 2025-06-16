@@ -54,17 +54,6 @@ const getStageColor = (stage: string) => {
   }
 };
 
-const StarRating = ({ score }: { score: number }) => {
-  if (score === 0) return <span className="text-gray-400">0.0</span>;
-
-  return (
-    <div className="flex items-center gap-1">
-      <span className="text-yellow-500">★</span>
-      <span className="font-medium">{score}</span>
-    </div>
-  );
-};
-
 export default function ApplicantTable() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedApplicants, setSelectedApplicants] = useState<string[]>([]);
@@ -162,7 +151,6 @@ export default function ApplicantTable() {
               <TableHead className="font-medium text-gray-600">
                 Full Name
               </TableHead>
-              <TableHead className="font-medium text-gray-600">Score</TableHead>
               <TableHead className="font-medium text-gray-600">
                 Hiring Stage
               </TableHead>
@@ -204,9 +192,6 @@ export default function ApplicantTable() {
                     </Avatar>
                     <span className="font-medium">{applicant.fullName}</span>
                   </div>
-                </TableCell>
-                <TableCell>
-                  <StarRating score={applicant.score} />
                 </TableCell>
                 <TableCell>
                   <Badge

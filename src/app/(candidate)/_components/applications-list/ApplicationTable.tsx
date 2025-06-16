@@ -1,14 +1,45 @@
 'use client';
 
 import type React from 'react';
+import { useState } from 'react';
+import {
+  Search,
+  Filter,
+  MoreHorizontal,
+  ChevronLeft,
+  ChevronRight,
+} from 'lucide-react';
 import { useAppDispatch } from '@/store/hooks';
 import type { Application } from '@/types/Application';
-import { MoreVertical } from 'lucide-react';
-import Image from 'next/image';
-import { formatDate } from './utils/helpers';
-import StatusBadge from './StatusBadge';
 import { useRouter } from 'next/navigation';
 import { setSelectedApplication } from '@/services/state/applicationsSlice';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { formatDate } from './utils/helpers';
 
 interface ApplicationTableProps {
   applications: Application[] | null;
@@ -18,7 +49,25 @@ interface ApplicationTableProps {
   pageSize: number;
   total: number;
   onPageChange: (page: number) => void;
+  onPageSizeChange: (pageSize: number) => void;
 }
+
+const getStageColor = (status: string) => {
+  switch (status) {
+    case 'Hired':
+      return 'bg-green-100 text-green-800 border-green-200';
+    case 'Shortlisted':
+      return 'bg-blue-100 text-blue-800 border-blue-200';
+    case 'Interview':
+      return 'bg-orange-100 text-orange-800 border-orange-200';
+    case 'Interviewed':
+      return 'bg-cyan-100 text-cyan-800 border-cyan-200';
+    case 'Declined':
+      return 'bg-red-100 text-red-800 border-red-200';
+    default:
+      return 'bg-gray-100 text-gray-800 border-gray-200';
+  }
+};
 
 export default function ApplicationTable({
   applications,
@@ -28,12 +77,16 @@ export default function ApplicationTable({
   pageSize,
   total,
   onPageChange,
+  onPageSizeChange,
 }: ApplicationTableProps) {
   const router = useRouter();
   const dispatch = useAppDispatch();
+  const [selectedApplications, setSelectedApplications] = useState<string[]>(
+    [],
+  );
+  const [searchTerm, setSearchTerm] = useState('');
 
   const handleRowClick = (application: Application) => {
-    // Set the selected application in Redux before navigation
     dispatch(setSelectedApplication(application));
     router.push(`/ca/application-list/${application.id}`);
   };
@@ -41,6 +94,35 @@ export default function ApplicationTable({
   const handleMoreClick = (e: React.MouseEvent) => {
     e.stopPropagation();
   };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked && applications) {
+      setSelectedApplications(applications.map((a) => a.id));
+    } else {
+      setSelectedApplications([]);
+    }
+  };
+
+  const handleSelectApplication = (applicationId: string, checked: boolean) => {
+    if (checked) {
+      setSelectedApplications([...selectedApplications, applicationId]);
+    } else {
+      setSelectedApplications(
+        selectedApplications.filter((id) => id !== applicationId),
+      );
+    }
+  };
+
+  const filteredApplications =
+    applications?.filter(
+      (application) =>
+        application.company?.companyName
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase()) ||
+        application.job?.title.toLowerCase().includes(searchTerm.toLowerCase()),
+    ) || [];
+
+  const totalPages = Math.ceil(total / pageSize);
 
   if (loading) {
     return (
@@ -58,102 +140,215 @@ export default function ApplicationTable({
     );
   }
 
-  if (applications?.length === 0) {
-    return (
-      <div className="flex h-64 items-center justify-center">
-        <div className="text-gray-500">No applications found</div>
-      </div>
-    );
-  }
+  // Handle case when no applications are found due to search
+  // if (searchTerm && !filteredApplications.length && applications && applications.length > 0) {
+  //   return (
+  //     <div className="p-6">
+  //       <div className="flex flex-col items-center justify-center h-64 gap-4">
+  //         <div className="text-gray-500 text-lg">No applications found matching "{searchTerm}"</div>
+  //         <Button
+  //           variant="outline"
+  //           onClick={() => setSearchTerm('')}
+  //           className="flex items-center gap-2"
+  //         >
+  //           Clear Search
+  //         </Button>
+  //       </div>
+  //     </div>
+  //   );
+  // }
+
+  // Handle case when no applications exist at all
+  // if (!applications || applications.length === 0) {
+  //   return (
+  //     <div className="flex h-64 items-center justify-center">
+  //       <div className="text-gray-500">No applications found</div>
+  //     </div>
+  //   );
+  // }
 
   return (
-    <div className="mb-16 overflow-x-auto">
-      <table className="min-w-full divide-y divide-gray-200">
-        <thead>
-          <tr className="text-left text-gray-500">
-            <th className="w-12 px-4 py-3">#</th>
-            <th className="px-4 py-3">Company Name</th>
-            <th className="px-4 py-3">Roles</th>
-            <th className="px-4 py-3">Date Applied</th>
-            <th className="px-4 py-3">Status</th>
-            <th className="w-12 px-4 py-3"></th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-100">
-          {applications?.map((application, index) => (
-            <tr
-              key={application.id}
-              className={`${
-                index % 2 === 1 ? 'bg-gray-50' : 'bg-white'
-              } cursor-pointer transition-colors hover:bg-gray-100`}
-              onClick={() => handleRowClick(application)}
-            >
-              <td className="px-4 py-4">{application.id}</td>
-              <td className="px-4 py-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-md bg-gray-100">
-                    {application.company?.logoUrl ? (
-                      <Image
-                        src={application.company?.logoUrl || '/placeholder.svg'}
-                        alt={application.company.companyName}
-                        width={40}
-                        height={40}
-                        className="object-contain"
-                      />
-                    ) : (
-                      <span className="text-xs text-gray-400">
-                        {application.company?.companyName.charAt(0)}
-                      </span>
-                    )}
-                  </div>
-                  <span className="font-medium">
-                    {application.company?.companyName}
-                  </span>
-                </div>
-              </td>
-              <td className="px-4 py-4">{application.job?.title}</td>
-              <td className="px-4 py-4">
-                {formatDate(application.applied_at)}
-              </td>
-              <td className="px-4 py-4">
-                <StatusBadge
-                  status={
-                    application.status as import('@/types/Application').ApplicationStatus
+    <div className="p-6">
+      {/* Header */}
+      <div className="mb-6 flex items-center justify-between">
+        <h1 className="text-2xl font-semibold text-gray-900">
+          Total Applications: {searchTerm ? filteredApplications.length : total}
+        </h1>
+        <div className="flex items-center gap-4">
+          <div className="relative">
+            <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform text-gray-400" />
+            <Input
+              placeholder="Search Applications"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-80 pl-10"
+            />
+          </div>
+          <Button variant="outline" className="flex items-center gap-2">
+            <Filter className="h-4 w-4" />
+            Filter
+          </Button>
+        </div>
+      </div>
+
+      {/* Table */}
+      <div className="rounded-lg border">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-gray-50">
+              <TableHead className="w-12">
+                <Checkbox
+                  checked={
+                    selectedApplications.length ===
+                      filteredApplications.length &&
+                    filteredApplications.length > 0
                   }
+                  onCheckedChange={handleSelectAll}
                 />
-              </td>
-              <td className="px-4 py-4">
-                <button
-                  className="rounded-full p-1 hover:bg-gray-200"
-                  onClick={handleMoreClick}
-                >
-                  <MoreVertical className="h-5 w-5 text-gray-400" />
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      {/* Pagination controls */}
-      <div className="mt-4 flex justify-center">
-        <button
-          className="rounded border px-3 py-1 disabled:opacity-50"
-          onClick={() => onPageChange(page - 1)}
-          disabled={page === 1}
-        >
-          Prev
-        </button>
-        <span className="mx-2">{page}</span>
-        <button
-          className="rounded border px-3 py-1 disabled:opacity-50"
-          onClick={() => onPageChange(page + 1)}
-          disabled={
-            (applications?.length ?? 0) < pageSize ||
-            applications?.length === total
-          }
-        >
-          Next
-        </button>
+              </TableHead>
+              <TableHead className="font-medium text-gray-600">
+                Company Name
+              </TableHead>
+              <TableHead className="font-medium text-gray-600">Roles</TableHead>
+              <TableHead className="font-medium text-gray-600">
+                Date Applied
+              </TableHead>
+              <TableHead className="font-medium text-gray-600">
+                Status
+              </TableHead>
+              <TableHead className="w-12"></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredApplications.map((application) => (
+              <TableRow
+                key={application.id}
+                className="cursor-pointer hover:bg-gray-50"
+                onClick={() => handleRowClick(application)}
+              >
+                <TableCell>
+                  <Checkbox
+                    checked={selectedApplications.includes(application.id)}
+                    onCheckedChange={(checked) =>
+                      handleSelectApplication(
+                        application.id,
+                        checked as boolean,
+                      )
+                    }
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage
+                        src={application.company?.logoUrl || '/placeholder.svg'}
+                        alt={application.company?.companyName}
+                      />
+                      <AvatarFallback>
+                        {application.company?.companyName?.charAt(0) || 'C'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="font-medium">
+                      {application.company?.companyName}
+                    </span>
+                  </div>
+                </TableCell>
+                <TableCell className="text-gray-600">
+                  {application.job?.title}
+                </TableCell>
+                <TableCell className="text-gray-600">
+                  {formatDate(application.applied_at)}
+                </TableCell>
+                <TableCell>
+                  <Badge
+                    variant="outline"
+                    className={getStageColor(application.status)}
+                  >
+                    {application.status}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleMoreClick}
+                      >
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem>View Details</DropdownMenuItem>
+                      <DropdownMenuItem>Send Message</DropdownMenuItem>
+                      <DropdownMenuItem>Schedule Interview</DropdownMenuItem>
+                      <DropdownMenuItem className="text-red-600">
+                        Withdraw
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+
+      {/* Pagination */}
+      <div className="mt-6 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-gray-600">View</span>
+          <Select
+            value={pageSize.toString()}
+            onValueChange={(value) => onPageSizeChange(Number(value))}
+          >
+            <SelectTrigger className="w-20">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="5">5</SelectItem>
+              <SelectItem value="10">10</SelectItem>
+              <SelectItem value="20">20</SelectItem>
+              <SelectItem value="50">50</SelectItem>
+            </SelectContent>
+          </Select>
+          <span className="text-sm text-gray-600">Applications per page</span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onPageChange(Math.max(1, page - 1))}
+            disabled={page === 1}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+            (pageNum) => (
+              <Button
+                key={pageNum}
+                variant={page === pageNum ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => onPageChange(pageNum)}
+                className="h-8 w-8"
+              >
+                {pageNum}
+              </Button>
+            ),
+          )}
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onPageChange(Math.min(totalPages, page + 1))}
+            disabled={page === totalPages}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
     </div>
   );

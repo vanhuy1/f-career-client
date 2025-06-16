@@ -2,7 +2,6 @@ export interface Applicant {
   id: string;
   fullName: string;
   avatar: string;
-  score: number;
   hiringStage:
     | 'Interview'
     | 'Shortlisted'

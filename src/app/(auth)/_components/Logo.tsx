@@ -6,7 +6,7 @@ import Link from 'next/link';
 const Logo = () => (
   <Link href={ROUTES.HOMEPAGE.path}>
     <div className="mb-8 flex cursor-pointer items-center">
-      <div className="rounded-full bg-[#5e5cff] p-1.5">
+      <div className="rounded-full bg-blue-600 p-1.5">
         <CheckCircle size={20} color="white" />
       </div>
       &nbsp;&nbsp;
