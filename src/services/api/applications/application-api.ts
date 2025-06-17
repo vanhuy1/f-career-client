@@ -2,6 +2,7 @@ import { Application, ApplicationsResponse } from '@/types/Application';
 import { RequestBuilder } from '@/utils/axios/request-builder';
 import { ApplicationFormData } from '@/app/(public)/_components/apply-dialog';
 import { httpClient } from '@/utils/axios';
+import { Applicants } from '@/types/Applicants';
 
 class ApplicationService {
   private requestBuilder: RequestBuilder;
@@ -57,6 +58,33 @@ class ApplicationService {
         return {
           success: true,
           data: data as Application,
+        };
+      },
+      config: {
+        withCredentials: false,
+      },
+    });
+    return response;
+  }
+
+  async getApplicants(): Promise<Applicants> {
+    const url = this.requestBuilder.buildUrl('hr');
+    const response = await httpClient.get<Applicants>({
+      url,
+      typeCheck: (data) => {
+        return {
+          success: true,
+          data: {
+            data: Array.isArray((data as Applicants).data)
+              ? (data as Applicants).data
+              : Array.isArray(data)
+                ? data
+                : [],
+            total:
+              (data as Applicants).total ||
+              (data as Applicants).data?.length ||
+              0,
+          } as Applicants,
         };
       },
       config: {
