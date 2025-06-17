@@ -1,6 +1,28 @@
 import type SimplePeer from 'simple-peer';
+import { Socket } from 'socket.io-client';
 
 export type TBreakpoint = 'xsm' | 'sm' | 'md' | 'lg' | 'xl' | 'xxl';
+
+export interface PeerData {
+  id: string;
+  name: string;
+  email: string;
+  stream?: MediaStream;
+  connection?: RTCPeerConnection;
+  lastMessage?: Message;
+}
+
+export interface Message {
+  sender: string;
+  content: string;
+  timestamp: number;
+}
+
+export interface AppContextProps {
+  socket: Socket | null;
+  user: TUser | null;
+  setUser: (user: TUser | null) => void;
+}
 
 export type TUser = {
   id: string;

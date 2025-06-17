@@ -10,9 +10,8 @@ import { useRouter } from 'next/navigation';
 import SimplePeer from 'simple-peer';
 import { io, Socket } from 'socket.io-client';
 import { toast } from 'react-toastify';
+import { v4 as uuidv4 } from 'uuid';
 import {
-  TCallAcceptedEventData,
-  TRequestMeetConnectionEventData,
   TUser,
 } from '../utils/types';
 import {
@@ -27,13 +26,14 @@ import { videoCallText } from '../utils/text';
 export interface MeetContextProps {
   socketRef: React.RefObject<Socket | null>;
   userVideoRef: React.RefObject<HTMLVideoElement | null>;
-  otherUserVideoRef: React.RefObject<HTMLVideoElement | null>;
+  peersVideoRefs: Map<string, React.RefObject<HTMLVideoElement | null>>;
+  meetId: string;
   meetName: string;
   userData: TUser;
-  otherUserData: TUser;
+  peersData: Map<string, TUser>;
   callingOtherUserData: TUser;
-  isOtherUserMuted: boolean;
-  isOtherUserVideoStopped: boolean;
+  peersMuted: Map<string, boolean>;
+  peersVideoStopped: Map<string, boolean>;
   userStream?: MediaStream;
   isCallingUser: boolean;
   meetRequestAccepted: boolean;
@@ -41,19 +41,19 @@ export interface MeetContextProps {
   isSharingScreen: boolean;
   isUsingVideo: boolean;
   isUsingMicrophone: boolean;
-  isOtherUserSharingScreen: boolean;
+  peersSharingScreen: Map<string, boolean>;
   getUserStream: () => Promise<MediaStream | undefined>;
   startNewMeet: (
     userName: string,
     userEmail: string,
     meetName: string,
   ) => boolean;
-  joinMeet: (userName: string, userEmail: string, userToCallId: string) => void;
-  acceptMeetRequest: () => void;
-  rejectMeetRequest: () => void;
+  joinMeet: (userName: string, userEmail: string, meetId: string) => void;
+  acceptMeetRequest: (callerId: string) => void;
+  rejectMeetRequest: (callerId: string) => void;
   cancelMeetRequest: () => void;
   renameMeet: (newMeetName: string) => void;
-  removeOtherUserFromMeet: () => void;
+  removePeerFromMeet: (peerId: string) => void;
   leftMeet: () => void;
   updateStreamAudio: () => void;
   updateStreamVideo: () => void;
@@ -64,10 +64,6 @@ export interface MeetContextProps {
 interface SocketResponse {
   success: boolean;
   error?: string;
-}
-
-interface AcceptCallResponse extends SocketResponse {
-  meetId?: string;
 }
 
 interface MeetProviderProps {
@@ -85,63 +81,70 @@ export const MeetProvider: React.FC<MeetProviderProps> = ({
 }) => {
   const router = useRouter();
 
-  const peerRef = useRef<SimplePeer.Instance | null>(null);
+  const peerRefs = useRef<Map<string, SimplePeer.Instance>>(new Map());
   const socketRef = useRef<Socket | null>(null);
   const userVideoRef = useRef<HTMLVideoElement | null>(null);
-  const otherUserVideoRef = useRef<HTMLVideoElement | null>(null);
+  const peersVideoRefs = useRef<Map<string, React.RefObject<HTMLVideoElement | null>>>(
+    new Map(),
+  );
 
+  const [meetId, setMeetId] = useState<string>('');
   const [meetName, setMeetName] = useState<string>('');
   const [userData, setUserData] = useState<TUser>({} as TUser);
-  const [otherUserData, setOtherUserData] = useState<TUser>({} as TUser);
+  const [peersData, setPeersData] = useState<Map<string, TUser>>(new Map());
   const [callingOtherUserData, setCallingOtherUserData] = useState<TUser>(
     {} as TUser,
   );
-  const [isOtherUserMuted, setIsOtherUserMuted] = useState<boolean>(false);
-  const [isOtherUserVideoStopped, setIsOtherUserVideoStopped] =
-    useState<boolean>(false);
+  const [peersMuted, setPeersMuted] = useState<Map<string, boolean>>(new Map());
+  const [peersVideoStopped, setPeersVideoStopped] = useState<Map<string, boolean>>(
+    new Map(),
+  );
   const [userStream, setUserStream] = useState<MediaStream>();
-  const [otherUserSignal, setOtherUserSignal] =
-    useState<SimplePeer.SignalData>();
-  const [callingOtherUserSignal, setCallingOtherUserSignal] =
-    useState<SimplePeer.SignalData>();
   const [isCallingUser, setIsCallingUser] = useState<boolean>(false);
-  const [meetRequestAccepted, setMeetRequestAccepted] =
-    useState<boolean>(false);
+  const [meetRequestAccepted, setMeetRequestAccepted] = useState<boolean>(false);
   const [isReceivingMeetRequest, setIsReceivingMeetRequest] =
     useState<boolean>(false);
   const [isSharingScreen, setIsSharingScreen] = useState<boolean>(false);
   const [isUsingVideo, setIsUsingVideo] = useState<boolean>(false);
   const [isUsingMicrophone, setIsUsingMicrophone] = useState<boolean>(false);
-  const [isOtherUserSharingScreen, setIsOtherUserSharingScreen] =
-    useState<boolean>(false);
-  const [disconnectedOtherUserId, setDisconnectedOtherUserId] =
-    useState<string>('');
+  const [peersSharingScreen, setPeersSharingScreen] = useState<Map<string, boolean>>(
+    new Map(),
+  );
+  const [disconnectedPeerId, setDisconnectedPeerId] = useState<string>('');
 
   const clearMeetData = () => {
-    setOtherUserData({} as TUser);
-    setOtherUserSignal(undefined);
+    setPeersData(new Map());
     setCallingOtherUserData({} as TUser);
-    setCallingOtherUserSignal(undefined);
     setIsCallingUser(false);
     setMeetRequestAccepted(false);
     setIsReceivingMeetRequest(false);
     setIsSharingScreen(false);
-    setIsOtherUserSharingScreen(false);
+    setPeersSharingScreen(new Map());
+    setPeersMuted(new Map());
+    setPeersVideoStopped(new Map());
+    peerRefs.current.forEach((peer) => peer.destroy());
+    peerRefs.current.clear();
+    peersVideoRefs.current.clear();
   };
 
   const clearUserStream = () => {
-    setUserStream(undefined);
+    if (userStream) {
+      userStream.getTracks().forEach((track) => track.stop());
+      setUserStream(undefined);
+    }
   };
 
   const getUserStream = async () => {
     try {
-      const stream = userStream
-        ? userStream
-        : await navigator.mediaDevices.getUserMedia({
-            video: true,
-            audio: true,
-          });
-      if (userVideoRef.current) userVideoRef.current.srcObject = stream;
+      if (userStream) return userStream;
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: true,
+        audio: true,
+      });
+      if (userVideoRef.current) {
+        userVideoRef.current.srcObject = stream;
+        userVideoRef.current.muted = true;
+      }
       setUserStream(stream);
       setIsUsingVideo(true);
       setIsUsingMicrophone(true);
@@ -166,56 +169,60 @@ export const MeetProvider: React.FC<MeetProviderProps> = ({
     return false;
   };
 
-  const startNewMeet = (userName: string, userEmail: string, meet: string) => {
+  const startNewMeet = (userName: string, userEmail: string, meetDisplayName: string) => {
     try {
-      if (socketRef.current) {
-        const user = {
-          id: socketRef.current.id ?? '',
-          name: userName,
-          email: userEmail,
-        };
-        socketRef.current.emit(
-          'save-user-data',
-          user,
-          (response: SocketResponse) => {
-            if (response && response.success) {
-              console.log('User data saved successfully');
-            } else {
-              console.error('Failed to save user data:', response?.error);
-            }
-          },
-        );
-        setUserData(user);
-        setMeetName(meet);
-        return true;
-      } else {
+      if (!socketRef.current) {
         console.error('Socket is not initialized');
+        toast('Connection error. Please try again.', TOAST_DEFAULT_CONFIG);
         return false;
       }
+      const user = {
+        id: socketRef.current.id ?? '',
+        name: userName,
+        email: userEmail,
+      };
+      const newMeetId = uuidv4();
+      socketRef.current.emit(
+        'save-user-data',
+        user,
+        (response: SocketResponse) => {
+          if (response.success) {
+            setUserData(user);
+            socketRef.current?.emit(
+              'create-meet',
+              { meetId: newMeetId, meetName: meetDisplayName },
+              (res: SocketResponse & { meetId?: string; meetName?: string }) => {
+                if (res.success) {
+                  setMeetId(newMeetId);
+                  setMeetName(meetDisplayName);
+                  router.push('/video-call/meet');
+                } else {
+                  toast(res.error || 'Failed to create meeting', TOAST_DEFAULT_CONFIG);
+                }
+              },
+            );
+          } else {
+            console.error('Failed to save user data:', response.error);
+            toast(response.error || 'Failed to save user data', TOAST_DEFAULT_CONFIG);
+          }
+        },
+      );
+      return true;
     } catch (error) {
-      console.log('Error starting new meet:', error);
+      console.error('Error starting new meet:', error);
+      toast('Error starting meeting', TOAST_DEFAULT_CONFIG);
       return false;
     }
   };
 
-  const joinMeet = async (
-    userName: string,
-    userEmail: string,
-    userToCallId: string,
-  ) => {
+  const joinMeet = async (userName: string, userEmail: string, meetId: string) => {
     try {
       const stream = await getUserStream();
-      if (!socketRef.current) {
-        console.error('Socket is not initialized');
+      if (!stream || !socketRef.current) {
+        console.error('Socket or stream not initialized');
+        toast('Connection error. Please try again.', TOAST_DEFAULT_CONFIG);
         return;
       }
-      setIsCallingUser(true);
-      const peer = new SimplePeer({
-        initiator: true,
-        trickle: false,
-        config: PEER_CONFIGS,
-        stream,
-      });
       const user = {
         id: socketRef.current.id ?? '',
         name: userName,
@@ -225,148 +232,158 @@ export const MeetProvider: React.FC<MeetProviderProps> = ({
         'save-user-data',
         user,
         (response: SocketResponse) => {
-          if (!response || !response.success) {
-            console.error('Failed to save user data:', response?.error);
+          if (response.success) {
+            setUserData(user);
+            socketRef.current?.emit(
+              'join-meet',
+              { meetId, user },
+              (res: SocketResponse & { meetName?: string }) => {
+                if (res.success && res.meetName) {
+                  setMeetName(res.meetName);
+                } else {
+                  toast(res.error || 'Failed to join meeting', TOAST_DEFAULT_CONFIG);
+                }
+              },
+            );
+          } else {
+            console.error('Failed to save user data:', response.error);
+            toast(response.error || 'Failed to save user data', TOAST_DEFAULT_CONFIG);
           }
         },
       );
-      socketRef.current.emit('check-meet-link', userToCallId);
-      setUserData(user);
-      setCallingOtherUserData({ id: userToCallId } as TUser);
-      peer.on('signal', (data) => {
-        if (socketRef.current) {
-          socketRef.current.emit(
-            'call-user',
-            {
-              to: userToCallId,
-              from: user,
-              signal: data,
-            },
-            (response: SocketResponse) => {
-              if (!response || !response.success) {
-                console.error('Call failed:', response?.error);
-              }
-            },
-          );
-        }
-      });
-      peer.on('stream', (stream) => {
-        if (otherUserVideoRef.current)
-          otherUserVideoRef.current.srcObject = stream;
-      });
-      peerRef.current = peer;
-      router.push('/video-call/meet');
     } catch (error) {
       console.error('Error joining meet:', error);
+      toast('Error joining meeting', TOAST_DEFAULT_CONFIG);
     }
   };
 
-  const acceptMeetRequest = () => {
-    setMeetRequestAccepted(true);
-    setIsReceivingMeetRequest(false);
-    const otherUser = {
-      data: callingOtherUserData,
-      signal: callingOtherUserSignal,
-    };
-    setOtherUserData(otherUser.data);
-    setOtherUserSignal(otherUser.signal);
-    setCallingOtherUserData({} as TUser);
-    setCallingOtherUserSignal(undefined);
+  const createPeer = (peerId: string, initiator: boolean, stream: MediaStream) => {
+    if (!stream) {
+      console.error('No stream available for peer creation');
+      return null;
+    }
     const peer = new SimplePeer({
-      initiator: false,
+      initiator,
       trickle: false,
-      stream: userStream,
+      config: PEER_CONFIGS,
+      stream,
     });
     peer.on('signal', (data) => {
       if (socketRef.current) {
-        socketRef.current.emit(
-          'accept-call',
-          {
-            to: otherUser.data.id,
-            from: userData,
-            signal: data,
-            meetName,
-          },
-          (response: AcceptCallResponse) => {
-            if (response && response.success) {
-              if (response.meetId) {
-                console.log('Joined meeting with ID:', response.meetId);
-              }
-            } else {
-              console.error('Failed to accept call:', response?.error);
-            }
-          },
-        );
+        socketRef.current.emit('signal', {
+          to: peerId,
+          from: userData.id,
+          signal: data,
+          meetId,
+        });
       }
     });
-    peer.on('stream', (stream) => {
-      if (otherUserVideoRef.current)
-        otherUserVideoRef.current.srcObject = stream;
+    peer.on('stream', (peerStream) => {
+      const videoRef = peersVideoRefs.current.get(peerId);
+      if (videoRef?.current) {
+        videoRef.current.srcObject = peerStream;
+      } else {
+        const newRef = React.createRef<HTMLVideoElement>();
+        peersVideoRefs.current.set(peerId, newRef);
+        setTimeout(() => {
+          if (newRef.current) {
+            newRef.current.srcObject = peerStream;
+            newRef.current.muted = false;
+          }
+        }, 0);
+      }
     });
-    setIsUsingVideo(true);
-    setIsUsingMicrophone(true);
-    peerRef.current = peer;
-    if (otherUser.signal && peerRef.current) {
-      peerRef.current.signal(otherUser.signal);
-    }
+    peer.on('error', (err) => {
+      console.error(`Peer error with ${peerId}:`, err);
+      removePeerFromMeet(peerId);
+      toast(`Connection error with ${peersData.get(peerId)?.name || 'user'}`, TOAST_DEFAULT_CONFIG);
+    });
+    peer.on('close', () => {
+      removePeerFromMeet(peerId);
+    });
+    peerRefs.current.set(peerId, peer);
+    return peer;
   };
 
-  const rejectMeetRequest = () => {
+  const acceptMeetRequest = (callerId: string) => {
+    setMeetRequestAccepted(true);
+    setIsReceivingMeetRequest(false);
+    setCallingOtherUserData({} as TUser);
+    router.push('/video-call/meet');
+  };
+
+  const rejectMeetRequest = (callerId: string) => {
     if (socketRef.current) {
       socketRef.current.emit('reject-call', {
-        to: callingOtherUserData.id,
+        to: callerId,
         from: userData,
       });
     }
-    clearMeetData();
+    setIsReceivingMeetRequest(false);
+    setCallingOtherUserData({} as TUser);
   };
 
   const cancelMeetRequest = () => {
     if (socketRef.current) {
-      socketRef.current.emit('cancel-meet-request', callingOtherUserData.id);
-    }
-    if (peerRef.current) {
-      peerRef.current.destroy();
+      socketRef.current.emit('cancel-meet-request', { meetId });
     }
     clearMeetData();
+    clearUserStream();
+    router.replace('/video-call?stopStream=true');
   };
 
   const renameMeet = (newMeetName: string) => {
     if (socketRef.current) {
       socketRef.current.emit('meet-new-name', {
-        to: otherUserData.id,
+        meetId,
         newMeetName,
       });
     }
-    setMeetName(newMeetName);
   };
 
-  const removeOtherUserFromMeet = () => {
-    if (socketRef.current) {
-      socketRef.current.emit('remove-from-meet', otherUserData.id);
+  const removePeerFromMeet = (peerId: string) => {
+    const peer = peerRefs.current.get(peerId);
+    if (peer) {
+      peer.destroy();
+      peerRefs.current.delete(peerId);
     }
-    clearMeetData();
+    peersVideoRefs.current.delete(peerId);
+    setPeersData((prev) => {
+      const newMap = new Map(prev);
+      newMap.delete(peerId);
+      return newMap;
+    });
+    setPeersMuted((prev) => {
+      const newMap = new Map(prev);
+      newMap.delete(peerId);
+      return newMap;
+    });
+    setPeersVideoStopped((prev) => {
+      const newMap = new Map(prev);
+      newMap.delete(peerId);
+      return newMap;
+    });
+    setPeersSharingScreen((prev) => {
+      const newMap = new Map(prev);
+      newMap.delete(peerId);
+      return newMap;
+    });
   };
 
   const leftMeet = () => {
-    const clearUserData = () => {
-      setUserData({} as TUser);
-      setIsUsingVideo(false);
-      setIsUsingMicrophone(false);
-      setMeetName('');
-    };
     if (socketRef.current) {
       socketRef.current.emit('left-meet', {
         userId: userData.id,
-        meetId: meetName,
+        meetId,
       });
     }
-    if (peerRef.current) {
-      peerRef.current.destroy();
-    }
-    userVideoRef.current?.remove();
-    clearUserData();
     clearMeetData();
+    clearUserStream();
+    setUserData({} as TUser);
+    setIsUsingVideo(false);
+    setIsUsingMicrophone(false);
+    setMeetId('');
+    setMeetName('');
     router.replace('/video-call?stopStream=true');
   };
 
@@ -384,7 +401,7 @@ export const MeetProvider: React.FC<MeetProviderProps> = ({
     if (socketRef.current) {
       socketRef.current.emit('update-user-audio', {
         userId: userData.id,
-        meetId: meetName,
+        meetId,
         status: newMicrophoneState,
       });
     }
@@ -404,7 +421,7 @@ export const MeetProvider: React.FC<MeetProviderProps> = ({
     if (socketRef.current) {
       socketRef.current.emit('update-user-video', {
         userId: userData.id,
-        meetId: meetName,
+        meetId,
         status: newVideoState,
       });
     }
@@ -412,55 +429,42 @@ export const MeetProvider: React.FC<MeetProviderProps> = ({
 
   const updateScreenSharing = async () => {
     try {
-      if (isEmpty(otherUserData))
-        return toast(
-          videoCallText.toastMessage.canNotshareScreen,
-          TOAST_DEFAULT_CONFIG,
-        );
       const hasNoStream = await checkUserStream();
       if (hasNoStream) return;
-      let stream;
+      let stream: MediaStream | undefined;
       if (isSharingScreen) {
         stream = userStream;
         setIsSharingScreen(false);
-        if (socketRef.current) {
-          socketRef.current.emit('update-screen-sharing', {
-            userId: userData.id,
-            meetId: meetName,
-            status: false,
-          });
-        }
       } else {
         stream = await navigator.mediaDevices.getDisplayMedia();
         setIsSharingScreen(true);
-        if (socketRef.current) {
-          socketRef.current.emit('update-screen-sharing', {
-            userId: userData.id,
-            meetId: meetName,
-            status: true,
-          });
-        }
       }
-      if (peerRef.current) {
-        const [oldStream] = peerRef.current.streams;
-        const [oldTrack] = oldStream.getVideoTracks();
-        const newTrack = stream?.getVideoTracks()?.[0];
-        if (!newTrack) {
-          console.error('No video track available for screen sharing');
-          return;
-        }
-        newTrack.onended = () => {
-          const userTrack = userStream?.getVideoTracks()?.[0];
-          if (!userTrack) {
-            console.error('No user video track available');
-            return;
+      if (stream && socketRef.current) {
+        socketRef.current.emit('update-screen-sharing', {
+          userId: userData.id,
+          meetId,
+          status: isSharingScreen,
+        });
+        peerRefs.current.forEach((peer, peerId) => {
+          const [oldStream] = peer.streams;
+          if (oldStream) {
+            const [oldTrack] = oldStream.getVideoTracks();
+            const newTrack = stream!.getVideoTracks()[0];
+            newTrack.onended = () => {
+              const userTrack = userStream?.getVideoTracks()[0];
+              if (userTrack && peer) {
+                peer.replaceTrack(oldTrack, userTrack, oldStream);
+                setIsSharingScreen(false);
+                socketRef.current?.emit('update-screen-sharing', {
+                  userId: userData.id,
+                  meetId,
+                  status: false,
+                });
+              }
+            };
+            peer.replaceTrack(oldTrack, newTrack, oldStream);
           }
-          if (peerRef.current) {
-            peerRef.current.replaceTrack(oldTrack, userTrack, oldStream);
-          }
-          setIsSharingScreen(false);
-        };
-        peerRef.current.replaceTrack(oldTrack, newTrack, oldStream);
+        });
       }
     } catch (error) {
       console.error('Error updating screen sharing:', error);
@@ -485,130 +489,110 @@ export const MeetProvider: React.FC<MeetProviderProps> = ({
             TOAST_DEFAULT_CONFIG,
           );
         });
-        socketRef.current.on('link-not-available', () => {
-          cancelMeetRequest();
-          const tracks = userStream?.getTracks();
-          tracks?.forEach((track) => track.stop());
-          router.replace('/video-call?stopStream=true');
+        socketRef.current.on('meet-joined', ({ meetId, meetName, users }: { meetId: string; meetName: string; users: TUser[] }) => {
+          setMeetId(meetId);
+          setMeetName(meetName);
+          setMeetRequestAccepted(true);
+          const stream = userStream;
+          if (!stream) return;
+          users.forEach((peerUser) => {
+            if (peerUser.id !== userData.id) {
+              setPeersData((prev) => new Map(prev).set(peerUser.id, peerUser));
+              createPeer(peerUser.id, true, stream);
+            }
+          });
+        });
+        socketRef.current.on('new-user-joined', ({ user }: { user: TUser }) => {
+          if (user.id !== userData.id) {
+            setPeersData((prev) => new Map(prev).set(user.id, user));
+            setIsReceivingMeetRequest(true);
+            setCallingOtherUserData(user);
+            if (userStream) {
+              createPeer(user.id, true, userStream);
+            }
+          }
+        });
+        socketRef.current.on('signal', ({ from, signal, meetId: receivedMeetId }: { from: string; signal: any; meetId: string }) => {
+          if (receivedMeetId !== meetId) return;
+          let peer = peerRefs.current.get(from);
+          if (!peer && userStream) {
+            const newPeer = createPeer(from, false, userStream);
+            if (newPeer) peer = newPeer;
+          }
+          if (peer) {
+            try {
+              peer.signal(signal);
+            } catch (error) {
+              console.error(`Error signaling peer ${from}:`, error);
+            }
+          }
+        });
+        socketRef.current.on('meet-name-updated', ({ name }: { name: string }) => {
+          setMeetName(name);
           toast(
-            videoCallText.toastMessage.linkNotAvailable,
+            videoCallText.toastMessage.meetNameUpdated,
             TOAST_DEFAULT_CONFIG,
           );
         });
-        socketRef.current.on(
-          'meet-name-updated',
-          ({ name }: { name: string }) => {
-            setMeetName(name);
-            toast(
-              videoCallText.toastMessage.meetNameUpdated,
-              TOAST_DEFAULT_CONFIG,
-            );
-          },
-        );
-        socketRef.current.on('user-left', ({ userId }: { userId: string }) => {
-          setDisconnectedOtherUserId(userId);
+        socketRef.current.on('other-user-left-meet', ({ userId }: { userId: string }) => {
+          removePeerFromMeet(userId);
+          toast(
+            `${peersData.get(userId)?.name || 'User'} left the meet`,
+            TOAST_DEFAULT_CONFIG,
+          );
         });
         socketRef.current.on('removed-from-meet', () => {
+          setMeetId('');
           setMeetName('');
           clearMeetData();
-          if (peerRef.current) {
-            peerRef.current.destroy();
-          }
+          clearUserStream();
           router.replace('/video-call?stopStream=true');
           toast(
             videoCallText.toastMessage.userRemovedFromMeet,
             TOAST_DEFAULT_CONFIG,
           );
         });
-        socketRef.current.on('other-user-left-meet', () => {
-          setMeetName('');
-          clearMeetData();
-          if (peerRef.current) {
-            peerRef.current.destroy();
+        socketRef.current.on('user-audio-update', ({ userId, status }: { userId: string; status: boolean }) => {
+          setPeersMuted((prev) => new Map(prev).set(userId, !status));
+          const videoRef = peersVideoRefs.current.get(userId);
+          if (videoRef?.current) {
+            videoRef.current.muted = !status;
           }
-          toast(
-            videoCallText.toastMessage.otherUserLeftMeet,
-            TOAST_DEFAULT_CONFIG,
-          );
         });
-        socketRef.current.on(
-          'user-audio-update',
-          ({ userId, status }: { userId: string; status: boolean }) => {
-            if (userId === otherUserData.id && otherUserVideoRef.current) {
-              otherUserVideoRef.current.muted = !status;
-              setIsOtherUserMuted(!status);
-            }
-          },
-        );
-        socketRef.current.on(
-          'user-video-update',
-          ({ userId, status }: { userId: string; status: boolean }) => {
-            if (userId === otherUserData.id) {
-              setIsOtherUserVideoStopped(!status);
-            }
-          },
-        );
-        socketRef.current.on(
-          'screen-sharing-update',
-          ({ userId, status }: { userId: string; status: boolean }) => {
-            if (userId === otherUserData.id) {
-              setIsOtherUserSharingScreen(status);
-            }
-          },
-        );
-        socketRef.current.on(
-          'incoming-call',
-          (data: TRequestMeetConnectionEventData) => {
-            setIsReceivingMeetRequest(true);
-            setCallingOtherUserData(data.from);
-            setCallingOtherUserSignal(data.signal);
-          },
-        );
-        socketRef.current.on(
-          'call-accepted',
-          (data: TCallAcceptedEventData) => {
-            setIsCallingUser(false);
-            setMeetRequestAccepted(true);
-            setMeetName(data.meetName);
-            setOtherUserData(data.from);
-            if (peerRef.current) {
-              peerRef.current.signal(data.signal);
-            }
-          },
-        );
-        socketRef.current.on('call-rejected', () => {
+        socketRef.current.on('user-video-update', ({ userId, status }: { userId: string; status: boolean }) => {
+          setPeersVideoStopped((prev) => new Map(prev).set(userId, !status));
+        });
+        socketRef.current.on('screen-sharing-update', ({ userId, status }: { userId: string; status: boolean }) => {
+          setPeersSharingScreen((prev) => new Map(prev).set(userId, status));
+        });
+        socketRef.current.on('call-rejected', ({ from }: { from: TUser }) => {
           clearMeetData();
-          if (peerRef.current) {
-            peerRef.current.destroy();
-          }
+          clearUserStream();
           toast(
-            videoCallText.toastMessage.requestDeclined,
+            `${from.name} declined the call`,
             TOAST_DEFAULT_CONFIG,
           );
         });
         socketRef.current.on('call-canceled', () => {
           clearMeetData();
+          clearUserStream();
+          router.replace('/video-call?stopStream=true');
         });
-        socketRef.current.on('other-user-already-in-meet', () => {
+        socketRef.current.on('meet-not-found', () => {
           cancelMeetRequest();
           toast(
-            videoCallText.toastMessage.otherUserInMeet,
+            videoCallText.toastMessage.linkNotAvailable,
             TOAST_DEFAULT_CONFIG,
           );
         });
-        socketRef.current.on(
-          'new-message',
-          ({
-            from,
-            message,
-          }: {
-            from: TUser;
-            message: string;
-            timestamp: string;
-          }) => {
-            console.log(`Message from ${from.name}: ${message}`);
-          },
-        );
+        socketRef.current.on('new-message', ({ from, message, timestamp }: { from: TUser; message: string; timestamp: string }) => {
+          setPeersData((prev) => {
+            if (!prev.has(from.id)) {
+              return new Map(prev).set(from.id, from);
+            }
+            return prev;
+          });
+        });
       } catch (error) {
         console.error('Could not initialize socket connection:', error);
         toast(
@@ -621,70 +605,31 @@ export const MeetProvider: React.FC<MeetProviderProps> = ({
     return () => {
       if (socketRef.current) {
         socketRef.current.disconnect();
-        socketRef.current.off('connect');
-        socketRef.current.off('connect_error');
-        socketRef.current.off('link-not-available');
-        socketRef.current.off('meet-name-updated');
-        socketRef.current.off('user-left');
-        socketRef.current.off('removed-from-meet');
-        socketRef.current.off('other-user-left-meet');
-        socketRef.current.off('user-audio-update');
-        socketRef.current.off('user-video-update');
-        socketRef.current.off('screen-sharing-update');
-        socketRef.current.off('incoming-call');
-        socketRef.current.off('call-accepted');
-        socketRef.current.off('call-rejected');
-        socketRef.current.off('call-canceled');
-        socketRef.current.off('other-user-already-in-meet');
-        socketRef.current.off('new-message');
+        socketRef.current.removeAllListeners();
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
-    if (isReceivingMeetRequest) {
-      const alreadyInMeet = otherUserSignal || !isEmpty(otherUserData);
-      if (alreadyInMeet && socketRef.current) {
-        socketRef.current.emit('already-in-meet', callingOtherUserData.id);
-      }
+    if (disconnectedPeerId) {
+      removePeerFromMeet(disconnectedPeerId);
+      setDisconnectedPeerId('');
     }
-  }, [
-    isReceivingMeetRequest,
-    callingOtherUserData.id,
-    otherUserData,
-    otherUserSignal,
-  ]);
-
-  useEffect(() => {
-    if (disconnectedOtherUserId) {
-      if (disconnectedOtherUserId === otherUserData.id) {
-        clearMeetData();
-        if (peerRef.current) {
-          peerRef.current.destroy();
-        }
-        toast(
-          videoCallText.toastMessage.otherUserLeftMeet,
-          TOAST_DEFAULT_CONFIG,
-        );
-      } else {
-        setDisconnectedOtherUserId('');
-      }
-    }
-  }, [disconnectedOtherUserId, otherUserData.id]);
+  }, [disconnectedPeerId]);
 
   return (
     <MeetContext.Provider
       value={{
         socketRef,
         userVideoRef,
-        otherUserVideoRef,
+        peersVideoRefs: peersVideoRefs.current,
+        meetId,
         meetName,
         userData,
-        otherUserData,
+        peersData,
         callingOtherUserData,
-        isOtherUserMuted,
-        isOtherUserVideoStopped,
+        peersMuted,
+        peersVideoStopped,
         userStream,
         isCallingUser,
         meetRequestAccepted,
@@ -692,7 +637,7 @@ export const MeetProvider: React.FC<MeetProviderProps> = ({
         isSharingScreen,
         isUsingVideo,
         isUsingMicrophone,
-        isOtherUserSharingScreen,
+        peersSharingScreen,
         getUserStream,
         startNewMeet,
         joinMeet,
@@ -700,7 +645,7 @@ export const MeetProvider: React.FC<MeetProviderProps> = ({
         rejectMeetRequest,
         cancelMeetRequest,
         renameMeet,
-        removeOtherUserFromMeet,
+        removePeerFromMeet,
         leftMeet,
         updateStreamAudio,
         updateStreamVideo,

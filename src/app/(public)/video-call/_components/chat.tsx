@@ -7,16 +7,17 @@ import { Button } from './ui-button';
 import useMeetContext from '../contexts/MeetContext';
 import { cn } from '@/lib/utils';
 import { videoCallText } from '../utils/text';
+import { TUser } from '../utils/types';
 
 interface Message {
   id: string;
   text: string;
-  isMine: boolean;
-  timestamp: Date;
+  from: TUser;
+  timestamp: string;
 }
 
 export function Chat() {
-  const { socketRef, otherUserData } = useMeetContext();
+  const { socketRef, userData, peersData, meetName } = useMeetContext();
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
@@ -27,20 +28,23 @@ export function Chat() {
   };
 
   const handleSendMessage = () => {
-    if (!inputValue.trim() || !socketRef.current) return;
+    if (!inputValue.trim() || !socketRef.current || !userData.id || !meetName) return;
 
-    const newMessage: Message = {
+    const message: Message = {
       id: Date.now().toString(),
-      text: inputValue,
-      isMine: true,
-      timestamp: new Date(),
+      text: inputValue.trim(),
+      from: userData,
+      timestamp: new Date().toISOString(),
     };
 
-    setMessages([...messages, newMessage]);
+    setMessages(prev => [...prev, message]);
     socketRef.current.emit('send-message', {
-      to: otherUserData.id,
-      message: inputValue,
+      meetId: meetName,
+      message: message.text,
+      from: userData,
+      timestamp: message.timestamp
     });
+
     setInputValue('');
   };
 
@@ -51,31 +55,32 @@ export function Chat() {
     }
   };
 
-  // Listen for incoming messages
   useEffect(() => {
     if (!socketRef.current) return;
 
-    // Copy the socket reference
     const socket = socketRef.current;
 
-    const handleReceivedMessage = (message: string) => {
+    const handleNewMessage = ({ from, message, timestamp }: { 
+      from: TUser; 
+      message: string; 
+      timestamp: string;
+    }) => {
       const newMessage: Message = {
         id: Date.now().toString(),
         text: message,
-        isMine: false,
-        timestamp: new Date(),
+        from,
+        timestamp,
       };
-      setMessages((prev) => [...prev, newMessage]);
+      setMessages(prev => [...prev, newMessage]);
     };
 
-    socket.on('received-message', handleReceivedMessage);
+    socket.on('new-message', handleNewMessage);
 
     return () => {
-      socket.off('received-message', handleReceivedMessage);
+      socket.off('new-message', handleNewMessage);
     };
   }, [socketRef]);
 
-  // Scroll to bottom when messages change
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
@@ -89,7 +94,7 @@ export function Chat() {
       <div className="flex-1 space-y-3 overflow-y-auto p-4">
         {messages.length === 0 ? (
           <p className="text-muted-foreground text-center text-sm">
-            No messages yet
+            {videoCallText.page.meet.empty.message}
           </p>
         ) : (
           messages.map((message) => (
@@ -97,22 +102,27 @@ export function Chat() {
               key={message.id}
               className={cn(
                 'flex w-full',
-                message.isMine ? 'justify-end' : 'justify-start',
+                message.from.id === userData.id ? 'justify-end' : 'justify-start'
               )}
             >
               <div
                 className={cn(
                   'max-w-[75%] rounded-lg px-3 py-2 text-sm',
-                  message.isMine
+                  message.from.id === userData.id
                     ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted',
+                    : 'bg-muted'
                 )}
               >
+                <p className="font-medium">
+                  {message.from.id === userData.id 
+                    ? 'You' 
+                    : peersData.get(message.from.id)?.name || message.from.name}
+                </p>
                 <p>{message.text}</p>
                 <span className="mt-1 block text-right text-xs opacity-70">
-                  {message.timestamp.toLocaleTimeString([], {
+                  {new Date(message.timestamp).toLocaleTimeString([], {
                     hour: '2-digit',
-                    minute: '2-digit',
+                    minute: '2-digit'
                   })}
                 </span>
               </div>
@@ -135,7 +145,7 @@ export function Chat() {
           <Button
             className="h-10 w-10 rounded-full p-0"
             onClick={handleSendMessage}
-            disabled={!inputValue.trim()}
+            disabled={!inputValue.trim() || !socketRef.current || !userData.id}
           >
             <Send className="h-4 w-4" />
             <span className="sr-only">Send</span>

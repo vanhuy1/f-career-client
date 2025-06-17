@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Head from 'next/head';
 import {
   Copy,
-  ComputerIcon as Desktop,
+  Computer as Desktop,
   Edit,
   Expand,
   Menu,
@@ -18,8 +18,8 @@ import {
   UserX,
   Video,
   VideoOff,
-  X,
   Users,
+  X,
 } from 'lucide-react';
 
 import { Button } from '../_components/ui-button';
@@ -30,7 +30,6 @@ import { Chat } from '../_components/chat';
 import { Menu as MenuComponent, MenuItem } from '../_components/menu';
 import useMeetContext from '../contexts/MeetContext';
 import { cn } from '@/lib/utils';
-import { isEmpty } from '../utils/functions';
 import {
   Tooltip,
   TooltipContent,
@@ -38,56 +37,53 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { videoCallText } from '../utils/text';
+import { isEmpty } from '../utils/functions';
 
 export default function Meet() {
   const router = useRouter();
   const {
     userVideoRef,
-    otherUserVideoRef,
+    peersVideoRefs,
+    meetId,
     meetName,
     userData,
-    otherUserData,
-    isOtherUserMuted,
-    isOtherUserVideoStopped,
+    peersData,
+    callingOtherUserData,
+    peersMuted,
+    peersVideoStopped,
     isCallingUser,
     isReceivingMeetRequest,
     isSharingScreen,
     isUsingVideo,
     isUsingMicrophone,
-    isOtherUserSharingScreen,
+    peersSharingScreen,
     getUserStream,
     cancelMeetRequest,
-    removeOtherUserFromMeet,
+    removePeerFromMeet,
     leftMeet,
     updateStreamAudio,
     updateStreamVideo,
     updateScreenSharing,
     renameMeet,
-    callingOtherUserData,
     acceptMeetRequest,
     rejectMeetRequest,
   } = useMeetContext();
 
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
   const [isChatOpen, setIsChatOpen] = useState<boolean>(false);
-  const [isRenameMeetModalVisible, setIsRenameMeetModalVisible] =
-    useState<boolean>(false);
-  const [, setIsFullScreen] = useState<boolean>(false);
+  const [isRenameMeetModalVisible, setIsRenameMeetModalVisible] = useState<boolean>(false);
+  const [isFullScreen, setIsFullScreen] = useState<boolean>(false);
   const [participantCount, setParticipantCount] = useState<number>(1);
   const [isHeaderVisible, setIsHeaderVisible] = useState<boolean>(true);
 
   const handleCopyMeetId = async () => {
     try {
       setIsMenuOpen(false);
-      const meetLink = `${window.location.origin}/video-call?meetId=${userData.id}`;
+      const meetLink = `${window.location.origin}/video-call?meetId=${meetId}`;
       await navigator.clipboard.writeText(meetLink);
       toast(videoCallText.toastMessage.copiedMeetLink, {
         position: 'top-right',
         autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
         type: 'success',
       });
     } catch (error) {
@@ -95,10 +91,6 @@ export default function Meet() {
       toast(videoCallText.toastMessage.errorWhileCopyingMeetLink, {
         position: 'top-right',
         autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
         type: 'error',
       });
     }
@@ -141,7 +133,7 @@ export default function Meet() {
         await navigator.share({
           title: meetName || videoCallText.page.meet.title,
           text: videoCallText.page.meet.title,
-          url: `${window.location.origin}/video-call?meetId=${userData.id}`,
+          url: `${window.location.origin}/video-call?meetId=${meetId}`,
         });
       } else {
         handleCopyMeetId();
@@ -160,11 +152,7 @@ export default function Meet() {
 
     getUserStream();
 
-    if (!isEmpty(otherUserData)) {
-      setParticipantCount(2);
-    } else {
-      setParticipantCount(1);
-    }
+    setParticipantCount(peersData.size + 1);
 
     const handleFullscreenChange = () => {
       setIsFullScreen(!!document.fullscreenElement);
@@ -175,9 +163,8 @@ export default function Meet() {
     return () => {
       document.removeEventListener('fullscreenchange', handleFullscreenChange);
     };
-  }, [otherUserData]);
+  }, [peersData, userData, getUserStream, router]);
 
-  // Auto-hide header on mobile after 3 seconds
   useEffect(() => {
     const timer = setTimeout(() => {
       if (window.innerWidth < 768) {
@@ -198,13 +185,12 @@ export default function Meet() {
         <ReceivingCallModal
           visible={isReceivingMeetRequest}
           userName={callingOtherUserData.name}
-          onAccept={acceptMeetRequest}
-          onReject={rejectMeetRequest}
+          onAccept={() => acceptMeetRequest(callingOtherUserData.id)}
+          onReject={() => rejectMeetRequest(callingOtherUserData.id)}
         />
       )}
 
       <div className="bg-background relative h-screen overflow-hidden">
-        {/* Header - Fixed and can slide up/down */}
         <header
           className={cn(
             'bg-background/95 fixed top-0 right-0 left-0 z-50 flex h-16 items-center justify-between border-b px-4 shadow-sm backdrop-blur-sm transition-transform duration-300',
@@ -254,7 +240,6 @@ export default function Meet() {
           </div>
         </header>
 
-        {/* Main video container */}
         <main
           id="video-container"
           className={cn(
@@ -274,7 +259,7 @@ export default function Meet() {
                 <h2 className="text-xl font-semibold">
                   {videoCallText.page.meet.calling.title.replace(
                     '{{ user }}',
-                    otherUserData.name || callingOtherUserData.name,
+                    callingOtherUserData.name,
                   )}
                 </h2>
                 <p className="text-muted-foreground">
@@ -288,7 +273,7 @@ export default function Meet() {
                 </p>
               </div>
             </div>
-          ) : isEmpty(otherUserData) ? (
+          ) : peersData.size === 0 ? (
             <div
               data-testid="emptyContent"
               className="flex flex-col items-center justify-center space-y-4 p-4 text-center"
@@ -316,53 +301,57 @@ export default function Meet() {
               </Button>
             </div>
           ) : (
-            <div className="border-muted relative h-full w-full overflow-hidden rounded-2xl border-4">
-              <video
-                playsInline
-                autoPlay
-                ref={otherUserVideoRef}
-                className={cn(
-                  'h-full w-full object-cover',
-                  isOtherUserVideoStopped && 'hidden',
-                )}
-              ></video>
+            <div className="grid h-full w-full grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {Array.from(peersData.entries()).map(([peerId, peerData]) => (
+                <div
+                  key={peerId}
+                  className="border-muted relative h-full w-full overflow-hidden rounded-2xl border-4"
+                >
+                  <video
+                    playsInline
+                    autoPlay
+                    ref={peersVideoRefs.get(peerId)}
+                    className={cn(
+                      'h-full w-full object-cover',
+                      peersVideoStopped.get(peerId) && 'hidden',
+                    )}
+                  ></video>
 
-              {isOtherUserVideoStopped && (
-                <div className="bg-muted flex h-full w-full items-center justify-center">
-                  <UserCircle className="text-muted-foreground h-32 w-32" />
+                  {peersVideoStopped.get(peerId) && (
+                    <div className="bg-muted flex h-full w-full items-center justify-center">
+                      <UserCircle className="text-muted-foreground h-32 w-32" />
+                    </div>
+                  )}
+
+                  <div className="bg-background/80 absolute bottom-4 left-4 flex items-center gap-2 rounded-md px-3 py-1.5 backdrop-blur-sm">
+                    <span className="font-medium">{peerData.name || 'Participant'}</span>
+                    {peersMuted.get(peerId) ? (
+                      <MicOff className="text-destructive h-4 w-4" />
+                    ) : (
+                      <Mic className="h-4 w-4 text-green-500" />
+                    )}
+                  </div>
+
+                  {peersSharingScreen.get(peerId) && (
+                    <div className="bg-background/80 absolute top-4 right-4 rounded-md px-3 py-1.5 backdrop-blur-sm">
+                      <span className="text-sm">
+                        {videoCallText.page.meet.screenShare}
+                      </span>
+                    </div>
+                  )}
+
+                  <button
+                    className="bg-background/80 hover:bg-background absolute top-4 right-4 rounded-md p-2 backdrop-blur-sm"
+                    onClick={handleToggleFullScreen}
+                  >
+                    <Expand className="h-4 w-4" />
+                  </button>
                 </div>
-              )}
-
-              <div className="bg-background/80 absolute bottom-4 left-4 flex items-center gap-2 rounded-md px-3 py-1.5 backdrop-blur-sm">
-                <span className="font-medium">
-                  {otherUserData.name || 'Participant'}
-                </span>
-                {isOtherUserMuted ? (
-                  <MicOff className="text-destructive h-4 w-4" />
-                ) : (
-                  <Mic className="h-4 w-4 text-green-500" />
-                )}
-              </div>
-
-              {isOtherUserSharingScreen && (
-                <div className="bg-background/80 absolute top-4 right-4 rounded-md px-3 py-1.5 backdrop-blur-sm">
-                  <span className="text-sm">
-                    {videoCallText.page.meet.screenShare}
-                  </span>
-                </div>
-              )}
-
-              <button
-                className="bg-background/80 hover:bg-background absolute top-4 right-4 rounded-md p-2 backdrop-blur-sm"
-                onClick={handleToggleFullScreen}
-              >
-                <Expand className="h-4 w-4" />
-              </button>
+              ))}
             </div>
           )}
         </main>
 
-        {/* User video - Fixed overlay in bottom right */}
         {isUsingVideo && (
           <div className="border-primary bg-background fixed right-4 bottom-20 z-40 h-32 w-24 overflow-hidden rounded-2xl border-4 shadow-lg transition-all duration-300 md:bottom-24 md:h-44 md:w-72">
             <video
@@ -382,7 +371,6 @@ export default function Meet() {
           </div>
         )}
 
-        {/* Control bar - Fixed at bottom */}
         <footer className="bg-background/95 fixed right-0 bottom-0 left-0 z-50 flex h-16 items-center justify-between border-t px-4 backdrop-blur-sm">
           <div className="hidden md:block">
             <h3 className="text-lg font-medium">
@@ -445,9 +433,9 @@ export default function Meet() {
               <Tooltip>
                 <TooltipTrigger asChild>
                   <IconButton
-                    testId="toggleScreenShareButton"
+                    testId="toggleScreen-sharingButton"
                     onClick={updateScreenSharing}
-                    variant={isSharingScreen ? 'destructive' : 'default'}
+                    variant={isSharingScreen ? 'secondary' : 'default'}
                     className="h-10 w-10 rounded-full"
                     icon={<Desktop className="h-5 w-5" />}
                   />
@@ -497,12 +485,11 @@ export default function Meet() {
 
           <div className="hidden items-center gap-2 md:flex">
             <span className="text-muted-foreground text-xs">
-              ID: {userData.id?.slice(-6)}
+              ID: {meetId.slice(-6)}
             </span>
           </div>
         </footer>
 
-        {/* Chat panel - Slide in from right */}
         {isChatOpen && (
           <aside className="bg-background fixed inset-y-0 right-0 z-50 w-full max-w-sm border-l shadow-xl md:max-w-xs">
             <div className="flex h-full flex-col">
@@ -555,20 +542,21 @@ export default function Meet() {
           text={videoCallText.page.meet.menu.openChat}
           onClick={handleOpenChat}
         />
-        {!isEmpty(otherUserData) && (
+        {Array.from(peersData.entries()).map(([peerId, peerData]) => (
           <MenuItem
+            key={peerId}
             icon={<UserX className="h-4 w-4" />}
             text={videoCallText.page.meet.menu.removeUser.replace(
               '{{ user }}',
-              otherUserData.name,
+              peerData.name,
             )}
             onClick={() => {
               setIsMenuOpen(false);
-              removeOtherUserFromMeet();
+              removePeerFromMeet(peerId);
             }}
             variant="destructive"
           />
-        )}
+        ))}
       </MenuComponent>
     </>
   );
