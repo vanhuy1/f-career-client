@@ -1,13 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Search,
   Filter,
   MoreHorizontal,
   ChevronLeft,
   ChevronRight,
+  ChevronUp,
+  ChevronDown,
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,7 +38,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { fakeApplicants } from '@/data/applicants/fake-applicants';
+import { applicationService } from '@/services/api/applications/application-api';
+import { Applicant } from '@/types/Applicants';
 
 const getStageColor = (stage: string) => {
   switch (stage) {
@@ -54,17 +58,63 @@ const getStageColor = (stage: string) => {
   }
 };
 
+// Utility to format date as "MMM dd, yyyy"
+function formatDate(dateString: string) {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return dateString;
+  return date.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: '2-digit',
+  });
+}
+
 export default function ApplicantTable() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedApplicants, setSelectedApplicants] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [viewMode, setViewMode] = useState<'pipeline' | 'table'>('table');
+  const [applicants, setApplicants] = useState<Applicant[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [sortConfig, setSortConfig] = useState<{
+    key: string;
+    direction: 'asc' | 'desc';
+  } | null>(null);
+  const router = useRouter();
 
-  const filteredApplicants = fakeApplicants.filter(
+  // Sorting logic
+  const sortedApplicants = [...applicants].sort((a, b) => {
+    if (!sortConfig) return 0;
+    let aValue, bValue;
+    switch (sortConfig.key) {
+      case 'name':
+        aValue = a.candidate.name.toLowerCase();
+        bValue = b.candidate.name.toLowerCase();
+        break;
+      case 'status':
+        aValue = a.status.toLowerCase();
+        bValue = b.status.toLowerCase();
+        break;
+      case 'job':
+        aValue = a.job.title.toLowerCase();
+        bValue = b.job.title.toLowerCase();
+        break;
+      default:
+        return 0;
+    }
+    if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+    if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
+    return 0;
+  });
+
+  const filteredApplicants = sortedApplicants.filter(
     (applicant) =>
-      applicant.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      applicant.jobRole.toLowerCase().includes(searchTerm.toLowerCase()),
+      applicant.candidate.name
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase()) ||
+      applicant.job.title.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   const totalPages = Math.ceil(filteredApplicants.length / itemsPerPage);
@@ -91,6 +141,41 @@ export default function ApplicantTable() {
       );
     }
   };
+
+  // Helper to handle sort toggling
+  const handleSort = (key: string) => {
+    setSortConfig((prev) => {
+      if (prev && prev.key === key) {
+        return { key, direction: prev.direction === 'asc' ? 'desc' : 'asc' };
+      }
+      return { key, direction: 'asc' };
+    });
+  };
+
+  useEffect(() => {
+    const fetchApplicants = async () => {
+      try {
+        setIsLoading(true);
+        const response = await applicationService.getApplicants();
+        console.log('Fetched Applicants:', response);
+
+        if (response && response.data) {
+          setApplicants(response.data);
+          // setTotalCount(response.total || response.data.length);
+        } else {
+          setApplicants([]);
+          // setTotalCount(0);
+        }
+      } catch (error) {
+        console.error('Error fetching applicants:', error);
+        setApplicants([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchApplicants();
+  }, []);
 
   return (
     <div className="bg-white p-6">
@@ -148,17 +233,44 @@ export default function ApplicantTable() {
                   onCheckedChange={handleSelectAll}
                 />
               </TableHead>
-              <TableHead className="font-medium text-gray-600">
+              <TableHead
+                className="cursor-pointer font-medium text-gray-600 select-none"
+                onClick={() => handleSort('name')}
+              >
                 Full Name
+                {sortConfig?.key === 'name' &&
+                  (sortConfig.direction === 'asc' ? (
+                    <ChevronUp className="ml-1 inline h-4 w-4" />
+                  ) : (
+                    <ChevronDown className="ml-1 inline h-4 w-4" />
+                  ))}
               </TableHead>
-              <TableHead className="font-medium text-gray-600">
+              <TableHead
+                className="cursor-pointer font-medium text-gray-600 select-none"
+                onClick={() => handleSort('status')}
+              >
                 Hiring Stage
+                {sortConfig?.key === 'status' &&
+                  (sortConfig.direction === 'asc' ? (
+                    <ChevronUp className="ml-1 inline h-4 w-4" />
+                  ) : (
+                    <ChevronDown className="ml-1 inline h-4 w-4" />
+                  ))}
               </TableHead>
               <TableHead className="font-medium text-gray-600">
                 Applied Date
               </TableHead>
-              <TableHead className="font-medium text-gray-600">
+              <TableHead
+                className="cursor-pointer font-medium text-gray-600 select-none"
+                onClick={() => handleSort('job')}
+              >
                 Job Role
+                {sortConfig?.key === 'job' &&
+                  (sortConfig.direction === 'asc' ? (
+                    <ChevronUp className="ml-1 inline h-4 w-4" />
+                  ) : (
+                    <ChevronDown className="ml-1 inline h-4 w-4" />
+                  ))}
               </TableHead>
               <TableHead className="font-medium text-gray-600">
                 Action
@@ -166,75 +278,98 @@ export default function ApplicantTable() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {paginatedApplicants.map((applicant) => (
-              <TableRow key={applicant.id} className="hover:bg-gray-50">
-                <TableCell>
-                  <Checkbox
-                    checked={selectedApplicants.includes(applicant.id)}
-                    onCheckedChange={(checked) =>
-                      handleSelectApplicant(applicant.id, checked as boolean)
-                    }
-                  />
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage
-                        src={applicant.avatar || '/placeholder.svg'}
-                        alt={applicant.fullName}
-                      />
-                      <AvatarFallback>
-                        {applicant.fullName
-                          .split(' ')
-                          .map((n) => n[0])
-                          .join('')}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className="font-medium">{applicant.fullName}</span>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <Badge
-                    variant="outline"
-                    className={getStageColor(applicant.hiringStage)}
-                  >
-                    {applicant.hiringStage}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-gray-600">
-                  {applicant.appliedDate}
-                </TableCell>
-                <TableCell className="text-gray-600">
-                  {applicant.jobRole}
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="border-blue-200 text-blue-600 hover:bg-blue-50"
-                    >
-                      See Application
-                    </Button>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem>View Profile</DropdownMenuItem>
-                        <DropdownMenuItem>Send Message</DropdownMenuItem>
-                        <DropdownMenuItem>Schedule Interview</DropdownMenuItem>
-                        <DropdownMenuItem className="text-red-600">
-                          Remove
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
+            {isLoading ? (
+              <TableRow>
+                <TableCell colSpan={6} className="py-10 text-center">
+                  Loading applicants...
                 </TableCell>
               </TableRow>
-            ))}
+            ) : paginatedApplicants.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={6} className="py-10 text-center">
+                  No applicants found
+                </TableCell>
+              </TableRow>
+            ) : (
+              paginatedApplicants.map((applicant) => (
+                <TableRow key={applicant.id} className="hover:bg-gray-50">
+                  <TableCell>
+                    <Checkbox
+                      checked={selectedApplicants.includes(applicant.id)}
+                      onCheckedChange={(checked) =>
+                        handleSelectApplicant(applicant.id, checked as boolean)
+                      }
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage
+                          src={
+                            applicant.candidate.avatar_url || '/placeholder.svg'
+                          }
+                          alt={applicant.candidate.name}
+                        />
+                        <AvatarFallback>
+                          {applicant.candidate.name
+                            .split(' ')
+                            .map((n) => n[0])
+                            .join('')}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="font-medium">
+                        {applicant.candidate.name}
+                      </span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge
+                      variant="outline"
+                      className={getStageColor(applicant.status)}
+                    >
+                      {applicant.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-gray-600">
+                    {formatDate(applicant.applied_at)}
+                  </TableCell>
+                  <TableCell className="text-gray-600">
+                    {applicant.job.title}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="border-blue-200 text-blue-600 hover:bg-blue-50"
+                        onClick={() =>
+                          router.push(`applicant-list/${applicant.id}`)
+                        }
+                      >
+                        See Application
+                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem>View Profile</DropdownMenuItem>
+                          <DropdownMenuItem>Send Message</DropdownMenuItem>
+                          <DropdownMenuItem>
+                            Schedule Interview
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="text-red-600">
+                            Remove
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </div>
