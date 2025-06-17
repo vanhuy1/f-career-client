@@ -36,3 +36,67 @@ export interface Applicants {
   data: Applicant[];
   total?: number;
 }
+
+export interface ApplicantDetail {
+  id: number;
+  status: ApplicationStatus;
+  cv_id: string;
+  cover_letter: string;
+  applied_at: string;
+  updated_at: string;
+  candidate: {
+    id: number;
+    name: string;
+    email: string;
+    phone: string;
+    avatar: string;
+    gender: string;
+  };
+  candidateProfile: {
+    id: string;
+    title: string;
+    company: string;
+    location: string;
+    avatar: string | null;
+    coverImage: string | null;
+    isOpenToOpportunities: boolean;
+    about: string;
+    contact: string | null;
+    social: string | null;
+    birthDate: string | null;
+    experiences: Array<{
+      id: string;
+      company: string;
+      role: string;
+      description: string;
+      employmentType: string;
+      location: string;
+      startDate: string;
+      endDate: string | null;
+      createdAt: string;
+      updatedAt: string;
+    }>;
+    educations: Array<{
+      id: string;
+      institution: string;
+      degree: string;
+      field: string;
+      startYear: number;
+      endYear: number | null;
+      description: string;
+      createdAt: string;
+      updatedAt: string;
+    }>;
+  };
+  job: {
+    id: string;
+    title: string;
+    location: string;
+    typeOfEmployment: string;
+    company: {
+      id: string;
+      companyName: string;
+      logoUrl: string | null;
+    };
+  };
+}

@@ -40,7 +40,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
       {/* Sidebar Header */}
       <div className="flex items-center justify-between p-6">
         <Link href={ROUTES.HOMEPAGE.path} className="flex items-center gap-2">
-          <div className="rounded-full bg-indigo-600 p-1.5 text-white">
+          <div className="rounded-full bg-blue-600 p-1.5 text-white">
             <Home className="h-5 w-5" />
           </div>
           <span className="text-xl font-semibold">FCareerConnect</span>
@@ -166,7 +166,7 @@ function NavItem({ href, icon, label, active, onClick }: NavItemProps) {
         onClick={onClick}
         className={`flex items-center gap-3 rounded-md px-3 py-2 ${
           active
-            ? 'bg-indigo-50 text-indigo-600'
+            ? 'bg-blue-50 text-blue-600'
             : 'text-muted-foreground hover:bg-gray-100'
         }`}
       >

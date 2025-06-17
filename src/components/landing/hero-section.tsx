@@ -59,7 +59,7 @@ export function HeroSection() {
 
             {/* Search Button */}
             <div className="p-2">
-              <Button className="w-full bg-[#5e5cff] text-white hover:bg-[#4b49ff]">
+              <Button className="w-full bg-blue-700 text-white hover:bg-blue-900">
                 Search my job
               </Button>
             </div>
