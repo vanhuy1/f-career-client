@@ -180,6 +180,7 @@ export const MeetProvider: React.FC<MeetProviderProps> = ({
         id: socketRef.current.id ?? '',
         name: userName,
         email: userEmail,
+        isHost: true
       };
       const newMeetId = uuidv4();
       socketRef.current.emit(
@@ -227,7 +228,12 @@ export const MeetProvider: React.FC<MeetProviderProps> = ({
         id: socketRef.current.id ?? '',
         name: userName,
         email: userEmail,
+        isHost: false
       };
+      setIsCallingUser(true);
+      console.log(`Attempting to join meeting: ${meetId}`);
+      setMeetId(meetId);
+      
       socketRef.current.emit(
         'save-user-data',
         user,
@@ -235,13 +241,17 @@ export const MeetProvider: React.FC<MeetProviderProps> = ({
           if (response.success) {
             setUserData(user);
             socketRef.current?.emit(
-              'join-meet',
+              'request-join-meet',
               { meetId, user },
-              (res: SocketResponse & { meetName?: string }) => {
-                if (res.success && res.meetName) {
-                  setMeetName(res.meetName);
-                } else {
+              (res: SocketResponse) => {
+                if (!res.success) {
+                  setIsCallingUser(false);
                   toast(res.error || 'Failed to join meeting', TOAST_DEFAULT_CONFIG);
+                  router.replace('/video-call');
+                } else {
+                  console.log('Join request sent successfully, waiting for approval');
+                  // Redirect to meet page where waiting UI will be shown
+                  router.push('/video-call/meet');
                 }
               },
             );
@@ -279,9 +289,14 @@ export const MeetProvider: React.FC<MeetProviderProps> = ({
       }
     });
     peer.on('stream', (peerStream) => {
+      console.log(`Received stream from peer ${peerId}`);
       const videoRef = peersVideoRefs.current.get(peerId);
       if (videoRef?.current) {
         videoRef.current.srcObject = peerStream;
+        videoRef.current.muted = false;
+        videoRef.current.play().catch(error => {
+          console.error('Error playing video:', error);
+        });
       } else {
         const newRef = React.createRef<HTMLVideoElement>();
         peersVideoRefs.current.set(peerId, newRef);
@@ -289,6 +304,9 @@ export const MeetProvider: React.FC<MeetProviderProps> = ({
           if (newRef.current) {
             newRef.current.srcObject = peerStream;
             newRef.current.muted = false;
+            newRef.current.play().catch(error => {
+              console.error('Error playing video:', error);
+            });
           }
         }, 0);
       }
@@ -306,29 +324,37 @@ export const MeetProvider: React.FC<MeetProviderProps> = ({
   };
 
   const acceptMeetRequest = (callerId: string) => {
-    setMeetRequestAccepted(true);
     setIsReceivingMeetRequest(false);
-    setCallingOtherUserData({} as TUser);
-    router.push('/video-call/meet');
+    if (userData.isHost && socketRef.current) {
+      console.log(`Approving join request from ${callerId}`);
+      socketRef.current.emit('approve-join-request', {
+        userId: callerId,
+        meetId: meetId,
+      });
+    }
   };
 
   const rejectMeetRequest = (callerId: string) => {
-    if (socketRef.current) {
-      socketRef.current.emit('reject-call', {
-        to: callerId,
-        from: userData,
+    setIsReceivingMeetRequest(false);
+    if (userData.isHost && socketRef.current) {
+      console.log(`Rejecting join request from ${callerId}`);
+      socketRef.current.emit('reject-join-request', {
+        userId: callerId,
+        meetId: meetId,
       });
     }
-    setIsReceivingMeetRequest(false);
-    setCallingOtherUserData({} as TUser);
   };
 
   const cancelMeetRequest = () => {
     if (socketRef.current) {
-      socketRef.current.emit('cancel-meet-request', { meetId });
+      socketRef.current.emit('cancel-meet-request', { 
+        meetId: meetId,
+        userId: userData.id 
+      });
     }
     clearMeetData();
     clearUserStream();
+    setIsCallingUser(false);
     router.replace('/video-call?stopStream=true');
   };
 
@@ -489,29 +515,90 @@ export const MeetProvider: React.FC<MeetProviderProps> = ({
             TOAST_DEFAULT_CONFIG,
           );
         });
+
+        // New user requesting to join the meeting
+        socketRef.current.on('join-request', ({ user }: { user: TUser }) => {
+          console.log(`Received join request from ${user.name}`);
+          if (userData.isHost) {
+            setIsReceivingMeetRequest(true);
+            setCallingOtherUserData(user);
+          }
+        });
+
+        // Join request was approved
+        socketRef.current.on('join-request-approved', () => {
+          setIsCallingUser(false);
+          console.log('Join request was approved');
+          toast('Your join request was approved', TOAST_DEFAULT_CONFIG);
+          
+          // Request to join the meeting now that we're approved
+          if (meetId && userData.id) {
+            socketRef.current?.emit('join-meet-approved', { 
+              meetId,
+              userId: userData.id 
+            });
+          }
+        });
+        
+        // Join request was rejected
+        socketRef.current.on('join-request-rejected', () => {
+          setIsCallingUser(false);
+          console.log('Join request was rejected');
+          toast('Your join request was rejected', TOAST_DEFAULT_CONFIG);
+          router.replace('/video-call');
+        });
+        
+        // Connection timeout
+        socketRef.current.on('join-request-timeout', () => {
+          setIsCallingUser(false);
+          console.log('Join request timed out');
+          toast('No response from host. Please try again later.', TOAST_DEFAULT_CONFIG);
+          router.replace('/video-call');
+        });
+
+        // Successfully joined the meeting
         socketRef.current.on('meet-joined', ({ meetId, meetName, users }: { meetId: string; meetName: string; users: TUser[] }) => {
           setMeetId(meetId);
           setMeetName(meetName);
           setMeetRequestAccepted(true);
-          const stream = userStream;
-          if (!stream) return;
-          users.forEach((peerUser) => {
-            if (peerUser.id !== userData.id) {
-              setPeersData((prev) => new Map(prev).set(peerUser.id, peerUser));
-              createPeer(peerUser.id, true, stream);
+          
+          // Get user stream before setting up peer connections
+          getUserStream().then(stream => {
+            if (!stream) {
+              console.error('Failed to get user stream after joining meet');
+              toast('Failed to access camera/microphone', TOAST_DEFAULT_CONFIG);
+              return;
+            }
+            
+            // Set up peer connections with each user already in the room
+            users.forEach((peerUser) => {
+              if (peerUser.id !== userData.id) {
+                console.log(`Setting up connection with peer: ${peerUser.name} (${peerUser.id})`);
+                setPeersData((prev) => new Map(prev).set(peerUser.id, peerUser));
+                createPeer(peerUser.id, true, stream);
+              }
+            });
+            
+            // Navigate to meet page if not already there
+            if (!window.location.pathname.includes('/video-call/meet')) {
+              router.push('/video-call/meet');
             }
           });
         });
+
+        // A new user has joined the meeting
         socketRef.current.on('new-user-joined', ({ user }: { user: TUser }) => {
           if (user.id !== userData.id) {
+            console.log(`User joined: ${user.name}`);
             setPeersData((prev) => new Map(prev).set(user.id, user));
-            setIsReceivingMeetRequest(true);
-            setCallingOtherUserData(user);
-            if (userStream) {
-              createPeer(user.id, true, userStream);
-            }
+            getUserStream().then(stream => {
+              if (stream) {
+                createPeer(user.id, false, stream);
+              }
+            });
           }
         });
+
         socketRef.current.on('signal', ({ from, signal, meetId: receivedMeetId }: { from: string; signal: any; meetId: string }) => {
           if (receivedMeetId !== meetId) return;
           let peer = peerRefs.current.get(from);

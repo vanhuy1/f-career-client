@@ -150,7 +150,14 @@ export default function Meet() {
       return;
     }
 
-    getUserStream();
+    // Initialize user's video stream
+    getUserStream().then(stream => {
+      console.log("User stream initialized for self-view");
+      if (stream && userVideoRef.current) {
+        userVideoRef.current.srcObject = stream;
+        userVideoRef.current.muted = true; // Mute self video to prevent feedback
+      }
+    });
 
     setParticipantCount(peersData.size + 1);
 
@@ -247,7 +254,7 @@ export default function Meet() {
             isHeaderVisible ? 'pt-24' : 'pt-8',
           )}
         >
-          {isCallingUser ? (
+          {isCallingUser && (
             <div
               data-testid="callingContent"
               className="flex flex-col items-center justify-center space-y-4 text-center"
@@ -257,12 +264,12 @@ export default function Meet() {
               </div>
               <div>
                 <h2 className="text-xl font-semibold">
-                  {videoCallText.page.meet.calling.title.replace(
-                    '{{ user }}',
-                    callingOtherUserData.name,
-                  )}
+                  Waiting for host approval...
                 </h2>
                 <p className="text-muted-foreground">
+                  Your request to join this meeting is pending approval from the host.
+                </p>
+                <p className="text-muted-foreground mt-2">
                   <button
                     onClick={cancelMeetRequest}
                     className="text-primary hover:underline"
@@ -273,7 +280,8 @@ export default function Meet() {
                 </p>
               </div>
             </div>
-          ) : peersData.size === 0 ? (
+          )}
+          {peersData.size === 0 ? (
             <div
               data-testid="emptyContent"
               className="flex flex-col items-center justify-center space-y-4 p-4 text-center"
@@ -310,7 +318,10 @@ export default function Meet() {
                   <video
                     playsInline
                     autoPlay
-                    ref={peersVideoRefs.get(peerId)}
+                    ref={(el) => {
+                      const ref = peersVideoRefs.get(peerId);
+                      if (ref) ref.current = el;
+                    }}
                     className={cn(
                       'h-full w-full object-cover',
                       peersVideoStopped.get(peerId) && 'hidden',
@@ -340,12 +351,23 @@ export default function Meet() {
                     </div>
                   )}
 
-                  <button
-                    className="bg-background/80 hover:bg-background absolute top-4 right-4 rounded-md p-2 backdrop-blur-sm"
-                    onClick={handleToggleFullScreen}
-                  >
-                    <Expand className="h-4 w-4" />
-                  </button>
+                  <div className="absolute top-4 right-4 flex space-x-2">
+                    <button
+                      className="bg-background/80 hover:bg-background rounded-md p-2 backdrop-blur-sm"
+                      onClick={handleToggleFullScreen}
+                    >
+                      <Expand className="h-4 w-4" />
+                    </button>
+                    
+                    {userData.isHost && (
+                      <button
+                        className="bg-red-500/80 hover:bg-red-600 text-white rounded-md p-2 backdrop-blur-sm"
+                        onClick={() => removePeerFromMeet(peerId)}
+                      >
+                        <UserX className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>

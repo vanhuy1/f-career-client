@@ -1,8 +1,9 @@
 'use client';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useFormik } from 'formik';
+import { useRouter } from 'next/navigation';
 import * as Yup from 'yup';
-import { AtSignIcon as At, Mail, User } from 'lucide-react';
+import { AtSignIcon as At, Mail, User, Loader2 } from 'lucide-react';
 
 import {
   Dialog,
@@ -27,7 +28,9 @@ export function JoinMeetModal({
   defaultMeetId,
   onClose,
 }: JoinMeetModalProps) {
-  const { joinMeet } = useMeetContext();
+  const { joinMeet, isCallingUser } = useMeetContext();
+  const router = useRouter();
+  const [isJoining, setIsJoining] = useState(false);
 
   const form = useFormik({
     initialValues: {
@@ -50,23 +53,33 @@ export function JoinMeetModal({
     onSubmit: (values) => {
       try {
         form.setSubmitting(true);
+        setIsJoining(true);
         joinMeet(values.userName, values.userEmail, values.meetId);
-        handleCloseModal();
+        
+        // Don't close the modal yet - we'll show joining state
+        // handleCloseModal() is removed from here
+        
+        // Redirect to meet page after a short delay
+        setTimeout(() => {
+          router.push('/video-call/meet');
+        }, 500);
       } catch (error) {
         console.error('Error joining meet:', error);
         toast(videoCallText.toastMessage.errorWhileStartingMeet, {
           type: 'error',
           position: 'top-right',
         });
-      } finally {
+        setIsJoining(false);
         form.setSubmitting(false);
       }
     },
   });
 
   const handleCloseModal = () => {
-    form.resetForm();
-    onClose();
+    if (!isJoining) {
+      form.resetForm();
+      onClose();
+    }
   };
 
   useEffect(() => {
@@ -80,60 +93,75 @@ export function JoinMeetModal({
         <DialogHeader className="flex flex-row items-center justify-between">
           <DialogTitle>{videoCallText.joinMeetModal.title}</DialogTitle>
         </DialogHeader>
-        <form onSubmit={form.handleSubmit} className="space-y-4">
-          <Input
-            testId="joinMeetModalUserNameInput"
-            name="userName"
-            placeholder={videoCallText.inputPlaceholder.userName}
-            error={
-              form.errors.userName && form.touched.userName
-                ? form.errors.userName
-                : undefined
-            }
-            value={form.values.userName}
-            onBlur={form.handleBlur}
-            onChangeValue={(value) => form.setFieldValue('userName', value)}
-            icon={User}
-          />
-          <Input
-            testId="joinMeetModalUserEmailInput"
-            name="userEmail"
-            type="email"
-            placeholder={videoCallText.inputPlaceholder.email}
-            error={
-              form.errors.userEmail && form.touched.userEmail
-                ? form.errors.userEmail
-                : undefined
-            }
-            value={form.values.userEmail}
-            onBlur={form.handleBlur}
-            onChangeValue={(value) => form.setFieldValue('userEmail', value)}
-            icon={Mail}
-          />
-          <Input
-            testId="meetIdInput"
-            name="meetId"
-            placeholder={videoCallText.inputPlaceholder.meetId}
-            error={
-              form.errors.meetId && form.touched.meetId
-                ? form.errors.meetId
-                : undefined
-            }
-            value={form.values.meetId}
-            onBlur={form.handleBlur}
-            onChangeValue={(value) => form.setFieldValue('meetId', value)}
-            icon={At}
-          />
-          <Button
-            type="submit"
-            testId="joinMeetButton"
-            disabled={!form.isValid || form.isSubmitting}
-            className="w-full"
-            isLoading={form.isSubmitting}
-          >
-            {videoCallText.joinMeetModal.button}
-          </Button>
-        </form>
+        
+        {isJoining ? (
+          <div className="flex flex-col items-center justify-center py-8">
+            <div className="mb-4 flex items-center justify-center">
+              <Loader2 className="h-10 w-10 animate-spin text-primary" />
+            </div>
+            <p className="text-center text-lg font-medium">
+              Joining meeting...
+            </p>
+            <p className="text-center text-sm text-muted-foreground mt-2">
+              Waiting for host approval
+            </p>
+          </div>
+        ) : (
+          <form onSubmit={form.handleSubmit} className="space-y-4">
+            <Input
+              testId="joinMeetModalUserNameInput"
+              name="userName"
+              placeholder={videoCallText.inputPlaceholder.userName}
+              error={
+                form.errors.userName && form.touched.userName
+                  ? form.errors.userName
+                  : undefined
+              }
+              value={form.values.userName}
+              onBlur={form.handleBlur}
+              onChangeValue={(value) => form.setFieldValue('userName', value)}
+              icon={User}
+            />
+            <Input
+              testId="joinMeetModalUserEmailInput"
+              name="userEmail"
+              type="email"
+              placeholder={videoCallText.inputPlaceholder.email}
+              error={
+                form.errors.userEmail && form.touched.userEmail
+                  ? form.errors.userEmail
+                  : undefined
+              }
+              value={form.values.userEmail}
+              onBlur={form.handleBlur}
+              onChangeValue={(value) => form.setFieldValue('userEmail', value)}
+              icon={Mail}
+            />
+            <Input
+              testId="meetIdInput"
+              name="meetId"
+              placeholder={videoCallText.inputPlaceholder.meetId}
+              error={
+                form.errors.meetId && form.touched.meetId
+                  ? form.errors.meetId
+                  : undefined
+              }
+              value={form.values.meetId}
+              onBlur={form.handleBlur}
+              onChangeValue={(value) => form.setFieldValue('meetId', value)}
+              icon={At}
+            />
+            <Button
+              type="submit"
+              testId="joinMeetButton"
+              disabled={!form.isValid || form.isSubmitting}
+              className="w-full"
+              isLoading={form.isSubmitting}
+            >
+              {videoCallText.joinMeetModal.button}
+            </Button>
+          </form>
+        )}
       </DialogContent>
     </Dialog>
   );

@@ -28,6 +28,7 @@ export type TUser = {
   id: string;
   name: string;
   email: string;
+  isHost?: boolean;
 };
 
 export type TSendMessageEventData = {

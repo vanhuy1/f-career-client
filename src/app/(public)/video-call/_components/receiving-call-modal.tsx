@@ -1,5 +1,5 @@
 'use client';
-import { PhoneCall, PhoneOff, X } from 'lucide-react';
+import { PhoneCall, PhoneOff, X, UserPlus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from './ui-button';
 import { IconButton } from './icon-button';
@@ -32,10 +32,7 @@ export function ReceivingCallModal({
         {/* Header */}
         <header className="flex items-center justify-between">
           <h2 className="text-xl font-semibold">
-            {videoCallText.receivingCallModal.title.replace(
-              '{{ user }}',
-              userName,
-            )}
+            Join Request
           </h2>
           <IconButton
             icon={<X className="h-4 w-4" />}
@@ -44,7 +41,16 @@ export function ReceivingCallModal({
           />
         </header>
 
-        {/* Content */}
+        <div className="text-center mb-4">
+          <div className="bg-primary/10 mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full">
+            <UserPlus className="h-10 w-10 text-primary" />
+          </div>
+          <p className="text-lg">
+            <strong>{userName}</strong> is requesting to join the meeting
+          </p>
+        </div>
+
+        {/* Actions */}
         <div className="flex items-center gap-3">
           <Button
             testId="rejectMeetRequestButton"
@@ -53,7 +59,7 @@ export function ReceivingCallModal({
             className="flex-1"
           >
             <PhoneOff className="mr-2 h-4 w-4" />
-            {videoCallText.receivingCallModal.decline}
+            Decline
           </Button>
 
           <Button
@@ -62,7 +68,7 @@ export function ReceivingCallModal({
             className="flex-1"
           >
             <PhoneCall className="mr-2 h-4 w-4" />
-            {videoCallText.receivingCallModal.accept}
+            Approve
           </Button>
         </div>
       </div>
