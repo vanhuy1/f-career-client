@@ -18,7 +18,7 @@ export default function Footer() {
           {/* Logo and Description */}
           <div className="space-y-4">
             <div className="flex items-center gap-2">
-              <div className="rounded-full bg-[#5e5cff] p-1.5">
+              <div className="rounded-full bg-blue-700 p-1.5">
                 <CheckCircle size={20} color="white" />
               </div>
               <span className="text-xl font-bold">FCareerConnect</span>
@@ -109,7 +109,7 @@ export default function Footer() {
                 placeholder="Email Address"
                 className="bg-white text-black"
               />
-              <Button className="bg-[#5e5cff] text-white hover:bg-[#4b49ff]">
+              <Button className="bg-blue-700 text-white hover:bg-blue-900">
                 Subscribe
               </Button>
             </div>

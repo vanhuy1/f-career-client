@@ -1,6 +1,9 @@
+'use client';
 import { Badge } from '@/components/ui/badge';
+import { useApplicantDetail } from '@/services/state/applicantDetailSlice';
 
 export default function ApplicantProfilePage() {
+  const applicant = useApplicantDetail();
   return (
     <>
       <div className="mb-8">
@@ -11,17 +14,19 @@ export default function ApplicantProfilePage() {
           <div>
             <label className="text-sm text-gray-600">Full Name</label>
             <p className="mt-1 text-sm font-medium text-gray-900">
-              Jerome Bell
+              {applicant?.candidate.name}
             </p>
           </div>
           <div>
             <label className="text-sm text-gray-600">Gender</label>
-            <p className="mt-1 text-sm font-medium text-gray-900">Male</p>
+            <p className="mt-1 text-sm font-medium text-gray-900">
+              {applicant?.candidate.gender}
+            </p>
           </div>
           <div>
             <label className="text-sm text-gray-600">Date of Birth</label>
             <p className="mt-1 text-sm font-medium text-gray-900">
-              March 23, 1995 <span className="text-gray-500">(26 y.o)</span>
+              {/* {applicant?.candidateProfile.birthDate}<span className="text-gray-500">(26 y.o)</span> */}
             </p>
           </div>
           <div>
@@ -33,9 +38,7 @@ export default function ApplicantProfilePage() {
           <div className="col-span-2">
             <label className="text-sm text-gray-600">Address</label>
             <p className="mt-1 text-sm font-medium text-gray-900">
-              4517 Washington Ave.
-              <br />
-              Manchester, Kentucky 39495
+              {applicant?.candidateProfile?.location}
             </p>
           </div>
         </div>
@@ -49,15 +52,7 @@ export default function ApplicantProfilePage() {
         <div className="mb-6">
           <label className="text-sm text-gray-600">About Me</label>
           <p className="mt-2 text-sm leading-relaxed text-gray-900">
-            I&apos;m a product designer + filmmaker currently working remotely
-            at Twitter from beautiful Manchester, United Kingdom. I&apos;m
-            passionate about designing digital products that have a positive
-            impact on the world.
-          </p>
-          <p className="mt-3 text-sm leading-relaxed text-gray-900">
-            For 10 years, I&apos;ve specialised in interface, experience &
-            interaction design as well as working in user research and product
-            strategy for product agencies, big tech companies & start-ups.
+            {applicant?.candidateProfile?.about}
           </p>
         </div>
 
@@ -65,7 +60,7 @@ export default function ApplicantProfilePage() {
           <div>
             <label className="text-sm text-gray-600">Current Job</label>
             <p className="mt-1 text-sm font-medium text-gray-900">
-              Product Designer
+              {applicant?.candidateProfile?.title}
             </p>
           </div>
           <div>

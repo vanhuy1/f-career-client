@@ -346,7 +346,7 @@ export default function ApplicantTable() {
                           router.push(`applicant-list/${applicant.id}`)
                         }
                       >
-                        See Application
+                        View Details
                       </Button>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>

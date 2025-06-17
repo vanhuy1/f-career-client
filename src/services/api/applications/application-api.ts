@@ -2,7 +2,7 @@ import { Application, ApplicationsResponse } from '@/types/Application';
 import { RequestBuilder } from '@/utils/axios/request-builder';
 import { ApplicationFormData } from '@/app/(public)/_components/apply-dialog';
 import { httpClient } from '@/utils/axios';
-import { Applicants } from '@/types/Applicants';
+import { Applicants, ApplicantDetail } from '@/types/Applicants';
 
 class ApplicationService {
   private requestBuilder: RequestBuilder;
@@ -89,6 +89,20 @@ class ApplicationService {
       },
       config: {
         withCredentials: false,
+      },
+    });
+    return response;
+  }
+
+  async getApplicantDetail(applicantId: string): Promise<ApplicantDetail> {
+    const url = this.requestBuilder.buildUrl(`${applicantId}/detail`);
+    const response = await httpClient.get<ApplicantDetail>({
+      url,
+      typeCheck: (data) => {
+        return {
+          success: true,
+          data: data as ApplicantDetail,
+        };
       },
     });
     return response;

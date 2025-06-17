@@ -33,7 +33,7 @@ export default function Sidebar() {
     <div className="flex w-60 flex-col border-r bg-white">
       <div className="p-6">
         <Link href={ROUTES.HOMEPAGE.path} className="flex items-center gap-2">
-          <div className="rounded-full bg-indigo-600 p-1.5 text-white">
+          <div className="rounded-full bg-blue-600 p-1.5 text-white">
             <Home className="h-5 w-5" />
           </div>
           <span className="text-xl font-semibold">FCareerConnect</span>
@@ -154,14 +154,14 @@ function NavItem({ href, icon, label, badge, active }: NavItemProps) {
         href={href}
         className={`flex items-center gap-3 rounded-md px-3 py-2 ${
           active
-            ? 'bg-indigo-50 text-indigo-600'
+            ? 'bg-blue-50 text-blue-600'
             : 'text-muted-foreground hover:bg-gray-100'
         }`}
       >
         <span className="h-5 w-5">{icon}</span>
         <span className="flex-1">{label}</span>
         {badge && (
-          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-indigo-600 text-xs text-white">
+          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-xs text-white">
             {badge}
           </span>
         )}

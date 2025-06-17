@@ -6,6 +6,7 @@ import jobReducer from '@/services/state/jobSlice';
 import companyReducer from '@/services/state/companySlice';
 import cvReducer from '@/services/state/cvSlice';
 import applicationReducer from '@/services/state/applicationsSlice';
+import { applicantDetailReducer } from '@/services/state/applicantDetailSlice';
 
 export const makeStore = () => {
   return configureStore({
@@ -17,6 +18,7 @@ export const makeStore = () => {
       company: companyReducer,
       cv: cvReducer,
       application: applicationReducer,
+      applicantDetail: applicantDetailReducer,
     },
   });
 };

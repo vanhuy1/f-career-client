@@ -7,9 +7,6 @@ import {
   MessageCircle,
   Mail,
   Phone,
-  Instagram,
-  Twitter,
-  Globe,
   MapPin,
   Calendar,
 } from 'lucide-react';
@@ -19,6 +16,19 @@ import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useParams } from 'next/navigation';
+import { useEffect } from 'react';
+import { applicationService } from '@/services/api/applications/application-api';
+import {
+  setApplicantDetailStart,
+  setApplicantDetailSuccess,
+  setApplicantDetailFailure,
+  useApplicantDetail,
+  useApplicantDetailLoadingState,
+  clearApplicantDetail,
+} from '@/services/state/applicantDetailSlice';
+import { useDispatch } from 'react-redux';
+import { LoadingState } from '@/store/store.model';
+import LoadingScreen from '@/pages/LoadingScreen';
 
 export default function ApplicantLayout({
   children,
@@ -28,6 +38,35 @@ export default function ApplicantLayout({
   const pathname = usePathname();
   const params = useParams();
   const applicantId = params?.id as string;
+  const applicant = useApplicantDetail();
+  const loadingState = useApplicantDetailLoadingState();
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    return () => {
+      dispatch(clearApplicantDetail());
+    };
+  }, [dispatch]);
+
+  // MODIFIED: Simplified data fetching
+  useEffect(() => {
+    if (!applicantId) return;
+
+    const fetchApplicantData = async () => {
+      try {
+        dispatch(setApplicantDetailStart());
+        const response =
+          await applicationService.getApplicantDetail(applicantId);
+        if (response) {
+          dispatch(setApplicantDetailSuccess(response));
+        }
+      } catch (error) {
+        dispatch(setApplicantDetailFailure(error as string));
+      }
+    };
+
+    fetchApplicantData();
+  }, [applicantId, dispatch]);
 
   const tabs = [
     { name: 'Applicant Profile', href: `/co/applicant-list/${applicantId}` },
@@ -41,6 +80,11 @@ export default function ApplicantLayout({
       href: `/co/applicant-list/${applicantId}/interview-schedule`,
     },
   ];
+
+  // Loading state
+  if (loadingState === LoadingState.loading) {
+    return <LoadingScreen />;
+  }
 
   return (
     <div className="min-h-screen bg-white">
@@ -77,8 +121,11 @@ export default function ApplicantLayout({
             <div className="mb-6 flex items-start gap-4">
               <div className="relative">
                 <Image
-                  src="/placeholder.svg?height=80&width=80"
-                  alt="Jerome Bell"
+                  src={
+                    applicant?.candidate?.avatar ||
+                    '/placeholder.svg?height=80&width=80'
+                  }
+                  alt={applicant?.candidate?.name || 'Applicant'}
                   width={80}
                   height={80}
                   className="rounded-full object-cover shadow-md ring-4 ring-white"
@@ -86,12 +133,16 @@ export default function ApplicantLayout({
                 <div className="absolute -right-1 -bottom-1 h-6 w-6 rounded-full border-2 border-white bg-green-500"></div>
               </div>
               <div className="flex-1">
-                <h2 className="text-xl font-bold text-gray-900">Jerome Bell</h2>
-                <p className="font-medium text-gray-600">Product Designer</p>
+                <h2 className="text-xl font-bold text-gray-900">
+                  {applicant?.candidate?.name || 'Loading...'}
+                </h2>
+                <p className="font-medium text-gray-600">
+                  {applicant?.candidateProfile?.title || 'Candidate'}
+                </p>
 
                 <div className="mt-1 flex items-center gap-1 text-xs text-gray-500">
                   <MapPin className="h-3 w-3" />
-                  San Francisco, CA
+                  {applicant?.job?.location || 'Location not specified'}
                 </div>
               </div>
             </div>
@@ -103,15 +154,19 @@ export default function ApplicantLayout({
                   Applied Position
                 </span>
                 <div className="flex items-center gap-1 text-xs text-gray-500">
-                  <Calendar className="h-3 w-3" />2 days ago
+                  <Calendar className="h-3 w-3" />
+                  {applicant?.applied_at
+                    ? new Date(applicant.applied_at).toLocaleDateString()
+                    : 'Recently'}
                 </div>
               </div>
               <div>
                 <h3 className="font-semibold text-gray-900">
-                  Product Development
+                  {applicant?.job?.title || 'Job Title'}
                 </h3>
                 <p className="text-sm text-gray-600">
-                  Marketing • Full-time • $120k-$150k
+                  {applicant?.job?.company?.companyName || 'Company'} •{' '}
+                  {applicant?.job?.typeOfEmployment || 'Employment Type'}
                 </p>
               </div>
             </div>
@@ -123,7 +178,7 @@ export default function ApplicantLayout({
                   Hiring Stage
                 </span>
                 <Badge className="bg-blue-600 text-white hover:bg-blue-700">
-                  Interview
+                  {applicant?.status || 'Pending'}
                 </Badge>
               </div>
               <div className="space-y-2">
@@ -161,7 +216,7 @@ export default function ApplicantLayout({
                     Email
                   </p>
                   <p className="text-sm font-medium text-gray-900">
-                    jeromeBell45@email.com
+                    {applicant?.candidate?.email || 'Email not available'}
                   </p>
                 </div>
               </div>
@@ -174,46 +229,7 @@ export default function ApplicantLayout({
                     Phone
                   </p>
                   <p className="text-sm font-medium text-gray-900">
-                    +44 1245 572 135
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 rounded-lg p-3 transition-colors hover:bg-gray-50">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-pink-100">
-                  <Instagram className="h-5 w-5 text-pink-600" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-xs font-medium tracking-wide text-gray-500 uppercase">
-                    Instagram
-                  </p>
-                  <p className="cursor-pointer text-sm font-medium text-blue-600 hover:text-blue-700">
-                    @jeromebell
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 rounded-lg p-3 transition-colors hover:bg-gray-50">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-sky-100">
-                  <Twitter className="h-5 w-5 text-sky-600" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-xs font-medium tracking-wide text-gray-500 uppercase">
-                    Twitter
-                  </p>
-                  <p className="cursor-pointer text-sm font-medium text-blue-600 hover:text-blue-700">
-                    @jeromebell
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 rounded-lg p-3 transition-colors hover:bg-gray-50">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-purple-100">
-                  <Globe className="h-5 w-5 text-purple-600" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-xs font-medium tracking-wide text-gray-500 uppercase">
-                    Website
-                  </p>
-                  <p className="cursor-pointer text-sm font-medium text-blue-600 hover:text-blue-700">
-                    jeromebell.com
+                    {applicant?.candidate?.phone || 'Phone not available'}
                   </p>
                 </div>
               </div>
