@@ -38,11 +38,11 @@ export function Chat() {
     };
 
     setMessages(prev => [...prev, message]);
-    socketRef.current.emit('send-message', {
-      meetId: meetName,
-      message: message.text,
-      from: userData,
-      timestamp: message.timestamp
+    // Send message using the NestJS event
+    socketRef.current.emit('BE-send-message', {
+      roomId: meetName,
+      msg: message.text,
+      sender: userData.name
     });
 
     setInputValue('');
@@ -60,24 +60,32 @@ export function Chat() {
 
     const socket = socketRef.current;
 
-    const handleNewMessage = ({ from, message, timestamp }: { 
-      from: TUser; 
-      message: string; 
-      timestamp: string;
+    // Legacy FE-prefixed event for receiving messages
+    const handleNewMessage = ({ msg, sender }: { 
+      msg: string; 
+      sender: string;
     }) => {
+      // Create a pseudo-user since we only get the sender name
+      const from: TUser = {
+        id: sender, // Using name as ID as we don't have the actual ID
+        name: sender,
+        email: '',
+        isHost: false
+      };
+      
       const newMessage: Message = {
         id: Date.now().toString(),
-        text: message,
+        text: msg,
         from,
-        timestamp,
+        timestamp: new Date().toISOString(),
       };
       setMessages(prev => [...prev, newMessage]);
     };
 
-    socket.on('new-message', handleNewMessage);
+    socket.on('FE-receive-message', handleNewMessage);
 
     return () => {
-      socket.off('new-message', handleNewMessage);
+      socket.off('FE-receive-message', handleNewMessage);
     };
   }, [socketRef]);
 

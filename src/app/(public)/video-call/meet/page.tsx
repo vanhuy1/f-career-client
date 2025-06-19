@@ -320,7 +320,21 @@ export default function Meet() {
                     autoPlay
                     ref={(el) => {
                       const ref = peersVideoRefs.get(peerId);
-                      if (ref) ref.current = el;
+                      if (ref) {
+                        ref.current = el;
+                        // If the video already has a stream, make sure it plays
+                        if (el && el.srcObject) {
+                          el.play().catch(err => 
+                            console.error(`Error playing video for peer ${peerId}:`, err)
+                          );
+                        }
+                      }
+                    }}
+                    onLoadedMetadata={(e) => {
+                      // Make sure video plays when it loads
+                      (e.target as HTMLVideoElement).play().catch(err => 
+                        console.error(`Error playing video for peer ${peerId}:`, err)
+                      );
                     }}
                     className={cn(
                       'h-full w-full object-cover',
@@ -381,6 +395,12 @@ export default function Meet() {
               playsInline
               autoPlay
               ref={userVideoRef}
+              onLoadedMetadata={(e) => {
+                // Make sure video plays when it loads
+                (e.target as HTMLVideoElement).play().catch(err => 
+                  console.error("Error playing user video:", err)
+                );
+              }}
               className="h-full w-full object-cover"
               id="user-video"
             ></video>

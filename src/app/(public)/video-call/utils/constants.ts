@@ -32,6 +32,10 @@ export const PEER_CONFIGS = {
 export const SOCKET_OPTIONS = {
   withCredentials: true,
   transports: ['websocket'],
+  autoConnect: true,
+  reconnection: true,
+  reconnectionAttempts: 5,
+  reconnectionDelay: 1000,
 };
 
 export const TOAST_DEFAULT_CONFIG: ToastOptions = {
@@ -61,6 +65,7 @@ export interface TUser {
   id: string;
   name: string;
   email: string;
+  isHost?: boolean;
 }
 
 // Define event data types
