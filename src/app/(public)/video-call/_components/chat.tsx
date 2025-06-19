@@ -17,7 +17,7 @@ interface Message {
 }
 
 export function Chat() {
-  const { socketRef, userData, peersData, meetName } = useMeetContext();
+  const { socketRef, userData, peersData, meetId } = useMeetContext();
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
@@ -28,7 +28,7 @@ export function Chat() {
   };
 
   const handleSendMessage = () => {
-    if (!inputValue.trim() || !socketRef.current || !userData.id || !meetName) return;
+    if (!inputValue.trim() || !socketRef.current || !userData.id || !meetId) return;
 
     const message: Message = {
       id: Date.now().toString(),
@@ -38,11 +38,10 @@ export function Chat() {
     };
 
     setMessages(prev => [...prev, message]);
-    // Send message using the NestJS event
-    socketRef.current.emit('BE-send-message', {
-      roomId: meetName,
-      msg: message.text,
-      sender: userData.name
+    socketRef.current.emit('BE-send-chat-message', {
+      meetId,
+      message: message.text,
+      from: userData,
     });
 
     setInputValue('');
@@ -60,32 +59,20 @@ export function Chat() {
 
     const socket = socketRef.current;
 
-    // Legacy FE-prefixed event for receiving messages
-    const handleNewMessage = ({ msg, sender }: { 
-      msg: string; 
-      sender: string;
-    }) => {
-      // Create a pseudo-user since we only get the sender name
-      const from: TUser = {
-        id: sender, // Using name as ID as we don't have the actual ID
-        name: sender,
-        email: '',
-        isHost: false
-      };
-      
+    const handleNewMessage = ({ message, from, timestamp }: { message: string; from: TUser; timestamp: string }) => {
       const newMessage: Message = {
         id: Date.now().toString(),
-        text: msg,
+        text: message,
         from,
-        timestamp: new Date().toISOString(),
+        timestamp,
       };
       setMessages(prev => [...prev, newMessage]);
     };
 
-    socket.on('FE-receive-message', handleNewMessage);
+    socket.on('FE-new-chat-message', handleNewMessage);
 
     return () => {
-      socket.off('FE-receive-message', handleNewMessage);
+      socket.off('FE-new-chat-message', handleNewMessage);
     };
   }, [socketRef]);
 
@@ -122,15 +109,15 @@ export function Chat() {
                 )}
               >
                 <p className="font-medium">
-                  {message.from.id === userData.id 
-                    ? 'You' 
+                  {message.from.id === userData.id
+                    ? 'You'
                     : peersData.get(message.from.id)?.name || message.from.name}
                 </p>
                 <p>{message.text}</p>
                 <span className="mt-1 block text-right text-xs opacity-70">
                   {new Date(message.timestamp).toLocaleTimeString([], {
                     hour: '2-digit',
-                    minute: '2-digit'
+                    minute: '2-digit',
                   })}
                 </span>
               </div>

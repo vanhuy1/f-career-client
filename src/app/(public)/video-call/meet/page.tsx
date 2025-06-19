@@ -97,6 +97,10 @@ export default function Meet() {
   };
 
   const handleRenameMeet = () => {
+    if (!userData.isHost) {
+      toast('Only the host can rename the meeting', { type: 'error' });
+      return;
+    }
     setIsMenuOpen(false);
     setIsRenameMeetModalVisible(true);
   };
@@ -150,16 +154,18 @@ export default function Meet() {
       return;
     }
 
-    // Initialize user's video stream
     getUserStream().then(stream => {
       console.log("User stream initialized for self-view");
       if (stream && userVideoRef.current) {
         userVideoRef.current.srcObject = stream;
-        userVideoRef.current.muted = true; // Mute self video to prevent feedback
+        userVideoRef.current.muted = true;
       }
     });
 
-    setParticipantCount(peersData.size + 1);
+    const otherPeersCount = Array.from(peersData.entries())
+      .filter(([peerId]) => peerId !== userData.id)
+      .length;
+    setParticipantCount(otherPeersCount + 1);
 
     const handleFullscreenChange = () => {
       setIsFullScreen(!!document.fullscreenElement);
@@ -212,12 +218,14 @@ export default function Meet() {
             >
               {meetName || videoCallText.page.meet.title}
             </h2>
-            <IconButton
-              testId="editMeetNameButton"
-              onClick={handleRenameMeet}
-              className="text-muted-foreground hover:text-primary"
-              icon={<Edit className="h-4 w-4" />}
-            />
+            {userData.isHost && (
+              <IconButton
+                testId="editMeetNameButton"
+                onClick={handleRenameMeet}
+                className="text-muted-foreground hover:text-primary"
+                icon={<Edit className="h-4 w-4" />}
+              />
+            )}
             <div className="bg-muted/50 ml-4 flex items-center gap-1 rounded-full px-2 py-1 text-xs">
               <Users className="h-3 w-3" />
               <span>{participantCount}</span>
@@ -310,7 +318,9 @@ export default function Meet() {
             </div>
           ) : (
             <div className="grid h-full w-full grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {Array.from(peersData.entries()).map(([peerId, peerData]) => (
+              {Array.from(peersData.entries())
+                .filter(([peerId]) => peerId !== userData.id)
+                .map(([peerId, peerData]) => (
                 <div
                   key={peerId}
                   className="border-muted relative h-full w-full overflow-hidden rounded-2xl border-4"
@@ -322,19 +332,24 @@ export default function Meet() {
                       const ref = peersVideoRefs.get(peerId);
                       if (ref) {
                         ref.current = el;
-                        // If the video already has a stream, make sure it plays
-                        if (el && el.srcObject) {
-                          el.play().catch(err => 
-                            console.error(`Error playing video for peer ${peerId}:`, err)
-                          );
+                        if (el && el.srcObject && el.paused) {
+                          el.play().catch(err => {
+                            if (err.name !== 'AbortError') {
+                              console.error(`Error playing video for peer ${peerId}:`, err);
+                            }
+                          });
                         }
                       }
                     }}
                     onLoadedMetadata={(e) => {
-                      // Make sure video plays when it loads
-                      (e.target as HTMLVideoElement).play().catch(err => 
-                        console.error(`Error playing video for peer ${peerId}:`, err)
-                      );
+                      const videoElement = e.target as HTMLVideoElement;
+                      if (videoElement.paused) {
+                        videoElement.play().catch(err => {
+                          if (err.name !== 'AbortError') {
+                            console.error(`Error playing video for peer ${peerId}:`, err);
+                          }
+                        });
+                      }
                     }}
                     className={cn(
                       'h-full w-full object-cover',
@@ -372,7 +387,7 @@ export default function Meet() {
                     >
                       <Expand className="h-4 w-4" />
                     </button>
-                    
+
                     {userData.isHost && (
                       <button
                         className="bg-red-500/80 hover:bg-red-600 text-white rounded-md p-2 backdrop-blur-sm"
@@ -396,10 +411,14 @@ export default function Meet() {
               autoPlay
               ref={userVideoRef}
               onLoadedMetadata={(e) => {
-                // Make sure video plays when it loads
-                (e.target as HTMLVideoElement).play().catch(err => 
-                  console.error("Error playing user video:", err)
-                );
+                const videoElement = e.target as HTMLVideoElement;
+                if (videoElement.paused) {
+                  videoElement.play().catch(err => {
+                    if (err.name !== 'AbortError') {
+                      console.error("Error playing user video:", err);
+                    }
+                  });
+                }
               }}
               className="h-full w-full object-cover"
               id="user-video"
@@ -552,54 +571,56 @@ export default function Meet() {
             </div>
           </aside>
         )}
-      </div>
 
-      <RenameMeetModal
-        visible={isRenameMeetModalVisible}
-        defaultName={meetName}
-        onClose={() => setIsRenameMeetModalVisible(false)}
-        onSubmit={(newName) => {
-          renameMeet(newName);
-          setIsRenameMeetModalVisible(false);
-        }}
-      />
+        <RenameMeetModal
+          visible={isRenameMeetModalVisible}
+          defaultName={meetName}
+          onClose={() => setIsRenameMeetModalVisible(false)}
+          onSubmit={(newName) => {
+            renameMeet(newName);
+            setIsRenameMeetModalVisible(false);
+          }}
+        />
 
-      <MenuComponent
-        visible={isMenuOpen}
-        onClose={() => setIsMenuOpen(false)}
-        position="right"
-      >
-        <MenuItem
-          icon={<Copy className="h-4 w-4" />}
-          text={videoCallText.page.meet.menu.copyId}
-          onClick={handleCopyMeetId}
-        />
-        <MenuItem
-          icon={<Edit className="h-4 w-4" />}
-          text={videoCallText.page.meet.menu.editName}
-          onClick={handleRenameMeet}
-        />
-        <MenuItem
-          icon={<MessageSquare className="h-4 w-4" />}
-          text={videoCallText.page.meet.menu.openChat}
-          onClick={handleOpenChat}
-        />
-        {Array.from(peersData.entries()).map(([peerId, peerData]) => (
+        <MenuComponent
+          visible={isMenuOpen}
+          onClose={() => setIsMenuOpen(false)}
+          position="right"
+        >
           <MenuItem
-            key={peerId}
-            icon={<UserX className="h-4 w-4" />}
-            text={videoCallText.page.meet.menu.removeUser.replace(
-              '{{ user }}',
-              peerData.name,
-            )}
-            onClick={() => {
-              setIsMenuOpen(false);
-              removePeerFromMeet(peerId);
-            }}
-            variant="destructive"
+            icon={<Copy className="h-4 w-4" />}
+            text={videoCallText.page.meet.menu.copyId}
+            onClick={handleCopyMeetId}
           />
-        ))}
-      </MenuComponent>
+          {userData.isHost && (
+            <MenuItem
+              icon={<Edit className="h-4 w-4" />}
+              text={videoCallText.page.meet.menu.editName}
+              onClick={handleRenameMeet}
+            />
+          )}
+          <MenuItem
+            icon={<MessageSquare className="h-4 w-4" />}
+            text={videoCallText.page.meet.menu.openChat}
+            onClick={handleOpenChat}
+          />
+          {Array.from(peersData.entries()).map(([peerId, peerData]) => (
+            <MenuItem
+              key={peerId}
+              icon={<UserX className="h-4 w-4" />}
+              text={videoCallText.page.meet.menu.removeUser.replace(
+                '{{ user }}',
+                peerData.name,
+              )}
+              onClick={() => {
+                setIsMenuOpen(false);
+                removePeerFromMeet(peerId);
+              }}
+              variant="destructive"
+            />
+          ))}
+        </MenuComponent>
+      </div>
     </>
   );
 }

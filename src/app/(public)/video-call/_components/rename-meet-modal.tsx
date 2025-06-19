@@ -10,6 +10,8 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from './ui-button';
 import { Input } from './ui-input';
+import useMeetContext from '../contexts/MeetContext';
+import { toast } from 'react-toastify';
 import { videoCallText } from '../utils/text';
 
 export interface RenameMeetModalProps {
@@ -25,17 +27,24 @@ export function RenameMeetModal({
   onClose,
   onSubmit,
 }: RenameMeetModalProps) {
+  const { userData } = useMeetContext();
   const [meetName, setMeetName] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const handleChangeName = () => {
-    if (!meetName.trim()) return;
+    if (!meetName.trim() || !userData.isHost) {
+      if (!userData.isHost) {
+        toast('Only the host can rename the meeting', { type: 'error' });
+      }
+      return;
+    }
 
     setIsLoading(true);
     try {
       onSubmit(meetName);
     } catch (error) {
       console.error('Error renaming meet:', error);
+      toast('Failed to rename meeting', { type: 'error' });
     } finally {
       setIsLoading(false);
     }
@@ -64,7 +73,7 @@ export function RenameMeetModal({
           />
           <Button
             testId="changeMeetNameButton"
-            disabled={!meetName.trim()}
+            disabled={!meetName.trim() || isLoading || !userData.isHost}
             isLoading={isLoading}
             onClick={handleChangeName}
             className="w-full"

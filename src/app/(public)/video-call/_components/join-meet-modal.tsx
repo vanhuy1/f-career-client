@@ -1,7 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useFormik } from 'formik';
-import { useRouter } from 'next/navigation';
 import * as Yup from 'yup';
 import { AtSignIcon as At, Mail, User, Loader2 } from 'lucide-react';
 
@@ -29,7 +28,6 @@ export function JoinMeetModal({
   onClose,
 }: JoinMeetModalProps) {
   const { joinMeet, isCallingUser } = useMeetContext();
-  const router = useRouter();
   const [isJoining, setIsJoining] = useState(false);
 
   const form = useFormik({
@@ -52,17 +50,8 @@ export function JoinMeetModal({
     }),
     onSubmit: (values) => {
       try {
-        form.setSubmitting(true);
         setIsJoining(true);
         joinMeet(values.userName, values.userEmail, values.meetId);
-        
-        // Don't close the modal yet - we'll show joining state
-        // handleCloseModal() is removed from here
-        
-        // Redirect to meet page after a short delay
-        setTimeout(() => {
-          router.push('/video-call/meet');
-        }, 500);
       } catch (error) {
         console.error('Error joining meet:', error);
         toast(videoCallText.toastMessage.errorWhileStartingMeet, {
@@ -84,7 +73,6 @@ export function JoinMeetModal({
 
   useEffect(() => {
     if (defaultMeetId) form.setFieldValue('meetId', defaultMeetId);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [defaultMeetId]);
 
   return (

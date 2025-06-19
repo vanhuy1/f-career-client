@@ -29,10 +29,9 @@ export function ReceivingCallModal({
       data-testid="receivingCallModal"
     >
       <div className="bg-background flex w-[90%] max-w-md flex-col gap-4 rounded-2xl p-6 shadow-2xl transition-all duration-300 sm:w-[450px]">
-        {/* Header */}
         <header className="flex items-center justify-between">
           <h2 className="text-xl font-semibold">
-            Join Request
+            Meeting Join Request
           </h2>
           <IconButton
             icon={<X className="h-4 w-4" />}
@@ -50,7 +49,6 @@ export function ReceivingCallModal({
           </p>
         </div>
 
-        {/* Actions */}
         <div className="flex items-center gap-3">
           <Button
             testId="rejectMeetRequestButton"
