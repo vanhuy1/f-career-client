@@ -119,8 +119,8 @@ export default function JobCard({
 
         {/* Apply button + Progress */}
         <div className="flex shrink-0 flex-col items-center justify-between">
-          <Button className="w-28 bg-indigo-600 hover:bg-indigo-700">
-            Apply
+          <Button className="w-28 bg-blue-600 hover:bg-blue-700">
+            View Detail
           </Button>
         </div>
       </div>

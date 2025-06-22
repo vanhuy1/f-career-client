@@ -43,6 +43,7 @@ import {
   useCaProfileLoading,
 } from '@/services/state/caProfileSlice';
 import { LoadingState } from '@/store/store.model';
+import { useUser } from '@/services/state/userSlice';
 interface ProfileHeaderProps {
   profile: CandidateProfile | null;
   onProfileUpdate?: (updatedProfile: Partial<CandidateProfile>) => void;
@@ -63,6 +64,7 @@ export function ProfileHeader({
   const dispatch = useDispatch();
   const loadingState = useCaProfileLoading();
   const errors = useCaProfileLoading();
+  const user = useUser();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type } = e.target;
@@ -157,7 +159,8 @@ export function ProfileHeader({
             <div className="group relative h-40 w-40 overflow-hidden rounded-full border-4 border-white bg-white shadow-md transition-all">
               <Image
                 src={
-                  '/placeholder.svg?height=160&width=160&query=professional headshot portrait'
+                  user?.data.avatar ??
+                  '/placeholder.svg?height=160&width=160&query=avatar'
                 }
                 alt={`${profile?.name}'s profile picture`}
                 width={160}

@@ -29,11 +29,13 @@ import { setUserStart, setUserSuccess } from '@/services/state/userSlice';
 import { userService } from '@/services/api/auth/user-api';
 import { ROLES } from '@/enums/roles.enum';
 import { toast } from 'react-toastify';
-import { Mail, Lock, LogIn, ArrowRight } from 'lucide-react';
+import { Mail, Lock, LogIn, ArrowRight, Eye, EyeOff } from 'lucide-react';
+import { useState } from 'react';
 
 export const SignInForm = () => {
   const dispatch = useAppDispatch();
   const router = useRouter();
+  const [showPassword, setShowPassword] = useState(false);
   const {
     register,
     handleSubmit,
@@ -133,17 +135,31 @@ export const SignInForm = () => {
                 <Lock className="h-4 w-4" />
                 Password
               </Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="Enter password"
-                className={`transition-all duration-200 ${
-                  errors.password
-                    ? 'border-red-300 focus:border-red-500 focus:ring-red-200'
-                    : 'border-gray-200 focus:border-blue-500 focus:ring-blue-200'
-                }`}
-                {...register('password')}
-              />
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Enter password"
+                  className={`pr-10 transition-all duration-200 ${
+                    errors.password
+                      ? 'border-red-300 focus:border-red-500 focus:ring-red-200'
+                      : 'border-gray-200 focus:border-blue-500 focus:ring-blue-200'
+                  }`}
+                  {...register('password')}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute top-1/2 right-3 -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
               {errors.password && (
                 <Alert variant="destructive" className="py-2">
                   <AlertDescription className="text-sm">

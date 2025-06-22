@@ -39,7 +39,7 @@ export const ProfileFormSchema = z.object({
 
   gender: z.string().min(1, { message: 'Please select a gender' }),
 
-  avatar: z.string().optional(),
+  avatar: z.string().nullable().optional(),
 });
 
 export type UpdateEmailFormValues = z.infer<typeof updateEmailSchema>;
