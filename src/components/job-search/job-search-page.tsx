@@ -4,7 +4,6 @@ import { ChevronDown } from 'lucide-react';
 import JobCard from '@/components/job-search/job-card';
 import Pagination from '@/components/job-search/pagination';
 import JobFilterSidebar from '@/components/job-search/filter-sidebar';
-import { jobService } from '@/services/api/jobs/job-api';
 import { useDispatch } from 'react-redux';
 import {
   setJobFailure,
@@ -15,36 +14,60 @@ import {
 } from '@/services/state/jobSlice';
 import { LoadingState } from '@/store/store.model';
 import LoadingScreen from '@/pages/LoadingScreen';
+import { jobSearchService } from '@/services/api/job-search/job-search.api';
+import { useSearchParams } from 'next/navigation';
+import { JobSearchSortBy } from '@/types/JobSearch';
 
 export default function JobListingsPage() {
-  const [count, setCount] = useState(0);
-  const [page, setPage] = useState(1);
-  const [viewMode] = useState<'grid' | 'list'>('list');
-  const limit = 10;
-
+  const searchParams = useSearchParams();
   const dispatch = useDispatch();
   const jobs = useJobs();
   const Loading = useJobLoadingState();
   const isLoading = Loading === LoadingState.loading;
 
+  const [totalItems, setTotalItems] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [sortBy, setSortBy] = useState<JobSearchSortBy>('relevance');
+  const [viewMode] = useState<'grid' | 'list'>('list');
+
+  const limit = 10;
+
   useEffect(() => {
     async function fetchJobs() {
       try {
         dispatch(setJobStart());
-        const res = await jobService.findAll(limit, (page - 1) * limit);
-        dispatch(setJobSuccess(res.data));
-        setCount(res.meta.count);
+
+        // Build search parameters from URL query params and current state
+        const params = {
+          q: searchParams?.get('q') || undefined,
+          location: searchParams?.get('location') || undefined,
+          page: currentPage,
+          limit,
+          sortBy,
+        };
+
+        const response = await jobSearchService.searchJobs(params);
+
+        dispatch(setJobSuccess(response.data));
+        setTotalItems(response.pagination.totalItems);
       } catch (error) {
         dispatch(setJobFailure(error as string));
       }
     }
-    setPage(1);
-    if (jobs?.length === 0) {
-      fetchJobs();
-    }
-  }, [page, limit, dispatch, jobs?.length]);
 
-  const totalPages = Math.ceil(count / limit);
+    fetchJobs();
+  }, [searchParams, currentPage, sortBy, dispatch]);
+
+  // const handlePageChange = (newPage: number) => {
+  //   setCurrentPage(newPage);
+  // };
+
+  const handleSortChange = (newSortBy: JobSearchSortBy) => {
+    setSortBy(newSortBy);
+    setCurrentPage(1); // Reset to first page when changing sort
+  };
+
+  const totalPages = Math.ceil(totalItems / limit);
 
   if (isLoading) {
     return <LoadingScreen />;
@@ -64,13 +87,22 @@ export default function JobListingsPage() {
           <div className="mb-4 flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-gray-800">All Jobs</h1>
-              <p className="text-sm text-gray-500">Showing {count} results</p>
+              <p className="text-sm text-gray-500">
+                Showing {totalItems} results
+              </p>
             </div>
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
                 <span className="text-sm text-gray-600">Sort by:</span>
-                <div className="flex items-center gap-1 text-sm font-medium">
-                  Most relevant
+                <div
+                  className="flex cursor-pointer items-center gap-1 text-sm font-medium"
+                  onClick={() =>
+                    handleSortChange(
+                      sortBy === 'relevance' ? 'date_posted' : 'relevance',
+                    )
+                  }
+                >
+                  {sortBy === 'relevance' ? 'Most relevant' : 'Date posted'}
                   <ChevronDown className="h-4 w-4" />
                 </div>
               </div>
@@ -111,9 +143,9 @@ export default function JobListingsPage() {
           {/* Pagination */}
           <div className="mt-8 flex justify-center">
             <Pagination
-              currentPage={page}
+              currentPage={currentPage}
               totalPages={totalPages}
-              // onPageChange={newPage => setPage(newPage)}
+              // onPageChange={handlePageChange}
             />
           </div>
         </div>
