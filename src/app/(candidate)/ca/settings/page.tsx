@@ -59,7 +59,7 @@ export default function SettingsPage() {
       email: user?.data.email,
       dob: user?.data.dob ? new Date(user.data.dob).toISOString() : '',
       gender: user?.data.gender,
-      avatar: user?.data.avatar || '',
+      avatar: user?.data.avatar || null,
     },
   });
 

@@ -119,7 +119,7 @@ export default function Header() {
                   >
                     <Avatar className="h-9 w-9">
                       <AvatarImage
-                        src="/logo-landing/udacity.png"
+                        src={user.data.avatar}
                         alt={user.data.name}
                       />
                       <AvatarFallback className="bg-gradient-to-br from-blue-700 to-blue-900 font-semibold text-white">
@@ -144,7 +144,7 @@ export default function Header() {
                       <div className="flex items-center gap-3">
                         <Avatar className="h-10 w-10">
                           <AvatarImage
-                            src="/logo-landing/udacity.png"
+                            src={user.data.avatar}
                             alt={user.data.name}
                           />
                           <AvatarFallback className="bg-gradient-to-br from-blue-500 to-blue-700 text-white">

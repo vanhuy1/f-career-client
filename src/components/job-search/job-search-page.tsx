@@ -1,6 +1,6 @@
 'use client';
 import React, { useEffect, useState } from 'react';
-import { ChevronDown, Grid, List } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import JobCard from '@/components/job-search/job-card';
 import Pagination from '@/components/job-search/pagination';
 import JobFilterSidebar from '@/components/job-search/filter-sidebar';
@@ -19,7 +19,7 @@ import LoadingScreen from '@/pages/LoadingScreen';
 export default function JobListingsPage() {
   const [count, setCount] = useState(0);
   const [page, setPage] = useState(1);
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
+  const [viewMode] = useState<'grid' | 'list'>('list');
   const limit = 10;
 
   const dispatch = useDispatch();
@@ -73,24 +73,6 @@ export default function JobListingsPage() {
                   Most relevant
                   <ChevronDown className="h-4 w-4" />
                 </div>
-              </div>
-              <div className="flex rounded border">
-                <button
-                  onClick={() => setViewMode('grid')}
-                  className={`border-r p-2 ${
-                    viewMode === 'grid' ? 'text-indigo-600' : 'text-gray-400'
-                  }`}
-                >
-                  <Grid className="h-4 w-4" />
-                </button>
-                <button
-                  onClick={() => setViewMode('list')}
-                  className={`p-2 ${
-                    viewMode === 'list' ? 'text-indigo-600' : 'text-gray-400'
-                  }`}
-                >
-                  <List className="h-4 w-4" />
-                </button>
               </div>
             </div>
           </div>
