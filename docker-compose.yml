@@ -1,0 +1,26 @@
+services:
+  f-career-client:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - NODE_ENV=production
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    env_file:
+      - .env
+    networks:
+      - api_web
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.f-career-client.rule=Host(`${DOMAIN}`)"
+      - "traefik.http.services.f-career-client.loadbalancer.server.port=3000"
+      - "traefik.http.routers.f-career-client.entrypoints=websecure"
+      - "traefik.http.routers.f-career-client.tls=true"
+      - "traefik.http.routers.f-career-client.tls.certresolver=letsencrypt"
+      - "traefik.docker.network=api_web"
+
+networks:
+  api_web:
+    external: true

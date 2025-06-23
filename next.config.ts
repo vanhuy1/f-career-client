@@ -1,7 +1,8 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  reactStrictMode: true,
+  reactStrictMode: false,
+  output: 'standalone',
   images: {
     remotePatterns: [
       // Allow all https and http images (wildcard)
