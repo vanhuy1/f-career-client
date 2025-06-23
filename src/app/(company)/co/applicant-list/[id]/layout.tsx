@@ -52,21 +52,24 @@ export default function ApplicantLayout({
   useEffect(() => {
     if (!applicantId) return;
 
-    const fetchApplicantData = async () => {
-      try {
-        dispatch(setApplicantDetailStart());
-        const response =
-          await applicationService.getApplicantDetail(applicantId);
-        if (response) {
-          dispatch(setApplicantDetailSuccess(response));
+    // Only fetch data if applicant is null
+    if (!applicant) {
+      const fetchApplicantData = async () => {
+        try {
+          dispatch(setApplicantDetailStart());
+          const response =
+            await applicationService.getApplicantDetail(applicantId);
+          if (response) {
+            dispatch(setApplicantDetailSuccess(response));
+          }
+        } catch (error) {
+          dispatch(setApplicantDetailFailure(error as string));
         }
-      } catch (error) {
-        dispatch(setApplicantDetailFailure(error as string));
-      }
-    };
+      };
 
-    fetchApplicantData();
-  }, [applicantId, dispatch]);
+      fetchApplicantData();
+    }
+  }, [applicantId, dispatch, applicant]);
 
   const tabs = [
     { name: 'Applicant Profile', href: `/co/applicant-list/${applicantId}` },

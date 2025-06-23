@@ -100,3 +100,13 @@ export interface ApplicantDetail {
     };
   };
 }
+
+export interface UpdateApplicationStatusData {
+  status: ApplicationStatus;
+  applicantId: string;
+}
+
+export interface UpdateApplicationStatusResponse {
+  message: string;
+  success: boolean;
+}

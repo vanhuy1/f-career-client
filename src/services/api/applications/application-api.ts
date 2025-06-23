@@ -2,7 +2,12 @@ import { Application, ApplicationsResponse } from '@/types/Application';
 import { RequestBuilder } from '@/utils/axios/request-builder';
 import { ApplicationFormData } from '@/app/(public)/_components/apply-dialog';
 import { httpClient } from '@/utils/axios';
-import { Applicants, ApplicantDetail } from '@/types/Applicants';
+import {
+  Applicants,
+  ApplicantDetail,
+  UpdateApplicationStatusData,
+  UpdateApplicationStatusResponse,
+} from '@/types/Applicants';
 
 class ApplicationService {
   private requestBuilder: RequestBuilder;
@@ -105,6 +110,28 @@ class ApplicationService {
         };
       },
     });
+    return response;
+  }
+
+  async updateHiringProgress(
+    reqData: UpdateApplicationStatusData,
+  ): Promise<UpdateApplicationStatusResponse> {
+    const url = this.requestBuilder.buildUrl(`${reqData.applicantId}`);
+
+    const response = await httpClient.patch<
+      UpdateApplicationStatusResponse,
+      typeof reqData
+    >({
+      url,
+      body: reqData,
+      typeCheck: (data) => {
+        return {
+          success: true,
+          data: data as UpdateApplicationStatusResponse,
+        };
+      },
+    });
+
     return response;
   }
 }
