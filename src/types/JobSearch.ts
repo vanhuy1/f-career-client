@@ -1,4 +1,3 @@
-// Enum-like types for specific fields
 export type EmploymentType =
   | 'FullTime'
   | 'PartTime'
@@ -11,83 +10,77 @@ export type JobSearchSortBy =
   | 'salary_high_to_low'
   | 'salary_low_to_high';
 
-// Request interface
 export interface JobSearchRequest {
-  q?: string; // Search query
-  location?: string; // Location filter
-  categoryIds?: string[]; // Array of category IDs
-  companyIds?: string[]; // Array of company IDs
-  employmentTypes?: EmploymentType[]; // Array of employment types
-  salaryMin?: number; // Minimum salary
-  salaryMax?: number; // Maximum salary
-  minExperienceYears?: number; // Minimum years of experience
-  activeOnly?: boolean; // Show only active jobs (default: true)
-  sortBy?: JobSearchSortBy; // Sort order (default: relevance)
-  page?: number; // Page number (default: 1)
-  limit?: number; // Items per page (default: 10, max: 100)
+  q?: string;
+  location?: string;
+  categoryIds?: string[];
+  companyIds?: string[];
+  employmentTypes?: EmploymentType[];
+  salaryMin?: number;
+  salaryMax?: number;
+  minExperienceYears?: number;
+  activeOnly?: boolean;
+  sortBy?: JobSearchSortBy;
+  page?: number;
+  limit?: number;
 }
 
-// Job object within the data array
 export interface Job {
-  id: string; // Unique job identifier
-  title: string; // Job title
-  description: string; // Job description
-  location: string; // Job location
-  salaryMin: number; // Minimum salary
-  salaryMax: number; // Maximum salary
-  experienceYears: number; // Required experience in years
-  typeOfEmployment: EmploymentType; // Type of employment
-  deadline: string; // Application deadline (ISO 8601 format)
+  id: string;
+  title: string;
+  description: string;
+  location: string;
+  salaryMin: number;
+  salaryMax: number;
+  experienceYears: number;
+  typeOfEmployment: EmploymentType;
+  deadline: string;
   company: {
-    id: string; // Company identifier
-    companyName: string; // Company name
-    logoUrl: string; // URL to company logo
-    industry: string; // Company industry
+    id: string;
+    companyName: string;
+    logoUrl: string;
+    industry: string;
   };
   category: {
-    id: string; // Category identifier
-    name: string; // Category name
+    id: string;
+    name: string;
   };
   applicationStats: {
-    totalApplications: number; // Number of applications received
-    maxCapacity: number; // Maximum number of applications allowed
-    applicationRate: number; // Rate of applications (e.g., per day)
+    totalApplications: number;
+    maxCapacity: number;
+    applicationRate: number;
   };
-  relevanceScore: number; // Relevance score for sorting
-  createdAt: string; // Job creation date (ISO 8601 format)
+  relevanceScore: number;
+  createdAt: string;
 }
 
-// Pagination details
 export interface Pagination {
-  currentPage: number; // Current page number
-  itemsPerPage: number; // Number of items per page
-  totalItems: number; // Total number of jobs
-  totalPages: number; // Total number of pages
-  hasNextPage: boolean; // Indicates if there is a next page
-  hasPreviousPage: boolean; // Indicates if there is a previous page
+  currentPage: number;
+  itemsPerPage: number;
+  totalItems: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
 }
 
-// Summary of applied filters
 export interface FilterSummary {
-  query: string; // Search query used
-  location: string; // Location filter applied
-  categoriesCount: number; // Number of categories filtered
-  companiesCount: number; // Number of companies filtered
-  employmentTypesCount: number; // Number of employment types filtered
-  activeOnly: boolean; // Whether only active jobs were shown
-  sortBy: JobSearchSortBy; // Sort order applied
+  query: string;
+  location: string;
+  categoriesCount: number;
+  companiesCount: number;
+  employmentTypesCount: number;
+  activeOnly: boolean;
+  sortBy: JobSearchSortBy;
 }
 
-// Metadata about the response
 export interface Meta {
-  message: string; // Response message (e.g., "Success")
-  success: boolean; // Indicates if the request was successful
+  message: string;
+  success: boolean;
 }
 
-// Full response structure
 export interface JobSearchResponse {
-  data: Job[]; // Array of job objects
-  pagination: Pagination; // Pagination information
-  filterSummary: FilterSummary; // Summary of filters applied
-  meta: Meta; // Metadata
+  data: Job[];
+  pagination: Pagination;
+  filterSummary: FilterSummary;
+  meta: Meta;
 }

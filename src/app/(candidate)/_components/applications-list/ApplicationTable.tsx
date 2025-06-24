@@ -8,6 +8,8 @@ import {
   MoreHorizontal,
   ChevronLeft,
   ChevronRight,
+  ChevronUp,
+  ChevronDown,
 } from 'lucide-react';
 import { useAppDispatch } from '@/store/hooks';
 import type { Application } from '@/types/Application';
@@ -46,22 +48,12 @@ interface ApplicationTableProps {
   applications: Application[] | null;
   loading: boolean;
   error: string | null;
-  page: number;
-  pageSize: number;
-  total: number;
-  onPageChange: (page: number) => void;
-  onPageSizeChange: (pageSize: number) => void;
 }
 
 export default function ApplicationTable({
   applications,
   loading,
   error,
-  page,
-  pageSize,
-  total,
-  onPageChange,
-  onPageSizeChange,
 }: ApplicationTableProps) {
   const router = useRouter();
   const dispatch = useAppDispatch();
@@ -69,6 +61,12 @@ export default function ApplicationTable({
     [],
   );
   const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [sortConfig, setSortConfig] = useState<{
+    key: string;
+    direction: 'asc' | 'desc';
+  } | null>(null);
 
   const handleRowClick = (application: Application) => {
     dispatch(setSelectedApplication(application));
@@ -80,8 +78,8 @@ export default function ApplicationTable({
   };
 
   const handleSelectAll = (checked: boolean) => {
-    if (checked && applications) {
-      setSelectedApplications(applications.map((a) => a.id));
+    if (checked) {
+      setSelectedApplications(paginatedApplications.map((a) => a.id));
     } else {
       setSelectedApplications([]);
     }
@@ -97,8 +95,39 @@ export default function ApplicationTable({
     }
   };
 
+  // Sorting logic
+  const sortedApplications = applications
+    ? [...applications].sort((a, b) => {
+        if (!sortConfig) return 0;
+        let aValue, bValue;
+        switch (sortConfig.key) {
+          case 'company':
+            aValue = a.company?.companyName?.toLowerCase() || '';
+            bValue = b.company?.companyName?.toLowerCase() || '';
+            break;
+          case 'role':
+            aValue = a.job?.title?.toLowerCase() || '';
+            bValue = b.job?.title?.toLowerCase() || '';
+            break;
+          case 'status':
+            aValue = a.status?.toLowerCase() || '';
+            bValue = b.status?.toLowerCase() || '';
+            break;
+          case 'date':
+            aValue = a.applied_at || '';
+            bValue = b.applied_at || '';
+            break;
+          default:
+            return 0;
+        }
+        if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+        if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
+        return 0;
+      })
+    : [];
+
   const filteredApplications =
-    applications?.filter(
+    sortedApplications.filter(
       (application) =>
         application.company?.companyName
           .toLowerCase()
@@ -106,7 +135,22 @@ export default function ApplicationTable({
         application.job?.title.toLowerCase().includes(searchTerm.toLowerCase()),
     ) || [];
 
-  const totalPages = Math.ceil(total / pageSize);
+  // Handle sorting
+  const handleSort = (key: string) => {
+    setSortConfig((prev) => {
+      if (prev && prev.key === key) {
+        return { key, direction: prev.direction === 'asc' ? 'desc' : 'asc' };
+      }
+      return { key, direction: 'asc' };
+    });
+  };
+
+  const totalPages = Math.ceil(filteredApplications.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedApplications = filteredApplications.slice(
+    startIndex,
+    startIndex + itemsPerPage,
+  );
 
   if (loading) {
     return (
@@ -129,7 +173,7 @@ export default function ApplicationTable({
       {/* Header */}
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-semibold text-gray-900">
-          Total Applications: {searchTerm ? filteredApplications.length : total}
+          Total Applications: {filteredApplications.length}
         </h1>
         <div className="flex items-center gap-4">
           <div className="relative">
@@ -157,27 +201,65 @@ export default function ApplicationTable({
                 <Checkbox
                   checked={
                     selectedApplications.length ===
-                      filteredApplications.length &&
-                    filteredApplications.length > 0
+                      paginatedApplications.length &&
+                    paginatedApplications.length > 0
                   }
                   onCheckedChange={handleSelectAll}
                 />
               </TableHead>
-              <TableHead className="font-medium text-gray-600">
+              <TableHead
+                className="cursor-pointer font-medium text-gray-600 select-none"
+                onClick={() => handleSort('company')}
+              >
                 Company Name
+                {sortConfig?.key === 'company' &&
+                  (sortConfig.direction === 'asc' ? (
+                    <ChevronUp className="ml-1 inline h-4 w-4" />
+                  ) : (
+                    <ChevronDown className="ml-1 inline h-4 w-4" />
+                  ))}
               </TableHead>
-              <TableHead className="font-medium text-gray-600">Roles</TableHead>
-              <TableHead className="font-medium text-gray-600">
+              <TableHead
+                className="cursor-pointer font-medium text-gray-600 select-none"
+                onClick={() => handleSort('role')}
+              >
+                Roles
+                {sortConfig?.key === 'role' &&
+                  (sortConfig.direction === 'asc' ? (
+                    <ChevronUp className="ml-1 inline h-4 w-4" />
+                  ) : (
+                    <ChevronDown className="ml-1 inline h-4 w-4" />
+                  ))}
+              </TableHead>
+              <TableHead
+                className="cursor-pointer font-medium text-gray-600 select-none"
+                onClick={() => handleSort('date')}
+              >
                 Date Applied
+                {sortConfig?.key === 'date' &&
+                  (sortConfig.direction === 'asc' ? (
+                    <ChevronUp className="ml-1 inline h-4 w-4" />
+                  ) : (
+                    <ChevronDown className="ml-1 inline h-4 w-4" />
+                  ))}
               </TableHead>
-              <TableHead className="font-medium text-gray-600">
+              <TableHead
+                className="cursor-pointer font-medium text-gray-600 select-none"
+                onClick={() => handleSort('status')}
+              >
                 Status
+                {sortConfig?.key === 'status' &&
+                  (sortConfig.direction === 'asc' ? (
+                    <ChevronUp className="ml-1 inline h-4 w-4" />
+                  ) : (
+                    <ChevronDown className="ml-1 inline h-4 w-4" />
+                  ))}
               </TableHead>
               <TableHead className="w-12"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredApplications.map((application) => (
+            {paginatedApplications.map((application) => (
               <TableRow
                 key={application.id}
                 className="cursor-pointer hover:bg-gray-50"
@@ -254,8 +336,8 @@ export default function ApplicationTable({
         <div className="flex items-center gap-2">
           <span className="text-sm text-gray-600">View</span>
           <Select
-            value={pageSize.toString()}
-            onValueChange={(value) => onPageSizeChange(Number(value))}
+            value={itemsPerPage.toString()}
+            onValueChange={(value) => setItemsPerPage(Number(value))}
           >
             <SelectTrigger className="w-20">
               <SelectValue />
@@ -274,8 +356,8 @@ export default function ApplicationTable({
           <Button
             variant="outline"
             size="sm"
-            onClick={() => onPageChange(Math.max(1, page - 1))}
-            disabled={page === 1}
+            onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+            disabled={currentPage === 1}
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
@@ -284,9 +366,9 @@ export default function ApplicationTable({
             (pageNum) => (
               <Button
                 key={pageNum}
-                variant={page === pageNum ? 'default' : 'outline'}
+                variant={currentPage === pageNum ? 'default' : 'outline'}
                 size="sm"
-                onClick={() => onPageChange(pageNum)}
+                onClick={() => setCurrentPage(pageNum)}
                 className="h-8 w-8"
               >
                 {pageNum}
@@ -297,8 +379,10 @@ export default function ApplicationTable({
           <Button
             variant="outline"
             size="sm"
-            onClick={() => onPageChange(Math.min(totalPages, page + 1))}
-            disabled={page === totalPages}
+            onClick={() =>
+              setCurrentPage(Math.min(totalPages, currentPage + 1))
+            }
+            disabled={currentPage === totalPages}
           >
             <ChevronRight className="h-4 w-4" />
           </Button>

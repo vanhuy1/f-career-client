@@ -1,14 +1,16 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import Link from 'next/link';
+import { Button } from '@/components/ui/button';
 
 interface PaginationProps {
   totalPages: number;
   currentPage: number;
+  onPageChange: (page: number) => void;
 }
 
 export default function Pagination({
   totalPages,
   currentPage,
+  onPageChange,
 }: PaginationProps) {
   // Generate page numbers to display
   const getPageNumbers = () => {
@@ -42,15 +44,30 @@ export default function Pagination({
 
   const pageNumbers = getPageNumbers();
 
+  const goToPrevPage = () => {
+    if (currentPage > 1) {
+      onPageChange(currentPage - 1);
+    }
+  };
+
+  const goToNextPage = () => {
+    if (currentPage < totalPages) {
+      onPageChange(currentPage + 1);
+    }
+  };
+
   return (
     <div className="flex items-center gap-1">
-      <Link
-        href="#"
+      <Button
+        variant="outline"
+        size="icon"
+        onClick={goToPrevPage}
+        disabled={currentPage === 1}
         className="flex h-10 w-10 items-center justify-center rounded-md border text-gray-500 hover:bg-gray-50"
         aria-label="Previous page"
       >
         <ChevronLeft className="h-4 w-4" />
-      </Link>
+      </Button>
 
       {pageNumbers.map((page, index) =>
         page === '...' ? (
@@ -61,9 +78,10 @@ export default function Pagination({
             ...
           </span>
         ) : (
-          <Link
+          <Button
             key={`page-${page}`}
-            href="#"
+            variant={page === currentPage ? 'default' : 'outline'}
+            onClick={() => typeof page === 'number' && onPageChange(page)}
             className={`flex h-10 w-10 items-center justify-center rounded-md ${
               page === currentPage
                 ? 'bg-indigo-600 text-white'
@@ -71,17 +89,20 @@ export default function Pagination({
             }`}
           >
             {page}
-          </Link>
+          </Button>
         ),
       )}
 
-      <Link
-        href="#"
+      <Button
+        variant="outline"
+        size="icon"
+        onClick={goToNextPage}
+        disabled={currentPage === totalPages}
         className="flex h-10 w-10 items-center justify-center rounded-md border text-gray-500 hover:bg-gray-50"
         aria-label="Next page"
       >
         <ChevronRight className="h-4 w-4" />
-      </Link>
+      </Button>
     </div>
   );
 }
