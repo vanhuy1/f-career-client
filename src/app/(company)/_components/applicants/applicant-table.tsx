@@ -9,12 +9,12 @@ import {
   ChevronRight,
   ChevronUp,
   ChevronDown,
+  X,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -40,23 +40,9 @@ import {
 } from '@/components/ui/select';
 import { applicationService } from '@/services/api/applications/application-api';
 import { Applicant } from '@/types/Applicants';
-
-const getStageColor = (stage: string) => {
-  switch (stage) {
-    case 'Hired':
-      return 'bg-green-100 text-green-800 border-green-200';
-    case 'Shortlisted':
-      return 'bg-blue-100 text-blue-800 border-blue-200';
-    case 'Interview':
-      return 'bg-orange-100 text-orange-800 border-orange-200';
-    case 'Interviewed':
-      return 'bg-cyan-100 text-cyan-800 border-cyan-200';
-    case 'Declined':
-      return 'bg-red-100 text-red-800 border-red-200';
-    default:
-      return 'bg-gray-100 text-gray-800 border-gray-200';
-  }
-};
+import { ApplicationStatus } from '@/enums/applicationStatus';
+import FilterableStatusBadge from './FilterableStatusBadge';
+import StatusBadge from './StatusBadge';
 
 // Utility to format date as "MMM dd, yyyy"
 function formatDate(dateString: string) {
@@ -78,6 +64,9 @@ export default function ApplicantTable() {
   const [viewMode, setViewMode] = useState<'pipeline' | 'table'>('table');
   const [applicants, setApplicants] = useState<Applicant[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState<ApplicationStatus | null>(
+    null,
+  );
   const [sortConfig, setSortConfig] = useState<{
     key: string;
     direction: 'asc' | 'desc';
@@ -111,10 +100,11 @@ export default function ApplicantTable() {
 
   const filteredApplicants = sortedApplicants.filter(
     (applicant) =>
-      applicant.candidate.name
+      (applicant.candidate.name
         .toLowerCase()
         .includes(searchTerm.toLowerCase()) ||
-      applicant.job.title.toLowerCase().includes(searchTerm.toLowerCase()),
+        applicant.job.title.toLowerCase().includes(searchTerm.toLowerCase())) &&
+      (statusFilter ? applicant.status === statusFilter : true),
   );
 
   const totalPages = Math.ceil(filteredApplicants.length / itemsPerPage);
@@ -152,6 +142,11 @@ export default function ApplicantTable() {
     });
   };
 
+  // Get count of applicants by status
+  const getStatusCount = (status: ApplicationStatus) => {
+    return applicants.filter((app) => app.status === status).length || 0;
+  };
+
   useEffect(() => {
     const fetchApplicants = async () => {
       try {
@@ -182,7 +177,7 @@ export default function ApplicantTable() {
       {/* Header */}
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-semibold text-gray-900">
-          Total Applicants : {filteredApplicants.length}
+          Total Applicants: {filteredApplicants.length}
         </h1>
         <div className="flex items-center gap-4">
           <div className="relative">
@@ -216,6 +211,39 @@ export default function ApplicantTable() {
               Table View
             </Button>
           </div>
+        </div>
+      </div>
+
+      {/* Status Filter Section */}
+      <div className="mb-4">
+        <h3 className="mb-2 font-medium">Filter by Status</h3>
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={() => setStatusFilter(null)}
+            className={`rounded border px-4 py-1 text-sm ${!statusFilter ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200'}`}
+          >
+            All ({applicants.length})
+          </button>
+
+          {Object.values(ApplicationStatus).map((status) => (
+            <FilterableStatusBadge
+              key={status}
+              status={status}
+              isActive={statusFilter === status}
+              onClick={() => setStatusFilter(status)}
+              count={getStatusCount(status)}
+            />
+          ))}
+
+          {statusFilter && (
+            <button
+              onClick={() => setStatusFilter(null)}
+              className="ml-2 flex items-center gap-1 rounded-full bg-blue-50 px-3 py-1 text-sm text-blue-700"
+            >
+              Clear filter
+              <X className="h-3 w-3" />
+            </button>
+          )}
         </div>
       </div>
 
@@ -323,12 +351,7 @@ export default function ApplicantTable() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge
-                      variant="outline"
-                      className={getStageColor(applicant.status)}
-                    >
-                      {applicant.status}
-                    </Badge>
+                    <StatusBadge status={applicant.status} />
                   </TableCell>
                   <TableCell className="text-gray-600">
                     {formatDate(applicant.applied_at)}

@@ -179,13 +179,14 @@ export default function ApplicationDetailPage() {
                               Number(application.job.salaryMax),
                               'USD', // Adjust if currency is available in data
                             )
-                          : 'Not specified'}
+                          : '10000 - 20000 USD'}
                       </p>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-2">
                     <MapPin className="h-5 w-5 text-gray-400" />
+                    {application.job.location}
                     <div>
                       {/* Location data can be added here if available */}
                     </div>
@@ -203,7 +204,7 @@ export default function ApplicationDetailPage() {
                             application.job.typeOfEmployment
                               .slice(1)
                               .replace('-', ' ')
-                          : 'Not specified'}
+                          : 'Full-time'}
                       </p>
                     </div>
                   </div>
@@ -232,20 +233,6 @@ export default function ApplicationDetailPage() {
               </div>
             </CardContent>
           </Card>
-
-          {/* Uncomment and implement if contacts/documents data is provided */}
-          {/* <Tabs defaultValue="contacts" className="mb-6">
-            <TabsList className="mb-4 grid grid-cols-2">
-              <TabsTrigger value="contacts">Contacts</TabsTrigger>
-              <TabsTrigger value="documents">Documents</TabsTrigger>
-            </TabsList>
-            <TabsContent value="contacts">
-              <ContactsSection contacts={application.job?.company.email} />
-            </TabsContent>
-            <TabsContent value="documents">
-              <DocumentsSection documents={application.documents} />
-            </TabsContent>
-          </Tabs> */}
         </div>
 
         {/* Right Column - Company Info */}
@@ -269,9 +256,9 @@ export default function ApplicationDetailPage() {
                       href={application.job.company.website}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="font-medium text-blue-600 hover:underline"
+                      className="font-medium text-black hover:underline"
                     >
-                      {/* {application.job.company.website.replace(/^https?:\/\//, '')} */}
+                      {application.job.company.website}
                     </a>
                   </div>
                 )}

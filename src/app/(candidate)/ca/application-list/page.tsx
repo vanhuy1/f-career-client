@@ -22,8 +22,7 @@ import type { Application } from '@/types/Application';
 
 export default function JobApplicationsPage() {
   const [searchQuery] = useState<string>('');
-  const [currentPage, setCurrentPage] = useState<number>(1);
-  const [pageSize, setPageSize] = useState<number>(10);
+  // Pagination is now handled internally in the ApplicationTable component
   const [dateRange] = useState<{
     startDate: string;
     endDate: string;
@@ -31,7 +30,6 @@ export default function JobApplicationsPage() {
     startDate: '2021-07-19',
     endDate: '2021-07-25',
   });
-  const [total, setTotal] = useState<number>(0);
   const [statusFilter, setStatusFilter] = useState<ApplicationStatus | null>(
     null,
   );
@@ -50,7 +48,6 @@ export default function JobApplicationsPage() {
         dispatch(setApplicationDetailStart());
         const response = await applicationService.getApplications();
         dispatch(setApplicationSuccess(response.data || []));
-        setTotal(response.total || response.data?.length || 0);
       } catch (err) {
         dispatch(setApplicationFailure(err as string));
       }
@@ -58,16 +55,9 @@ export default function JobApplicationsPage() {
     if (applications?.length === 0) {
       loadApplications();
     }
-  }, [searchQuery, currentPage, dateRange, applications?.length, dispatch]);
+  }, [searchQuery, dateRange, applications?.length, dispatch]);
 
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-  };
-
-  const handlePageSizeChange = (newPageSize: number) => {
-    setPageSize(newPageSize);
-    setCurrentPage(1);
-  };
+  // Pagination is now handled internally in the ApplicationTable component
 
   // Filter applications by status
   const filteredApplications = applications
@@ -175,15 +165,6 @@ export default function JobApplicationsPage() {
               applications={filteredApplications}
               loading={loading}
               error={error}
-              page={currentPage}
-              pageSize={pageSize}
-              total={
-                statusFilter && filteredApplications
-                  ? filteredApplications.length
-                  : total
-              }
-              onPageChange={handlePageChange}
-              onPageSizeChange={handlePageSizeChange}
             />
           </div>
         </div>
