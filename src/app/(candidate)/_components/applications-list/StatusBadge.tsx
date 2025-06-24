@@ -7,14 +7,10 @@ interface StatusBadgeProps {
 export default function StatusBadge({ status }: StatusBadgeProps) {
   const getStatusStyles = (status: ApplicationStatus) => {
     switch (status) {
-      case 'IN_REVIEW':
+      case 'APPLIED':
         return 'bg-yellow-50 text-yellow-700 border-yellow-200';
-      case 'INTERVIEWING':
+      case 'INTERVIEW':
         return 'bg-orange-50 text-orange-700 border-orange-200';
-      case 'ASSESSMENT':
-        return 'bg-purple-50 text-purple-700 border-purple-200';
-      case 'OFFERED':
-        return 'bg-blue-50 text-blue-700 border-blue-200';
       case 'HIRED':
         return 'bg-green-50 text-green-700 border-green-200';
       case 'REJECTED':
@@ -26,14 +22,10 @@ export default function StatusBadge({ status }: StatusBadgeProps) {
 
   const getStatusLabel = (status: ApplicationStatus) => {
     switch (status) {
-      case 'IN_REVIEW':
-        return 'In Review';
-      case 'INTERVIEWING':
+      case 'APPLIED':
+        return 'Applied';
+      case 'INTERVIEW':
         return 'Interviewing';
-      case 'ASSESSMENT':
-        return 'Assessment';
-      case 'OFFERED':
-        return 'Offered';
       case 'HIRED':
         return 'Hired';
       case 'REJECTED':

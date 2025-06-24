@@ -15,9 +15,10 @@ import { useRouter } from 'next/navigation';
 import { setSelectedApplication } from '@/services/state/applicationsSlice';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import StatusBadge from '@/app/(candidate)/_components/applications-list/StatusBadge';
+import { ApplicationStatus } from '@/enums/applicationStatus';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -51,23 +52,6 @@ interface ApplicationTableProps {
   onPageChange: (page: number) => void;
   onPageSizeChange: (pageSize: number) => void;
 }
-
-const getStageColor = (status: string) => {
-  switch (status) {
-    case 'Hired':
-      return 'bg-green-100 text-green-800 border-green-200';
-    case 'Shortlisted':
-      return 'bg-blue-100 text-blue-800 border-blue-200';
-    case 'Interview':
-      return 'bg-orange-100 text-orange-800 border-orange-200';
-    case 'Interviewed':
-      return 'bg-cyan-100 text-cyan-800 border-cyan-200';
-    case 'Declined':
-      return 'bg-red-100 text-red-800 border-red-200';
-    default:
-      return 'bg-gray-100 text-gray-800 border-gray-200';
-  }
-};
 
 export default function ApplicationTable({
   applications,
@@ -139,33 +123,6 @@ export default function ApplicationTable({
       </div>
     );
   }
-
-  // Handle case when no applications are found due to search
-  // if (searchTerm && !filteredApplications.length && applications && applications.length > 0) {
-  //   return (
-  //     <div className="p-6">
-  //       <div className="flex flex-col items-center justify-center h-64 gap-4">
-  //         <div className="text-gray-500 text-lg">No applications found matching "{searchTerm}"</div>
-  //         <Button
-  //           variant="outline"
-  //           onClick={() => setSearchTerm('')}
-  //           className="flex items-center gap-2"
-  //         >
-  //           Clear Search
-  //         </Button>
-  //       </div>
-  //     </div>
-  //   );
-  // }
-
-  // Handle case when no applications exist at all
-  // if (!applications || applications.length === 0) {
-  //   return (
-  //     <div className="flex h-64 items-center justify-center">
-  //       <div className="text-gray-500">No applications found</div>
-  //     </div>
-  //   );
-  // }
 
   return (
     <div className="p-6">
@@ -261,12 +218,9 @@ export default function ApplicationTable({
                   {formatDate(application.applied_at)}
                 </TableCell>
                 <TableCell>
-                  <Badge
-                    variant="outline"
-                    className={getStageColor(application.status)}
-                  >
-                    {application.status}
-                  </Badge>
+                  <StatusBadge
+                    status={application.status as ApplicationStatus}
+                  />
                 </TableCell>
                 <TableCell>
                   <DropdownMenu>
