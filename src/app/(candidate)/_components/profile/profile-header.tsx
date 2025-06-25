@@ -14,6 +14,7 @@ import {
   Loader2,
   X,
 } from 'lucide-react';
+import { AvatarInitial } from '@/components/ui/avatar-initial';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -133,15 +134,9 @@ export function ProfileHeader({
   return (
     <Card className="mb-6 overflow-hidden rounded-xl border-0 bg-white p-0">
       <div className="relative m-0 h-50 w-full rounded-t-xl bg-gradient-to-r from-blue-800 via-blue-900 to-blue-950 p-0">
-        <Image
-          src={
-            '/placeholder.svg?height=400&width=1200&query=abstract professional profile cover'
-          }
-          alt="Cover"
-          fill
-          className="h-full w-full object-cover opacity-90"
-          priority
-        />
+        <div className="absolute inset-0 opacity-20">
+          <div className="absolute inset-0 bg-[radial-gradient(white_1px,transparent_1px)] [background-size:16px_16px]"></div>
+        </div>
         <div className="absolute right-4 bottom-4 flex gap-2">
           <Button
             variant="secondary"
@@ -157,17 +152,18 @@ export function ProfileHeader({
         <div className="flex flex-col items-start gap-6 md:flex-row md:items-end">
           <div className="relative -mt-24 flex-shrink-0">
             <div className="group relative h-40 w-40 overflow-hidden rounded-full border-4 border-white bg-white shadow-md transition-all">
-              <Image
-                src={
-                  user?.data.avatar ??
-                  '/placeholder.svg?height=160&width=160&query=avatar'
-                }
-                alt={`${profile?.name}'s profile picture`}
-                width={160}
-                height={160}
-                className="object-cover"
-                priority
-              />
+              {user?.data.avatar ? (
+                <Image
+                  src={user.data.avatar}
+                  alt={`${profile?.name}'s profile picture`}
+                  width={160}
+                  height={160}
+                  className="object-cover"
+                  priority
+                />
+              ) : (
+                <AvatarInitial name={profile?.name} fontSize="text-4xl" />
+              )}
               <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
                 <Button
                   variant="secondary"

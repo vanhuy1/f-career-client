@@ -4,7 +4,6 @@ import type React from 'react';
 import { useState } from 'react';
 import {
   Search,
-  Filter,
   MoreHorizontal,
   ChevronLeft,
   ChevronRight,
@@ -17,7 +16,6 @@ import { useRouter } from 'next/navigation';
 import { setSelectedApplication } from '@/services/state/applicationsSlice';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import StatusBadge from '@/app/(candidate)/_components/applications-list/StatusBadge';
 import { ApplicationStatus } from '@/enums/applicationStatus';
@@ -57,9 +55,6 @@ export default function ApplicationTable({
 }: ApplicationTableProps) {
   const router = useRouter();
   const dispatch = useAppDispatch();
-  const [selectedApplications, setSelectedApplications] = useState<string[]>(
-    [],
-  );
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -75,24 +70,6 @@ export default function ApplicationTable({
 
   const handleMoreClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-  };
-
-  const handleSelectAll = (checked: boolean) => {
-    if (checked) {
-      setSelectedApplications(paginatedApplications.map((a) => a.id));
-    } else {
-      setSelectedApplications([]);
-    }
-  };
-
-  const handleSelectApplication = (applicationId: string, checked: boolean) => {
-    if (checked) {
-      setSelectedApplications([...selectedApplications, applicationId]);
-    } else {
-      setSelectedApplications(
-        selectedApplications.filter((id) => id !== applicationId),
-      );
-    }
   };
 
   // Sorting logic
@@ -185,28 +162,18 @@ export default function ApplicationTable({
               className="w-80 pl-10"
             />
           </div>
-          <Button variant="outline" className="flex items-center gap-2">
+          {/* <Button variant="outline" className="flex items-center gap-2">
             <Filter className="h-4 w-4" />
             Filter
-          </Button>
+          </Button> */}
         </div>
       </div>
 
       {/* Table */}
-      <div className="rounded-lg border">
-        <Table>
+      <div className="overflow-hidden rounded-xl border">
+        <Table className="overflow-hidden">
           <TableHeader>
             <TableRow className="bg-gray-50">
-              <TableHead className="w-12">
-                <Checkbox
-                  checked={
-                    selectedApplications.length ===
-                      paginatedApplications.length &&
-                    paginatedApplications.length > 0
-                  }
-                  onCheckedChange={handleSelectAll}
-                />
-              </TableHead>
               <TableHead
                 className="cursor-pointer font-medium text-gray-600 select-none"
                 onClick={() => handleSort('company')}
@@ -255,28 +222,18 @@ export default function ApplicationTable({
                     <ChevronDown className="ml-1 inline h-4 w-4" />
                   ))}
               </TableHead>
-              <TableHead className="w-12"></TableHead>
+              <TableHead className="cursor-pointer font-medium text-gray-600 select-none">
+                Actions
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {paginatedApplications.map((application) => (
               <TableRow
                 key={application.id}
-                className="cursor-pointer hover:bg-gray-50"
+                className="cursor-pointer transition-colors hover:bg-gray-50"
                 onClick={() => handleRowClick(application)}
               >
-                <TableCell>
-                  <Checkbox
-                    checked={selectedApplications.includes(application.id)}
-                    onCheckedChange={(checked) =>
-                      handleSelectApplication(
-                        application.id,
-                        checked as boolean,
-                      )
-                    }
-                    onClick={(e) => e.stopPropagation()}
-                  />
-                </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-3">
                     <Avatar className="h-10 w-10">

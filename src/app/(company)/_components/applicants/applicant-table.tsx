@@ -9,13 +9,11 @@ import {
   ChevronRight,
   ChevronUp,
   ChevronDown,
-  X,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
@@ -41,7 +39,6 @@ import {
 import { applicationService } from '@/services/api/applications/application-api';
 import { Applicant } from '@/types/Applicants';
 import { ApplicationStatus } from '@/enums/applicationStatus';
-import FilterableStatusBadge from './FilterableStatusBadge';
 import StatusBadge from './StatusBadge';
 
 // Utility to format date as "MMM dd, yyyy"
@@ -58,7 +55,6 @@ function formatDate(dateString: string) {
 
 export default function ApplicantTable() {
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedApplicants, setSelectedApplicants] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [viewMode, setViewMode] = useState<'pipeline' | 'table'>('table');
@@ -113,25 +109,6 @@ export default function ApplicantTable() {
     startIndex,
     startIndex + itemsPerPage,
   );
-
-  const handleSelectAll = (checked: boolean) => {
-    if (checked) {
-      setSelectedApplicants(paginatedApplicants.map((a) => a.id));
-    } else {
-      setSelectedApplicants([]);
-    }
-  };
-
-  const handleSelectApplicant = (applicantId: string, checked: boolean) => {
-    if (checked) {
-      setSelectedApplicants([...selectedApplicants, applicantId]);
-    } else {
-      setSelectedApplicants(
-        selectedApplicants.filter((id) => id !== applicantId),
-      );
-    }
-  };
-
   // Helper to handle sort toggling
   const handleSort = (key: string) => {
     setSortConfig((prev) => {
@@ -214,53 +191,63 @@ export default function ApplicantTable() {
         </div>
       </div>
 
-      {/* Status Filter Section */}
-      <div className="mb-4">
-        <h3 className="mb-2 font-medium">Filter by Status</h3>
-        <div className="flex flex-wrap gap-2">
-          <button
-            onClick={() => setStatusFilter(null)}
-            className={`rounded border px-4 py-1 text-sm ${!statusFilter ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200'}`}
+      {/* Application Statistics */}
+      <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-4">
+        {Object.values(ApplicationStatus).map((status) => (
+          <div
+            key={status}
+            className={`cursor-pointer rounded-lg border ${
+              status === statusFilter
+                ? 'border-indigo-300 bg-indigo-50 ring-2 ring-indigo-200'
+                : 'bg-white'
+            } p-4 shadow-sm transition-all hover:shadow-md`}
+            onClick={() =>
+              setStatusFilter(status === statusFilter ? null : status)
+            }
           >
-            All ({applicants.length})
-          </button>
-
-          {Object.values(ApplicationStatus).map((status) => (
-            <FilterableStatusBadge
-              key={status}
-              status={status}
-              isActive={statusFilter === status}
-              onClick={() => setStatusFilter(status)}
-              count={getStatusCount(status)}
-            />
-          ))}
-
-          {statusFilter && (
-            <button
-              onClick={() => setStatusFilter(null)}
-              className="ml-2 flex items-center gap-1 rounded-full bg-blue-50 px-3 py-1 text-sm text-blue-700"
+            <div className="mb-2 flex justify-between">
+              <h3
+                className={`font-medium ${status === statusFilter ? 'text-blue-700' : 'text-gray-700'}`}
+              >
+                {status === 'INTERVIEW'
+                  ? 'Interviewing'
+                  : status.charAt(0) + status.slice(1).toLowerCase()}
+              </h3>
+              <StatusBadge status={status} />
+            </div>
+            <p
+              className={`text-2xl font-bold ${status === statusFilter ? 'text-blue-700' : ''}`}
             >
-              Clear filter
-              <X className="h-3 w-3" />
-            </button>
-          )}
-        </div>
+              {getStatusCount(status)}
+            </p>
+            <p
+              className={`text-sm ${status === statusFilter ? 'text-blue-600' : 'text-gray-500'}`}
+            >
+              {status === 'APPLIED' && 'Applications awaiting review'}
+              {status === 'INTERVIEW' && 'Ongoing interviews'}
+              {status === 'HIRED' && 'Successful applications'}
+              {status === 'REJECTED' && 'Unsuccessful applications'}
+            </p>
+          </div>
+        ))}
       </div>
 
+      {/* {statusFilter && (
+        <div className="mb-4 flex">
+          <button
+            onClick={() => setStatusFilter(null)}
+            className="flex items-center gap-1 rounded-full bg-blue-50 px-3 py-1 text-sm text-blue-700 hover:bg-blue-100"
+          >
+            Clear filter <X className="h-3 w-3" />
+          </button>
+        </div>
+      )} */}
+
       {/* Table */}
-      <div className="rounded-lg border">
-        <Table>
+      <div className="overflow-hidden rounded-xl border">
+        <Table className="overflow-hidden">
           <TableHeader>
             <TableRow className="bg-gray-50">
-              <TableHead className="w-12">
-                <Checkbox
-                  checked={
-                    selectedApplicants.length === paginatedApplicants.length &&
-                    paginatedApplicants.length > 0
-                  }
-                  onCheckedChange={handleSelectAll}
-                />
-              </TableHead>
               <TableHead
                 className="cursor-pointer font-medium text-gray-600 select-none"
                 onClick={() => handleSort('name')}
@@ -321,14 +308,6 @@ export default function ApplicantTable() {
             ) : (
               paginatedApplicants.map((applicant) => (
                 <TableRow key={applicant.id} className="hover:bg-gray-50">
-                  <TableCell>
-                    <Checkbox
-                      checked={selectedApplicants.includes(applicant.id)}
-                      onCheckedChange={(checked) =>
-                        handleSelectApplicant(applicant.id, checked as boolean)
-                      }
-                    />
-                  </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <Avatar className="h-10 w-10">

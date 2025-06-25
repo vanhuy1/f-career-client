@@ -99,7 +99,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle, isSidebarOpen }) => {
           <Bell className="h-5 w-5 text-gray-500" aria-label="Notifications" />
           <Button
             size="sm"
-            className="bg-indigo-600 text-xs text-white hover:bg-indigo-700 sm:text-sm"
+            className="bg-blue-600 text-xs text-white hover:bg-blue-700 sm:text-sm"
             asChild
           >
             <Link
