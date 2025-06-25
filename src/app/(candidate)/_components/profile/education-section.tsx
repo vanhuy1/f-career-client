@@ -24,7 +24,6 @@ interface EducationSectionProps {
 
 export function EducationSection({
   education,
-  showMoreCount = 0,
   onAddEducation,
   onUpdateEducation,
 }: EducationSectionProps) {
@@ -121,13 +120,6 @@ export function EducationSection({
           </div>
         ))}
 
-        {showMoreCount > 0 && (
-          <button className="font-medium text-indigo-600">
-            Show {showMoreCount} more educations
-          </button>
-        )}
-
-        {/* Edit Education Dialog */}
         <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
           <DialogContent className="sm:max-w-[550px]">
             <DialogHeader>

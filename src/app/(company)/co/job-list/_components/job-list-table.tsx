@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -8,7 +9,21 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Filter, MoreHorizontal } from 'lucide-react';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  Filter,
+  MoreHorizontal,
+  Search,
+  ChevronUp,
+  ChevronDown,
+} from 'lucide-react';
 import { Job } from '@/types/Job';
 
 interface JobListTableProps {
@@ -17,6 +32,7 @@ interface JobListTableProps {
   onEditJob: (jobId: string) => void;
   onViewApplicants: (jobId: string) => void;
   onDeleteJob: (jobId: string) => void;
+  companyName: string;
 }
 
 export default function JobListTable({
@@ -25,7 +41,14 @@ export default function JobListTable({
   onEditJob,
   onViewApplicants,
   onDeleteJob,
+  companyName,
 }: JobListTableProps) {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortConfig, setSortConfig] = useState<{
+    key: string;
+    direction: 'asc' | 'desc';
+  } | null>(null);
+
   const getStatusBadgeVariant = (status: string) => {
     return status === 'OPEN' ? 'default' : 'destructive';
   };
@@ -34,122 +57,219 @@ export default function JobListTable({
     return jobType === 'FullTime' ? 'secondary' : 'outline';
   };
 
+  // Helper to handle sort toggling
+  const handleSort = (key: string) => {
+    setSortConfig((prev) => {
+      if (prev && prev.key === key) {
+        return { key, direction: prev.direction === 'asc' ? 'desc' : 'asc' };
+      }
+      return { key, direction: 'asc' };
+    });
+  };
+
+  // Apply sorting
+  const sortedJobs = [...jobs].sort((a, b) => {
+    if (!sortConfig) return 0;
+
+    let aValue, bValue;
+    switch (sortConfig.key) {
+      case 'title':
+        aValue = a.title.toLowerCase();
+        bValue = b.title.toLowerCase();
+        break;
+      case 'status':
+        aValue = a.status.toLowerCase();
+        bValue = b.status.toLowerCase();
+        break;
+      case 'date':
+        aValue = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        bValue = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        break;
+      default:
+        return 0;
+    }
+
+    if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+    if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
+    return 0;
+  });
+
+  const filteredJobs = sortedJobs.filter(
+    (job) =>
+      job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (job.description &&
+        job.description.toLowerCase().includes(searchTerm.toLowerCase())),
+  );
+
   return (
-    <div className="rounded-lg border bg-white shadow-sm">
-      <div className="flex items-center justify-between border-b p-6">
-        <h2 className="text-lg font-medium text-gray-900">Job List</h2>
-        <Button variant="outline" size="sm">
-          <Filter className="mr-2 h-4 w-4" />
-          Filters
-        </Button>
+    <div className="bg-white p-6">
+      {/* Header */}
+      <div className="mb-6 flex items-center justify-between">
+        <h1 className="text-2xl font-semibold text-gray-900">
+          Total Jobs: {filteredJobs.length}
+          <p className="mt-1 text-sm text-gray-600">
+            Managing jobs for {companyName}
+          </p>
+        </h1>
+        <div className="flex items-center gap-4">
+          <div className="relative">
+            <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform text-gray-400" />
+            <input
+              placeholder="Search Jobs"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-80 rounded-md border border-gray-300 py-2 pl-10 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            />
+          </div>
+          <Button variant="outline" className="flex items-center gap-2">
+            <Filter className="h-4 w-4" />
+            Filter
+          </Button>
+        </div>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead className="border-b bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
+      {/* Table */}
+      <div className="overflow-hidden rounded-xl border">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-gray-50">
+              <TableHead
+                className="cursor-pointer font-medium text-gray-600 select-none"
+                onClick={() => handleSort('title')}
+              >
                 Job Title
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
+                {sortConfig?.key === 'title' &&
+                  (sortConfig.direction === 'asc' ? (
+                    <ChevronUp className="ml-1 inline h-4 w-4" />
+                  ) : (
+                    <ChevronDown className="ml-1 inline h-4 w-4" />
+                  ))}
+              </TableHead>
+              <TableHead
+                className="cursor-pointer font-medium text-gray-600 select-none"
+                onClick={() => handleSort('status')}
+              >
                 Status
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
+                {sortConfig?.key === 'status' &&
+                  (sortConfig.direction === 'asc' ? (
+                    <ChevronUp className="ml-1 inline h-4 w-4" />
+                  ) : (
+                    <ChevronDown className="ml-1 inline h-4 w-4" />
+                  ))}
+              </TableHead>
+              <TableHead
+                className="cursor-pointer font-medium text-gray-600 select-none"
+                onClick={() => handleSort('date')}
+              >
                 Posted Date
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
+                {sortConfig?.key === 'date' &&
+                  (sortConfig.direction === 'asc' ? (
+                    <ChevronUp className="ml-1 inline h-4 w-4" />
+                  ) : (
+                    <ChevronDown className="ml-1 inline h-4 w-4" />
+                  ))}
+              </TableHead>
+              <TableHead className="font-medium text-gray-600">
                 Due Date
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
+              </TableHead>
+              <TableHead className="font-medium text-gray-600">
                 Job Type
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
+              </TableHead>
+              <TableHead className="font-medium text-gray-600">
                 Applicants
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase"></th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200 bg-white">
-            {jobs.map((job) => (
-              <tr key={job.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm font-medium text-gray-900">
-                    {job.title}
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <Badge
-                    variant={getStatusBadgeVariant(job.status)}
-                    className={
-                      job.status === 'OPEN'
-                        ? 'border-green-200 bg-white text-green-600 hover:bg-white'
-                        : 'border-red-200 bg-white text-red-600 hover:bg-white'
-                    }
-                  >
-                    {job.status}
-                  </Badge>
-                </td>
-                <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-600">
-                  {job.createdAt
-                    ? new Date(job.createdAt).toLocaleDateString()
-                    : 'N/A'}
-                </td>
-                <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-600">
-                  {job.deadline
-                    ? new Date(job.deadline).toLocaleDateString()
-                    : 'N/A'}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <Badge
-                    variant={getJobTypeBadgeVariant(job.typeOfEmployment)}
-                    className={
-                      job.typeOfEmployment === 'FullTime'
-                        ? 'border-purple-200 bg-white text-purple-600 hover:bg-white'
-                        : 'border-orange-200 bg-white text-orange-600 hover:bg-white'
-                    }
-                  >
-                    {job.typeOfEmployment}
-                  </Badge>
-                </td>
-                <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-900">
-                  {job.applicants || 0}
-                </td>
-                <td className="px-6 py-4 text-right text-sm font-medium whitespace-nowrap">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem
-                        onClick={() => job.id && onViewDetails(job.id)}
-                      >
-                        View Details
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => job.id && onEditJob(job.id)}
-                      >
-                        Edit Job
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => job.id && onViewApplicants(job.id)}
-                      >
-                        View Applicants
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => job.id && onDeleteJob(job.id)}
-                        className="text-red-600"
-                      >
-                        Delete Job
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+              </TableHead>
+              <TableHead className="font-medium text-gray-600">
+                Action
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredJobs.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={7} className="py-10 text-center">
+                  No jobs found
+                </TableCell>
+              </TableRow>
+            ) : (
+              filteredJobs.map((job) => (
+                <TableRow key={job.id} className="hover:bg-gray-50">
+                  <TableCell className="font-medium">{job.title}</TableCell>
+                  <TableCell>
+                    <Badge
+                      variant={getStatusBadgeVariant(job.status)}
+                      className={
+                        job.status === 'OPEN'
+                          ? 'border-green-200 bg-white text-green-600 hover:bg-white'
+                          : 'border-red-200 bg-white text-red-600 hover:bg-white'
+                      }
+                    >
+                      {job.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-gray-600">
+                    {job.createdAt
+                      ? new Date(job.createdAt).toLocaleDateString()
+                      : 'N/A'}
+                  </TableCell>
+                  <TableCell className="text-gray-600">
+                    {job.deadline
+                      ? new Date(job.deadline).toLocaleDateString()
+                      : 'N/A'}
+                  </TableCell>
+                  <TableCell>
+                    <Badge
+                      variant={getJobTypeBadgeVariant(job.typeOfEmployment)}
+                      className={
+                        job.typeOfEmployment === 'FullTime'
+                          ? 'border-purple-200 bg-white text-purple-600 hover:bg-white'
+                          : 'border-orange-200 bg-white text-orange-600 hover:bg-white'
+                      }
+                    >
+                      {job.typeOfEmployment}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="font-medium">
+                    {job.applicants || 0}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={() => job.id && onViewDetails(job.id)}
+                          >
+                            View Details
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => job.id && onViewApplicants(job.id)}
+                          >
+                            View Applicants
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => job.id && onEditJob(job.id)}
+                          >
+                            Edit Job
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => job.id && onDeleteJob(job.id)}
+                            className="text-red-600"
+                          >
+                            Delete Job
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
       </div>
     </div>
   );

@@ -25,7 +25,6 @@ import {
 } from '@/services/state/companySlice';
 
 // Components
-import JobListHeader from './_components/job-list-header';
 import JobListTable from './_components/job-list-table';
 import JobListPagination from './_components/job-list-pagination';
 import LoadingStateComponent from './_components/loading-state';
@@ -148,16 +147,15 @@ export default function JobListingDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen">
       <div className="mx-auto max-w-7xl">
-        <JobListHeader companyName={company.companyName} />
-
         <JobListTable
           jobs={jobs}
           onViewDetails={handleViewDetails}
           onEditJob={handleEditJob}
           onViewApplicants={handleViewApplicants}
           onDeleteJob={handleDeleteJob}
+          companyName={company.companyName}
         />
 
         <JobListPagination

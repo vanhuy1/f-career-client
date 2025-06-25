@@ -1,10 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Calendar, X } from 'lucide-react';
+import { Calendar } from 'lucide-react';
 import ApplicationTable from '@/app/(candidate)/_components/applications-list/ApplicationTable';
 import StatusBadge from '@/app/(candidate)/_components/applications-list/StatusBadge';
-import FilterableStatusBadge from '@/app/(candidate)/_components/applications-list/FilterableStatusBadge';
 import { applicationService } from '@/services/api/applications/application-api';
 import { useAppDispatch } from '@/store/hooks';
 import {
@@ -57,9 +56,6 @@ export default function JobApplicationsPage() {
     }
   }, [searchQuery, dateRange, applications?.length, dispatch]);
 
-  // Pagination is now handled internally in the ApplicationTable component
-
-  // Filter applications by status
   const filteredApplications = applications
     ? applications.filter((app: Application) =>
         statusFilter ? app.status === statusFilter : true,
@@ -103,21 +99,33 @@ export default function JobApplicationsPage() {
           {Object.values(ApplicationStatus).map((status) => (
             <div
               key={status}
-              className="cursor-pointer rounded-lg border bg-white p-4 shadow-sm transition-shadow hover:shadow-md"
+              className={`cursor-pointer rounded-lg border ${
+                status === statusFilter
+                  ? 'border-indigo-300 bg-indigo-50 ring-2 ring-indigo-200'
+                  : 'bg-white'
+              } p-4 shadow-sm transition-all hover:shadow-md`}
               onClick={() =>
                 setStatusFilter(status === statusFilter ? null : status)
               }
             >
               <div className="mb-2 flex justify-between">
-                <h3 className="font-medium text-gray-700">
+                <h3
+                  className={`font-medium ${status === statusFilter ? 'text-blue-700' : 'text-gray-700'}`}
+                >
                   {status === 'INTERVIEW'
                     ? 'Interviewing'
                     : status.charAt(0) + status.slice(1).toLowerCase()}
                 </h3>
                 <StatusBadge status={status} />
               </div>
-              <p className="text-2xl font-bold">{getStatusCount(status)}</p>
-              <p className="text-sm text-gray-500">
+              <p
+                className={`text-2xl font-bold ${status === statusFilter ? 'text-blue-700' : ''}`}
+              >
+                {getStatusCount(status)}
+              </p>
+              <p
+                className={`text-sm ${status === statusFilter ? 'text-blue-600' : 'text-gray-500'}`}
+              >
                 {status === 'APPLIED' && 'Applications awaiting review'}
                 {status === 'INTERVIEW' && 'Ongoing interviews'}
                 {status === 'HIRED' && 'Successful applications'}
@@ -125,38 +133,6 @@ export default function JobApplicationsPage() {
               </p>
             </div>
           ))}
-        </div>
-
-        {/* Status Filter Section */}
-        <div className="mb-4">
-          <h3 className="mb-2 font-medium">Filter by Status</h3>
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => setStatusFilter(null)}
-              className={`rounded border px-4 py-1 text-sm ${!statusFilter ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200'}`}
-            >
-              All ({applications?.length || 0})
-            </button>
-
-            {Object.values(ApplicationStatus).map((status) => (
-              <FilterableStatusBadge
-                key={status}
-                status={status}
-                isActive={statusFilter === status}
-                onClick={() => setStatusFilter(status)}
-                count={getStatusCount(status)}
-              />
-            ))}
-
-            {statusFilter && (
-              <button
-                onClick={() => setStatusFilter(null)}
-                className="flex items-center gap-1 rounded border border-gray-200 bg-gray-50 px-2 py-1 text-xs text-gray-700"
-              >
-                Clear filter <X className="h-3 w-3" />
-              </button>
-            )}
-          </div>
         </div>
 
         <div className="mb-[3%]">
