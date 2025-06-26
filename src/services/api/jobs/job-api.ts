@@ -1,4 +1,10 @@
-import { Job, JobListResponse, CreateJobReq, UpdateJobReq } from '@/types/Job';
+import {
+  Job,
+  JobListResponse,
+  CreateJobReq,
+  UpdateJobReq,
+  JobByCompanyIdResponse,
+} from '@/types/Job';
 import { httpClient } from '@/utils/axios';
 import { RequestBuilder } from '@/utils/axios/request-builder';
 
@@ -7,9 +13,16 @@ class JobService {
 
   /** GET /jobs?limit=&offset= */
   async findAll(limit?: number, offset?: number): Promise<JobListResponse> {
-    const url = this.rb.buildUrl('');
+    let url = this.rb.buildUrl('');
 
-    console.log(limit, offset); // handle share page
+    // Build pagination parameters if provided
+    const queryParams = [];
+    if (limit !== undefined) queryParams.push(`limit=${limit}`);
+    if (offset !== undefined) queryParams.push(`offset=${offset}`);
+    if (queryParams.length > 0) {
+      url += `?${queryParams.join('&')}`;
+    }
+
     return await httpClient.get<JobListResponse>({
       url,
       typeCheck: (data) => ({ success: true, data: data as JobListResponse }),
@@ -23,8 +36,16 @@ class JobService {
     limit?: number,
     offset?: number,
   ): Promise<JobListResponse> {
-    const url = this.rb.buildUrl(`company/${companyId}`);
-    console.log(limit, offset);
+    let url = this.rb.buildUrl(`company/${companyId}`);
+
+    // Build pagination parameters if provided
+    const queryParams = [];
+    if (limit !== undefined) queryParams.push(`limit=${limit}`);
+    if (offset !== undefined) queryParams.push(`offset=${offset}`);
+    if (queryParams.length > 0) {
+      url += `?${queryParams.join('&')}`;
+    }
+
     return await httpClient.get<JobListResponse>({
       url,
       typeCheck: (data) => ({ success: true, data: data as JobListResponse }),
@@ -68,6 +89,35 @@ class JobService {
       url,
       typeCheck: (data) => ({ success: true, data: data }),
     });
+  }
+
+  async getJobsByCompanyId(
+    companyId: string,
+    page: number = 1,
+    limit: number = 10,
+  ): Promise<JobByCompanyIdResponse> {
+    // Build URL with query parameters for pagination
+    let url = this.rb.buildUrl(`company/${companyId}/hr`);
+
+    // Always include pagination parameters
+    const queryParams = [`page=${page}`, `limit=${limit}`];
+    url += `?${queryParams.join('&')}`;
+
+    try {
+      const response = await httpClient.get<JobByCompanyIdResponse>({
+        url,
+        typeCheck: (data) => {
+          return {
+            success: true,
+            data: data as JobByCompanyIdResponse,
+          };
+        },
+      });
+      return response;
+    } catch (error) {
+      console.error('Error fetching jobs by company ID:', error);
+      throw error;
+    }
   }
 }
 

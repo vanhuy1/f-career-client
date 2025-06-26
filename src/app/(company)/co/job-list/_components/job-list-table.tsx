@@ -24,10 +24,11 @@ import {
   ChevronUp,
   ChevronDown,
 } from 'lucide-react';
-import { Job } from '@/types/Job';
+import { JobByCompanyId } from '@/types/Job';
+import { formatDate } from '@/utils/helpers';
 
 interface JobListTableProps {
-  jobs: Job[];
+  jobs: JobByCompanyId[];
   onViewDetails: (jobId: string) => void;
   onEditJob: (jobId: string) => void;
   onViewApplicants: (jobId: string) => void;
@@ -74,16 +75,16 @@ export default function JobListTable({
     let aValue, bValue;
     switch (sortConfig.key) {
       case 'title':
-        aValue = a.title.toLowerCase();
-        bValue = b.title.toLowerCase();
+        aValue = a.jobTitle.toLowerCase();
+        bValue = b.jobTitle.toLowerCase();
         break;
       case 'status':
         aValue = a.status.toLowerCase();
         bValue = b.status.toLowerCase();
         break;
       case 'date':
-        aValue = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-        bValue = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        aValue = a.postedDate ? new Date(a.postedDate).getTime() : 0;
+        bValue = b.postedDate ? new Date(b.postedDate).getTime() : 0;
         break;
       default:
         return 0;
@@ -94,11 +95,8 @@ export default function JobListTable({
     return 0;
   });
 
-  const filteredJobs = sortedJobs.filter(
-    (job) =>
-      job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (job.description &&
-        job.description.toLowerCase().includes(searchTerm.toLowerCase())),
+  const filteredJobs = sortedJobs.filter((job) =>
+    job.jobTitle.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   return (
@@ -192,8 +190,8 @@ export default function JobListTable({
               </TableRow>
             ) : (
               filteredJobs.map((job) => (
-                <TableRow key={job.id} className="hover:bg-gray-50">
-                  <TableCell className="font-medium">{job.title}</TableCell>
+                <TableRow key={job.jobId} className="hover:bg-gray-50">
+                  <TableCell className="font-medium">{job.jobTitle}</TableCell>
                   <TableCell>
                     <Badge
                       variant={getStatusBadgeVariant(job.status)}
@@ -207,29 +205,25 @@ export default function JobListTable({
                     </Badge>
                   </TableCell>
                   <TableCell className="text-gray-600">
-                    {job.createdAt
-                      ? new Date(job.createdAt).toLocaleDateString()
-                      : 'N/A'}
+                    {formatDate(job.postedDate)}
                   </TableCell>
                   <TableCell className="text-gray-600">
-                    {job.deadline
-                      ? new Date(job.deadline).toLocaleDateString()
-                      : 'N/A'}
+                    {formatDate(job.endDate)}
                   </TableCell>
                   <TableCell>
                     <Badge
-                      variant={getJobTypeBadgeVariant(job.typeOfEmployment)}
+                      variant={getJobTypeBadgeVariant(job.jobType)}
                       className={
-                        job.typeOfEmployment === 'FullTime'
+                        job.jobType === 'FullTime'
                           ? 'border-purple-200 bg-white text-purple-600 hover:bg-white'
                           : 'border-orange-200 bg-white text-orange-600 hover:bg-white'
                       }
                     >
-                      {job.typeOfEmployment}
+                      {job.jobType}
                     </Badge>
                   </TableCell>
                   <TableCell className="font-medium">
-                    {job.applicants || 0}
+                    {job.totalApplications || 0}
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
@@ -241,22 +235,22 @@ export default function JobListTable({
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem
-                            onClick={() => job.id && onViewDetails(job.id)}
+                            onClick={() => onViewDetails(job.jobId)}
                           >
                             View Details
                           </DropdownMenuItem>
                           <DropdownMenuItem
-                            onClick={() => job.id && onViewApplicants(job.id)}
+                            onClick={() => onViewApplicants(job.jobId)}
                           >
                             View Applicants
                           </DropdownMenuItem>
                           <DropdownMenuItem
-                            onClick={() => job.id && onEditJob(job.id)}
+                            onClick={() => onEditJob(job.jobId)}
                           >
                             Edit Job
                           </DropdownMenuItem>
                           <DropdownMenuItem
-                            onClick={() => job.id && onDeleteJob(job.id)}
+                            onClick={() => onDeleteJob(job.jobId)}
                             className="text-red-600"
                           >
                             Delete Job
