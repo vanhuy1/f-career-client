@@ -40,7 +40,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { formatDate } from './utils/helpers';
+import { formatDate } from '../../../../utils/helpers';
 
 interface ApplicationTableProps {
   applications: Application[] | null;

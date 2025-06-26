@@ -188,3 +188,24 @@ export interface JobFormData {
   typeOfEmployment: EmploymentType;
   benefit: string[];
 }
+
+// job list manage by company id
+export interface JobByCompanyId {
+  jobId: string;
+  jobTitle: string;
+  status: string;
+  postedDate: string;
+  endDate: string;
+  jobType: string;
+  totalApplications: number;
+}
+
+interface MetaJobByCompanyId {
+  count: number;
+  page: number;
+}
+
+export interface JobByCompanyIdResponse {
+  data: JobByCompanyId[];
+  meta: MetaJobByCompanyId;
+}
