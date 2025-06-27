@@ -1,9 +1,4 @@
-export enum ApplicationStatus {
-  APPLIED = 'APPLIED',
-  INTERVIEW = 'INTERVIEW',
-  HIRED = 'HIRED',
-  REJECTED = 'REJECTED',
-}
+import { ApplicationStatus } from '@/enums/applicationStatus';
 
 export interface Candidate {
   id: string;

@@ -2,13 +2,6 @@
 
 import { useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface JobListPaginationProps {
@@ -24,7 +17,7 @@ export default function JobListPagination({
   itemsPerPage,
   totalItems,
   onPageChange,
-  onItemsPerPageChange,
+  // onItemsPerPageChange,
 }: JobListPaginationProps) {
   // Calculate total pages
   const totalPages = useMemo(() => {
@@ -76,8 +69,8 @@ export default function JobListPagination({
   }, [currentPage, totalPages]);
 
   return (
-    <div className="flex items-center justify-between border-t px-6 py-4">
-      <div className="flex items-center gap-2">
+    <div className="flex items-center justify-between border-t bg-white px-6 py-4">
+      {/* <div className="flex items-center gap-2">
         <span className="text-sm text-gray-600">View</span>
         <Select
           value={itemsPerPage.toString()}
@@ -99,7 +92,7 @@ export default function JobListPagination({
             ? `Showing ${Math.min((currentPage - 1) * itemsPerPage + 1, totalItems)}-${Math.min(currentPage * itemsPerPage, totalItems)} of ${totalItems} jobs`
             : 'No jobs found'}
         </span>
-      </div>
+      </div> */}
 
       <div className="flex items-center gap-2">
         <Button

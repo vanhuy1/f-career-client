@@ -4,9 +4,9 @@ import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 
 const tabs = [
-  { key: 'applicants', label: 'Applicants', href: '/applicants' },
-  { key: 'job-details', label: 'Job Details', href: '/job-details' },
-  { key: 'settings', label: 'Settings', href: '/settings' },
+  { key: 'applicants', label: 'Applicants', href: 'applicants' },
+  { key: 'job-details', label: 'Job Details', href: 'job-details' },
+  { key: 'settings', label: 'Settings', href: 'settings' },
 ];
 
 export function JobNavigation() {
@@ -23,8 +23,8 @@ export function JobNavigation() {
               key={tab.key}
               href={
                 pathname?.replace(
-                  /\/(applicants|job-details|settings).*/,
-                  tab.href,
+                  /\/(applicants|job-details|settings).*$/,
+                  `/${tab.href}`,
                 ) || tab.href
               }
               className={`border-b-2 px-1 py-4 text-sm font-medium transition-colors ${

@@ -3,7 +3,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import type { Candidate } from '../_components/types/candidate';
-import { ApplicationStatus } from '../_components/types/candidate';
+import { ApplicationStatus } from '@/enums/applicationStatus';
 
 interface CandidateCardProps {
   candidate: Candidate;

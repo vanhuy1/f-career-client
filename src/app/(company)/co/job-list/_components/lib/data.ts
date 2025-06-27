@@ -1,6 +1,6 @@
+import { ApplicationStatus } from '@/enums/applicationStatus';
 import type { Candidate } from '../types/candidate';
 import type { JobDetails } from '../types/job';
-import { ApplicationStatus } from '../types/candidate';
 
 export async function getJobApplicants(): Promise<Candidate[]> {
   // Simulate API call
