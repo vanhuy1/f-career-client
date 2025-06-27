@@ -110,3 +110,27 @@ export interface UpdateApplicationStatusResponse {
   message: string;
   success: boolean;
 }
+
+// Application By JobID
+export interface ApplicationByJobId {
+  id: string;
+  applicantName: string;
+  applicationStatus: ApplicationStatus;
+  appliedDate: string;
+}
+
+export interface ApplicationByJobIdResponse {
+  applications: ApplicationByJobId[];
+  meta: {
+    count: number;
+  };
+}
+
+// export interface ApplicationByJobIdFilters {
+// }
+
+export interface ApplicationByJobIdRequest {
+  jobId: string;
+  offset: number;
+  limit: number;
+}

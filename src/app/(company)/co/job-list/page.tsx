@@ -13,7 +13,7 @@ import JobListPagination from './_components/job-list-pagination';
 
 export default function JobListingDashboard() {
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [itemsPerPage, setItemsPerPage] = useState(8);
   const [jobs, setJobs] = useState<JobByCompanyId[]>([]);
   const [totalItems, setTotalItems] = useState(0);
   const [company, setCompany] = useState<{ companyName: string } | null>(null);
@@ -117,10 +117,8 @@ export default function JobListingDashboard() {
     const job = jobs.find((job) => job.jobId === jobId);
     if (!job) return;
 
-    toast.info(
-      `View ${job.totalApplications} applicants for job: ${job.jobTitle}`,
-    );
-    // In a real implementation, you would navigate to the applicants page
+    // Navigate to the applicants page for the specific job
+    window.location.href = `/co/job-list/${jobId}/applicants`;
   };
 
   const handleDeleteJob = async (jobId: string) => {
@@ -208,7 +206,7 @@ export default function JobListingDashboard() {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="overflow-hidde max-h-screen">
       <div className="mx-auto max-w-7xl">
         <JobListTable
           jobs={jobs}

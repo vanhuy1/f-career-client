@@ -7,6 +7,8 @@ import {
   ApplicantDetail,
   UpdateApplicationStatusData,
   UpdateApplicationStatusResponse,
+  ApplicationByJobIdRequest,
+  ApplicationByJobIdResponse,
 } from '@/types/Applicants';
 
 class ApplicationService {
@@ -129,6 +131,31 @@ class ApplicationService {
           success: true,
           data: data as UpdateApplicationStatusResponse,
         };
+      },
+    });
+
+    return response;
+  }
+
+  async getApplicationByJobId(
+    params: ApplicationByJobIdRequest,
+  ): Promise<ApplicationByJobIdResponse> {
+    const url = this.requestBuilder.buildUrl(`job/${params.jobId}`);
+
+    const response = await httpClient.get<ApplicationByJobIdResponse>({
+      url,
+      typeCheck: (data) => {
+        return {
+          success: true,
+          data: data as ApplicationByJobIdResponse,
+        };
+      },
+      config: {
+        params: {
+          offset: params.offset,
+          limit: params.limit,
+        },
+        withCredentials: false,
       },
     });
 
