@@ -209,3 +209,8 @@ export interface JobByCompanyIdResponse {
   data: JobByCompanyId[];
   meta: MetaJobByCompanyId;
 }
+
+export interface JobByCompanyIdParams {
+  limit?: number;
+  offset?: number;
+}
