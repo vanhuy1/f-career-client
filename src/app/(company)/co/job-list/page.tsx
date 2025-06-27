@@ -53,6 +53,7 @@ export default function JobListingDashboard() {
 
       try {
         setIsLoading(true);
+        // Pass currentPage and itemsPerPage - the function now handles offset calculation internally
         const response = await jobService.getJobsByCompanyId(
           companyId,
           currentPage,

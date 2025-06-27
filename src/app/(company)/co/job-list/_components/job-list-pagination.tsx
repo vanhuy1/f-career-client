@@ -76,7 +76,7 @@ export default function JobListPagination({
   }, [currentPage, totalPages]);
 
   return (
-    <div className="flex items-center justify-between border-t px-6 py-4">
+    <div className="flex items-center justify-between border-t bg-white px-6 py-4">
       <div className="flex items-center gap-2">
         <span className="text-sm text-gray-600">View</span>
         <Select

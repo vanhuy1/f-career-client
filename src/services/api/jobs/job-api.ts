@@ -94,13 +94,16 @@ class JobService {
   async getJobsByCompanyId(
     companyId: string,
     page: number = 1,
-    limit: number = 10,
+    itemsPerPage: number = 10,
   ): Promise<JobByCompanyIdResponse> {
     // Build URL with query parameters for pagination
     let url = this.rb.buildUrl(`company/${companyId}/hr`);
 
-    // Always include pagination parameters
-    const queryParams = [`page=${page}`, `limit=${limit}`];
+    // Calculate offset based on page and items per page
+    const offset = (page - 1) * itemsPerPage;
+
+    // Always include pagination parameters (using limit/offset as required by API)
+    const queryParams = [`limit=${itemsPerPage}`, `offset=${offset}`];
     url += `?${queryParams.join('&')}`;
 
     try {
