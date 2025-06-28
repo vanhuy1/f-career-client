@@ -1,6 +1,5 @@
 import { Job } from '@/types/Job';
 import JobSection from '@/components/job-search/job-section';
-import CheckListItem from '@/components/job-search/job-check-list-item';
 import { Gift } from 'lucide-react';
 
 interface JobDetailContentProps {
@@ -11,31 +10,10 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
   return (
     <div className="space-y-10 lg:col-span-2">
       <JobSection title="Description">
-        <p className="leading-relaxed text-gray-600">{job.description}</p>
-      </JobSection>
-
-      <JobSection title="Responsibilities">
-        <ul className="space-y-3">
-          {job.responsibility.map((item, index) => (
-            <CheckListItem key={index}>{item}</CheckListItem>
-          ))}
-        </ul>
-      </JobSection>
-
-      <JobSection title="Who You Are">
-        <ul className="space-y-3">
-          {job.jobFitAttributes.map((item, index) => (
-            <CheckListItem key={index}>{item}</CheckListItem>
-          ))}
-        </ul>
-      </JobSection>
-
-      <JobSection title="Nice-To-Haves">
-        <ul className="space-y-3">
-          {job.niceToHave.map((item, index) => (
-            <CheckListItem key={index}>{item}</CheckListItem>
-          ))}
-        </ul>
+        <div
+          className="prose max-w-none leading-relaxed text-gray-600"
+          dangerouslySetInnerHTML={{ __html: job.description }}
+        />
       </JobSection>
 
       <JobSection title="Benefits & Perks">

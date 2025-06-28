@@ -24,6 +24,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { formatSalaryRange } from '../../utils/formatters';
 
 // Skeleton loader for job cards
 const JobCardSkeleton = () => (
@@ -192,6 +193,8 @@ export default function JobListingsPage() {
                   location={job.location}
                   typeOfEmployment={job.typeOfEmployment}
                   category={job.category}
+                  priorityPosition={job.priorityPosition || 3}
+                  salary={formatSalaryRange(job.salaryMin, job.salaryMax)}
                 />
               ))}
             </div>
@@ -207,6 +210,8 @@ export default function JobListingsPage() {
                   location={job.location}
                   typeOfEmployment={job.typeOfEmployment}
                   category={job.category}
+                  priorityPosition={job.priorityPosition || 3}
+                  salary={formatSalaryRange(job.salaryMin, job.salaryMax)}
                 />
               ))}
             </div>

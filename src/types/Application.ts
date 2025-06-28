@@ -29,9 +29,6 @@ export interface Job {
   status: string;
   typeOfEmployment: string;
   deadline: string;
-  responsibility: string[];
-  jobFitAttributes: string[];
-  niceToHave: string[];
   benefit: string[];
   isVip: boolean;
   company: Company;
