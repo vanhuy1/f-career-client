@@ -4,6 +4,7 @@ import { ChevronDown, ListFilter } from 'lucide-react';
 import JobCard from '@/components/job-search/job-card';
 import Pagination from '@/components/job-search/pagination';
 import JobFilterSidebar from '@/components/job-search/filter-sidebar';
+import { Button } from '@/components/ui/button';
 import { useDispatch } from 'react-redux';
 import {
   setJobFailure,
@@ -16,7 +17,9 @@ import { LoadingState } from '@/store/store.model';
 import LoadingScreen from '@/pages/LoadingScreen';
 import { jobSearchService } from '@/services/api/job-search/job-search.api';
 import { useSearchParams } from 'next/navigation';
-import { JobSearchSortBy } from '@/types/JobSearch';
+import { JobSearchSortBy, JobSearchRequest } from '@/types/JobSearch';
+import { employmentType } from '@/enums/employmentType';
+import FilterSummary from '@/components/job-search/filter-summary';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   DropdownMenu,
@@ -55,8 +58,40 @@ export default function JobListingsPage() {
   const [sortBy, setSortBy] = useState<JobSearchSortBy>('relevance');
   const [viewMode] = useState<'grid' | 'list'>('list');
   const [loadingJobs, setLoadingJobs] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
 
   const limit = 10;
+
+  // Use the shared filter visibility state
+  useEffect(() => {
+    // Initialize from localStorage
+    import('@/lib/utils').then(({ getFilterVisibility }) => {
+      setShowFilters(getFilterVisibility());
+    });
+
+    // Listen for changes from the banner component
+    const handleVisibilityChange = (e: CustomEvent<boolean>) => {
+      setShowFilters(e.detail);
+    };
+
+    window.addEventListener(
+      'filterVisibilityChanged',
+      handleVisibilityChange as EventListener,
+    );
+    return () => {
+      window.removeEventListener(
+        'filterVisibilityChanged',
+        handleVisibilityChange as EventListener,
+      );
+    };
+  }, []);
+
+  const toggleFilters = () => {
+    import('@/lib/utils').then(({ toggleFilterVisibility }) => {
+      const newState = toggleFilterVisibility();
+      setShowFilters(newState);
+    });
+  };
 
   useEffect(() => {
     async function fetchJobs() {
@@ -65,13 +100,39 @@ export default function JobListingsPage() {
         dispatch(setJobStart());
 
         // Build search parameters from URL query params and current state
-        const params = {
+        const params: JobSearchRequest = {
           q: searchParams?.get('q') || undefined,
           location: searchParams?.get('location') || undefined,
           page: currentPage,
           limit,
           sortBy,
         };
+
+        // Add filter parameters from URL
+        // Employment types filter
+        const employmentTypesParam = searchParams?.get('employmentTypes');
+        if (employmentTypesParam) {
+          params.employmentTypes = employmentTypesParam.split(
+            ',',
+          ) as employmentType[];
+        }
+
+        // Categories filter
+        const categoriesParam = searchParams?.get('categoryIds');
+        if (categoriesParam) {
+          params.categoryIds = categoriesParam.split(',');
+        }
+
+        // Salary range filter
+        const salaryMinParam = searchParams?.get('salaryMin');
+        if (salaryMinParam) {
+          params.salaryMin = parseInt(salaryMinParam);
+        }
+
+        const salaryMaxParam = searchParams?.get('salaryMax');
+        if (salaryMaxParam) {
+          params.salaryMax = parseInt(salaryMaxParam);
+        }
 
         const response = await jobSearchService.searchJobs(params);
 
@@ -108,19 +169,52 @@ export default function JobListingsPage() {
     <div className="max-w-8xl container mx-auto p-4">
       <div className="flex flex-col gap-6 md:flex-row">
         {/* Sidebar */}
-        <div className="w-full shrink-0 md:w-64">
-          <JobFilterSidebar />
+        <div
+          className={`overflow-hidden transition-all duration-300 ease-in-out ${
+            showFilters
+              ? 'max-h-[2000px] w-full shrink-0 opacity-100 md:w-64'
+              : 'max-h-0 w-0 opacity-0 md:max-h-0'
+          }`}
+        >
+          <div
+            className={`transition-all duration-300 ${showFilters ? 'opacity-100' : 'opacity-0'}`}
+          >
+            <JobFilterSidebar />
+          </div>
         </div>
 
         {/* Main */}
         <div className="flex-1">
+          {/* Mobile Filter Toggle Button - only shown in mobile view as a backup */}
+          <div className="mb-4 md:hidden">
+            <Button
+              variant="outline"
+              className="flex w-full items-center justify-center gap-2"
+              onClick={toggleFilters}
+            >
+              <ListFilter className="h-4 w-4" />
+              {showFilters ? 'Hide Filters' : 'Show Filters'}
+            </Button>
+          </div>
+
           {/* Header */}
           <div className="mb-4 flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-800">All Jobs</h1>
-              <p className="text-sm text-gray-500">
-                Showing {totalItems} results
-              </p>
+            <div className="flex items-center gap-3">
+              <Button
+                variant="outline"
+                size="sm"
+                className="hidden items-center gap-1 md:flex"
+                onClick={toggleFilters}
+              >
+                <ListFilter className="h-4 w-4" />
+                {showFilters ? 'Hide Filters' : 'Show Filters'}
+              </Button>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-800">All Jobs</h1>
+                <p className="text-sm text-gray-500">
+                  Showing {totalItems} results
+                </p>
+              </div>
             </div>
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
@@ -159,6 +253,9 @@ export default function JobListingsPage() {
               </div>
             </div>
           </div>
+
+          {/* Filter summary badges */}
+          <FilterSummary />
 
           {/* Job cards */}
           {loadingJobs ? (

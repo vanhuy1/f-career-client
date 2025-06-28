@@ -1,81 +1,353 @@
-import { ChevronDown } from 'lucide-react';
+'use client';
+
+import { ChevronDown, FilterX, Filter } from 'lucide-react';
 import { Checkbox } from '../ui/checkbox';
 import { Label } from '../ui/label';
+import { Slider } from '../ui/slider';
+import { Button } from '../ui/button';
+import { employmentType } from '@/enums/employmentType';
+import { useState, useEffect } from 'react';
+import { categoryService } from '@/services/api/category/category-api';
+import type { Category } from '@/types/Category';
+import { useSearchParams, useRouter } from 'next/navigation';
 
 export default function JobFilterSidebar() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [salaryRange, setSalaryRange] = useState<number[]>([0, 10000]);
+  const [expandedSections, setExpandedSections] = useState<boolean[]>([
+    false,
+    true,
+    true,
+  ]);
+
+  // Filter states
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedEmploymentTypes, setSelectedEmploymentTypes] = useState<
+    employmentType[]
+  >([]);
+  const [appliedFilters, setAppliedFilters] = useState<number>(0);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        setError(null);
+        const response = await categoryService.findAll();
+        setCategories(response);
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+        setError('Failed to load categories');
+        setCategories([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCategories();
+  }, []);
+
+  // Initialize filter state from URL params
+  useEffect(() => {
+    // Get salary range from URL
+    const minSalary = searchParams?.get('salaryMin')
+      ? parseInt(searchParams.get('salaryMin')!)
+      : 0;
+    const maxSalary = searchParams?.get('salaryMax')
+      ? parseInt(searchParams.get('salaryMax')!)
+      : 10000;
+    setSalaryRange([minSalary, maxSalary]);
+
+    // Get selected employment types from URL
+    const employmentTypesParam = searchParams?.get('employmentTypes');
+    if (employmentTypesParam) {
+      setSelectedEmploymentTypes(
+        employmentTypesParam.split(',') as employmentType[],
+      );
+    }
+
+    // Get selected categories from URL
+    const categoriesParam = searchParams?.get('categoryIds');
+    if (categoriesParam) {
+      setSelectedCategories(categoriesParam.split(','));
+    }
+
+    // Calculate total applied filters
+    let filterCount = 0;
+    if (employmentTypesParam)
+      filterCount += employmentTypesParam.split(',').length;
+    if (categoriesParam) filterCount += categoriesParam.split(',').length;
+    if (searchParams?.get('salaryMin') || searchParams?.get('salaryMax'))
+      filterCount += 1;
+    setAppliedFilters(filterCount);
+  }, [searchParams]);
+
   const JobFilter = [
     {
       title: 'Type of Employment',
-      options: [
-        { label: 'Full-time', count: 3 },
-        { label: 'Part-Time', count: 5 },
-        { label: 'Remote', count: 2 },
-        { label: 'Internship', count: 24 },
-        { label: 'Contract', count: 3 },
-      ],
+      type: 'checkbox',
+      options: Object.values(employmentType).map((type) => ({
+        label: type,
+      })),
     },
     {
       title: 'Categories',
-      options: [
-        { label: 'Design', count: 24 },
-        { label: 'Sales', count: 3 },
-        { label: 'Marketing', count: 3 },
-        { label: 'Business', count: 3, checked: true },
-        { label: 'Human Resource', count: 6 },
-        { label: 'Finance', count: 4 },
-        { label: 'Engineering', count: 4 },
-        { label: 'Technology', count: 5, checked: true },
-      ],
-    },
-    {
-      title: 'Job Level',
-      options: [
-        { label: 'Entry Level', count: 57 },
-        { label: 'Mid Level', count: 3 },
-        { label: 'Senior Level', count: 5 },
-        { label: 'Director', count: 12, checked: true },
-        { label: 'VP or Above', count: 8 },
-      ],
+      type: 'checkbox',
+      options: isLoading
+        ? [{ label: 'Loading...' }]
+        : categories.map((category) => ({ label: category.name })),
     },
     {
       title: 'Salary Range',
-      options: [
-        { label: '$700 - $1000', count: 4 },
-        { label: '$100 - $1500', count: 6 },
-        { label: '$1500 - $2000', count: 10 },
-        { label: '$3000 or above', count: 4, checked: true },
-      ],
+      type: 'slider',
+      options: [],
     },
   ];
 
+  const handleSalaryRangeChange = (value: number[]) => {
+    setSalaryRange(value);
+  };
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(value);
+  };
+
+  const toggleSection = (index: number) => {
+    setExpandedSections((prev) =>
+      prev.map((expanded, i) => (i === index ? !expanded : expanded)),
+    );
+  };
+
+  // Handle employment type selection
+  const handleEmploymentTypeChange = (type: employmentType) => {
+    setSelectedEmploymentTypes((prev) => {
+      if (prev.includes(type)) {
+        return prev.filter((t) => t !== type);
+      } else {
+        return [...prev, type];
+      }
+    });
+  };
+
+  // Handle category selection
+  const handleCategoryChange = (categoryId: string) => {
+    setSelectedCategories((prev) => {
+      if (prev.includes(categoryId)) {
+        return prev.filter((id) => id !== categoryId);
+      } else {
+        return [...prev, categoryId];
+      }
+    });
+  };
+
+  // Apply all filters
+  const applyFilters = () => {
+    const params = new URLSearchParams(searchParams?.toString());
+
+    // Handle salary range
+    if (salaryRange[0] > 0) {
+      params.set('salaryMin', salaryRange[0].toString());
+    } else {
+      params.delete('salaryMin');
+    }
+
+    if (salaryRange[1] < 10000) {
+      params.set('salaryMax', salaryRange[1].toString());
+    } else {
+      params.delete('salaryMax');
+    }
+
+    // Handle employment types
+    if (selectedEmploymentTypes.length > 0) {
+      params.set('employmentTypes', selectedEmploymentTypes.join(','));
+    } else {
+      params.delete('employmentTypes');
+    }
+
+    // Handle categories
+    if (selectedCategories.length > 0) {
+      params.set('categoryIds', selectedCategories.join(','));
+    } else {
+      params.delete('categoryIds');
+    }
+
+    // Reset to page 1 when filters change
+    params.set('page', '1');
+
+    // Calculate applied filters for UI
+    let filterCount = 0;
+    filterCount += selectedEmploymentTypes.length;
+    filterCount += selectedCategories.length;
+    if (salaryRange[0] > 0 || salaryRange[1] < 10000) filterCount += 1;
+    setAppliedFilters(filterCount);
+
+    // Update URL with new parameters
+    router.push(`/job?${params.toString()}`);
+  };
+
+  // Clear all filters
+  const clearFilters = () => {
+    const params = new URLSearchParams(searchParams?.toString());
+
+    params.forEach((_, key) => {
+      if (key !== 'q' && key !== 'location') {
+        params.delete(key);
+      }
+    });
+
+    // Reset filter states
+    setSalaryRange([0, 10000]);
+    setSelectedEmploymentTypes([]);
+    setSelectedCategories([]);
+    setAppliedFilters(0);
+
+    router.push(`/job?${params.toString()}`);
+  };
+
   return (
     <div className="space-y-6">
+      <div className="mb-6 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Filter className="h-5 w-5 text-blue-600" />
+          <h2 className="font-semibold text-gray-800">Filters</h2>
+          {appliedFilters > 0 && (
+            <span className="mr-2 rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800">
+              {appliedFilters}
+            </span>
+          )}
+        </div>
+        {appliedFilters > 0 && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={clearFilters}
+            className="text-xs text-gray-500 hover:text-red-500"
+          >
+            <FilterX className="mr-1 h-3 w-3" />
+            Clear All
+          </Button>
+        )}
+      </div>
+
       {JobFilter.map((filter, index) => (
         <div key={index} className="border-b pb-4">
-          <div className="mb-2 flex items-center justify-between">
+          <div
+            className="mb-2 flex cursor-pointer items-center justify-between rounded-md p-2 transition-colors hover:bg-gray-50"
+            onClick={() => toggleSection(index)}
+          >
             <h3 className="font-medium text-gray-700">{filter.title}</h3>
-            <ChevronDown className="h-5 w-5 text-gray-500" />
+            <ChevronDown
+              className={`h-5 w-5 text-gray-500 transition-transform duration-200 ${
+                expandedSections[index] ? 'rotate-180' : ''
+              }`}
+            />
           </div>
 
-          <div className="space-y-2">
-            {filter.options.map((option, optionIndex) => (
-              <div key={optionIndex} className="flex items-center space-x-2">
-                <Checkbox
-                  id={`${filter.title}-${option.label}`}
-                  checked={option.checked}
-                />
-                <Label
-                  htmlFor={`${filter.title}-${option.label}`}
-                  className="flex w-full items-center justify-between text-sm"
-                >
-                  <span>{option.label}</span>
-                  <span className="text-gray-500">({option.count})</span>
-                </Label>
+          {expandedSections[index] &&
+            (filter.type === 'slider' ? (
+              <div className="space-y-4">
+                <div className="px-2">
+                  <Slider
+                    value={salaryRange}
+                    onValueChange={handleSalaryRangeChange}
+                    max={10000}
+                    min={0}
+                    step={100}
+                    className="w-full"
+                  />
+                </div>
+                <div className="flex items-center justify-between text-sm text-gray-600">
+                  <span>{formatCurrency(salaryRange[0])}</span>
+                  <span>{formatCurrency(salaryRange[1])}</span>
+                </div>
+                <div className="text-center text-sm text-gray-500">
+                  {formatCurrency(salaryRange[0])} -{' '}
+                  {formatCurrency(salaryRange[1])}
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {filter.title === 'Categories' && isLoading ? (
+                  <div className="py-1 text-sm text-gray-500">
+                    Loading categories...
+                  </div>
+                ) : filter.title === 'Categories' && error ? (
+                  <div className="py-1 text-sm text-red-500">{error}</div>
+                ) : filter.title === 'Type of Employment' ? (
+                  Object.values(employmentType).map((type) => (
+                    <div key={type} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`employment-${type}`}
+                        checked={selectedEmploymentTypes.includes(type)}
+                        onCheckedChange={() => handleEmploymentTypeChange(type)}
+                      />
+                      <Label
+                        htmlFor={`employment-${type}`}
+                        className="flex w-full cursor-pointer items-center justify-between text-sm"
+                      >
+                        <span>{type}</span>
+                      </Label>
+                    </div>
+                  ))
+                ) : filter.title === 'Categories' ? (
+                  categories.map((category) => (
+                    <div
+                      key={category.id}
+                      className="flex items-center space-x-2"
+                    >
+                      <Checkbox
+                        id={`category-${category.id}`}
+                        checked={selectedCategories.includes(category.id)}
+                        onCheckedChange={() =>
+                          handleCategoryChange(category.id)
+                        }
+                      />
+                      <Label
+                        htmlFor={`category-${category.id}`}
+                        className="flex w-full cursor-pointer items-center justify-between text-sm"
+                      >
+                        <span>{category.name}</span>
+                      </Label>
+                    </div>
+                  ))
+                ) : (
+                  filter.options.map((option, optionIndex) => (
+                    <div
+                      key={optionIndex}
+                      className="flex items-center space-x-2"
+                    >
+                      <Checkbox id={`${filter.title}-${option.label}`} />
+                      <Label
+                        htmlFor={`${filter.title}-${option.label}`}
+                        className="flex w-full items-center justify-between text-sm"
+                      >
+                        <span>{option.label}</span>
+                      </Label>
+                    </div>
+                  ))
+                )}
               </div>
             ))}
-          </div>
         </div>
       ))}
+
+      {/* Apply filters button */}
+      <div className="pt-4">
+        <Button
+          onClick={applyFilters}
+          className="w-full bg-blue-600 hover:bg-blue-700"
+        >
+          Apply Filters
+        </Button>
+      </div>
     </div>
   );
 }
