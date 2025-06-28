@@ -130,21 +130,21 @@ export interface StepProps {
   salaryRange: number[];
   benefits: Benefit[];
   positions: Position[];
-  packageInfo?: PackageInfo;
+  packageInfo: PackageInfo | null;
   setSkills: (skills: string[]) => void;
-  setNewSkill: (newSkill: string) => void;
+  setNewSkill: (skill: string) => void;
   setSalaryRange: (range: number[]) => void;
   setBenefits: (benefits: Benefit[]) => void;
   setPositions: (positions: Position[]) => void;
-  setPackageInfo: (packageInfo: PackageInfo) => void;
-  handleAddSkill: (skillId: string) => void;
+  setPackageInfo: (info: PackageInfo) => void;
+  handleAddSkill: (skill: string) => void;
   handleRemoveSkill: (skill: string) => void;
   jobTitle: string;
   setJobTitle: (title: string) => void;
   jobDescription: string;
-  setJobDescription: (description: string) => void;
+  setJobDescription: (desc: string) => void;
   whoYouAre: string;
-  setWhoYouAre: (whoYouAre: string) => void;
+  setWhoYouAre: (desc: string) => void;
   benefit: string;
   setBenefit: (benefit: string) => void;
   typeOfEmployment: EmploymentType;
@@ -160,6 +160,8 @@ export interface StepProps {
   experienceYears: number;
   setExperienceYears: (years: number) => void;
   availableSkills: Skill[];
+  totalPrice?: number;
+  setTotalPrice?: (price: number) => void;
 }
 
 export interface JobCategory {
