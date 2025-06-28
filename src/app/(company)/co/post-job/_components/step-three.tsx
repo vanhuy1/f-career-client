@@ -98,7 +98,7 @@ const displayPackages: DisplayPackage[] = [
   {
     id: 'vip',
     name: 'VIP Elite',
-    pricePerDay: 4.99,
+    pricePerDay: 0.5,
     features: [
       'Top position in search results',
       'Premium highlighted listing with glow effect',
@@ -119,7 +119,7 @@ const displayPackages: DisplayPackage[] = [
   {
     id: 'premium',
     name: 'Premium Pro',
-    pricePerDay: 2.99,
+    pricePerDay: 0.4,
     features: [
       'Higher position in search results',
       'Highlighted listing with border',
@@ -537,6 +537,7 @@ export default function Step3({
   packageInfo,
   setPackageInfo,
   deadline,
+  setTotalPrice,
 }: StepProps) {
   const [selectedPackage, setSelectedPackage] = useState<PackageType>(
     packageInfo?.type || 'basic',
@@ -549,7 +550,7 @@ export default function Step3({
   const [showPreview, setShowPreview] = useState(false);
   const [selectedDuration, setSelectedDuration] = useState<number>(1);
   const [maxDuration, setMaxDuration] = useState<number>(30);
-  const [totalPrice, setTotalPrice] = useState<number>(0);
+  const [internalTotalPrice, setInternalTotalPrice] = useState<number>(0);
 
   // Calculate max duration based on job deadline
   useEffect(() => {
@@ -572,9 +573,13 @@ export default function Step3({
   useEffect(() => {
     const pkg = displayPackages.find((p) => p.id === selectedPackage);
     if (pkg) {
-      setTotalPrice(Number((pkg.pricePerDay * selectedDuration).toFixed(2)));
+      const price = Number((pkg.pricePerDay * selectedDuration).toFixed(2));
+      setInternalTotalPrice(price);
+      if (setTotalPrice) {
+        setTotalPrice(price);
+      }
     }
-  }, [selectedPackage, selectedDuration]);
+  }, [selectedPackage, selectedDuration, setTotalPrice]);
 
   // Check if there's an active package subscription
   useEffect(() => {
@@ -840,7 +845,7 @@ export default function Step3({
                 </div>
                 <div className="text-right">
                   <div className="text-3xl font-bold text-green-600">
-                    ${totalPrice.toFixed(2)}
+                    ${internalTotalPrice.toFixed(2)}
                   </div>
                   <p className="text-sm text-gray-500">one-time payment</p>
                 </div>

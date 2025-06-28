@@ -16,10 +16,11 @@ import {
 } from '@/types/Job';
 import { jobService } from '@/services/api/jobs/job-api';
 import { skillService, Skill } from '@/services/api/skills/skill-api';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'react-toastify';
 import { JobStatus, EmploymentType } from '@/types/Job';
 import { useUser } from '@/services/state/userSlice';
+import { payosService } from '@/services/api/payment/payos-api';
 
 // Function to calculate expiration date based on package type
 const calculateExpirationDate = (
@@ -60,6 +61,7 @@ const calculateExpirationDate = (
 
 export default function JobPostingForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [currentStep, setCurrentStep] = useState(1);
   const [skills, setSkills] = useState<string[]>([]);
   const [newSkill, setNewSkill] = useState('');
@@ -68,9 +70,11 @@ export default function JobPostingForm() {
   const [salaryRange, setSalaryRange] = useState([5000, 22000]);
   const [benefits, setBenefits] = useState<Benefit[]>([]);
   const [positions, setPositions] = useState<Position[]>([]);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [isYearlyBilling, setIsYearlyBilling] = useState(false);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [totalPrice, setTotalPrice] = useState<number>(0);
 
+  console.log(isYearlyBilling);
   // Package information state
   const [packageInfo, setPackageInfo] = useState<PackageInfo>({
     type: 'basic',
@@ -92,9 +96,33 @@ export default function JobPostingForm() {
   const [jobStatus] = useState<JobStatus>('OPEN');
   const [typeOfEmployment, setTypeOfEmployment] =
     useState<EmploymentType>('FullTime');
-  const [priorityPosition, setPriorityPosition] = useState<number>(3); // Default to lowest priority (basic)
+  const [priorityPosition, setPriorityPosition] = useState<number>(3);
   const [vipExpiration, setVipExpiration] = useState<string>('');
   const user = useUser();
+
+  // Check for payment completion
+  useEffect(() => {
+    const orderCode = searchParams?.get('orderCode');
+    const checkPayment = async () => {
+      if (!orderCode) return;
+
+      try {
+        const paymentStatus = await payosService.getPaymentStatus(orderCode);
+        if (paymentStatus.status === 'COMPLETED') {
+          // Nếu thanh toán thành công, tiến hành tạo job
+          await handleCreateJob();
+          toast.success('Payment successful and job posted!');
+        } else {
+          toast.error('Payment was not completed. Please try again.');
+        }
+      } catch (error) {
+        console.error('Error checking payment:', error);
+        toast.error('Failed to verify payment status');
+      }
+    };
+
+    checkPayment();
+  }, [searchParams]);
 
   // Check if company has active packages from previous purchases
   useEffect(() => {
@@ -212,7 +240,7 @@ export default function JobPostingForm() {
     }
   };
 
-  const handleSubmit = async () => {
+  const handleCreateJob = async () => {
     try {
       const jobData = {
         title: jobTitle,
@@ -234,11 +262,8 @@ export default function JobPostingForm() {
         vip_expiration: vipExpiration,
       };
 
-      // Save the job
       await jobService.create(jobData);
 
-      // For demo purposes, store the package info in localStorage
-      // In a real app, this would be stored in a database
       if (user?.data?.companyId) {
         localStorage.setItem(
           `company_${user.data.companyId}_package`,
@@ -246,13 +271,42 @@ export default function JobPostingForm() {
         );
       }
 
-      toast.success(
-        'Job posted successfully with ' + packageInfo.type + ' visibility!',
-      );
       router.push('/job');
     } catch (error) {
       console.error('Error creating job:', error);
       toast.error('Failed to create job. Please try again.');
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (packageInfo.type === 'basic') {
+      // Nếu là gói basic, tạo job luôn không cần thanh toán
+      await handleCreateJob();
+      return;
+    }
+
+    setIsProcessingPayment(true);
+    try {
+      const orderCode = Date.now();
+      const returnUrl = `${window.location.origin}/job`;
+      const cancelUrl = `${window.location.origin}/co/post-job`;
+
+      const response = await payosService.createPaymentLink({
+        amount: Math.round(totalPrice * 24000),
+        description: `${packageInfo.type.toUpperCase()} Package - ${packageInfo.durationDays} days`,
+        orderCode,
+        returnUrl,
+        cancelUrl,
+      });
+
+      // Chuyển hướng đến trang thanh toán PayOS
+      window.location.href = response.checkoutUrl;
+    } catch (error) {
+      console.error('Payment error:', error);
+      toast.error('Failed to process payment. Please try again.');
+    } finally {
+      setIsProcessingPayment(false);
+      await handleCreateJob();
     }
   };
 
@@ -292,6 +346,8 @@ export default function JobPostingForm() {
     experienceYears,
     setExperienceYears,
     availableSkills,
+    totalPrice,
+    setTotalPrice,
   };
 
   return (
@@ -367,10 +423,16 @@ export default function JobPostingForm() {
             Next Step
           </Button>
         ) : (
-          <Button onClick={handleSubmit} className="w-full sm:w-auto">
-            {packageInfo.type === 'basic'
-              ? 'Post Job'
-              : `Pay & Post Job (${packageInfo.type})`}
+          <Button
+            onClick={handleSubmit}
+            className="w-full sm:w-auto"
+            disabled={isProcessingPayment}
+          >
+            {isProcessingPayment
+              ? 'Processing...'
+              : packageInfo.type === 'basic'
+                ? 'Post Job'
+                : `Pay $${totalPrice.toFixed(2)} & Post Job`}
           </Button>
         )}
       </div>
