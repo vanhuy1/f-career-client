@@ -7,13 +7,56 @@ import { Button } from '@/components/ui/button';
 import Step1 from './_components/step-one';
 import Step2 from './_components/step-two';
 import Step3 from './_components/step-three';
-import { StepProps, Benefit } from '@/types/Job';
+import {
+  StepProps,
+  Benefit,
+  Position,
+  PackageInfo,
+  PackageType,
+} from '@/types/Job';
 import { jobService } from '@/services/api/jobs/job-api';
 import { skillService, Skill } from '@/services/api/skills/skill-api';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
 import { JobStatus, EmploymentType } from '@/types/Job';
 import { useUser } from '@/services/state/userSlice';
+
+// Function to calculate expiration date based on package type
+const calculateExpirationDate = (
+  packageType: PackageType,
+  isYearly: boolean,
+): string => {
+  const now = new Date();
+  const expirationDate = new Date(now);
+
+  switch (packageType) {
+    case 'basic':
+      // Basic package is valid for 30 days
+      expirationDate.setDate(now.getDate() + 30);
+      break;
+    case 'premium':
+      // Premium package is valid for 60 days, or 1 year if yearly billing
+      if (isYearly) {
+        expirationDate.setFullYear(now.getFullYear() + 1);
+      } else {
+        expirationDate.setDate(now.getDate() + 60);
+      }
+      break;
+    case 'vip':
+      // VIP package is valid for 90 days, or 1 year if yearly billing
+      if (isYearly) {
+        expirationDate.setFullYear(now.getFullYear() + 1);
+      } else {
+        expirationDate.setDate(now.getDate() + 90);
+      }
+      break;
+    default:
+      // Default to 30 days
+      expirationDate.setDate(now.getDate() + 30);
+  }
+
+  return expirationDate.toISOString();
+};
 
 export default function JobPostingForm() {
   const router = useRouter();
@@ -24,13 +67,22 @@ export default function JobPostingForm() {
   const [selectedSkillIds, setSelectedSkillIds] = useState<string[]>([]);
   const [salaryRange, setSalaryRange] = useState([5000, 22000]);
   const [benefits, setBenefits] = useState<Benefit[]>([]);
+  const [positions, setPositions] = useState<Position[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [isYearlyBilling, setIsYearlyBilling] = useState(false);
 
-  // Thêm state cho các thông tin job
+  // Package information state
+  const [packageInfo, setPackageInfo] = useState<PackageInfo>({
+    type: 'basic',
+    purchasedAt: new Date().toISOString(),
+    expiresAt: calculateExpirationDate('basic', false),
+    isActive: true,
+  });
+
+  // Job information state
   const [jobTitle, setJobTitle] = useState('');
   const [jobDescription, setJobDescription] = useState('');
-  const [responsibilities, setResponsibilities] = useState('');
   const [whoYouAre, setWhoYouAre] = useState('');
-  const [niceToHaves, setNiceToHaves] = useState('');
   const [benefit, setBenefit] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [location, setLocation] = useState('');
@@ -40,7 +92,60 @@ export default function JobPostingForm() {
   const [jobStatus] = useState<JobStatus>('OPEN');
   const [typeOfEmployment, setTypeOfEmployment] =
     useState<EmploymentType>('FullTime');
+  const [priorityPosition, setPriorityPosition] = useState<number>(3); // Default to lowest priority (basic)
+  const [vipExpiration, setVipExpiration] = useState<string>('');
   const user = useUser();
+
+  // Check if company has active packages from previous purchases
+  useEffect(() => {
+    const checkExistingPackages = async () => {
+      if (user?.data?.companyId) {
+        try {
+          // This is a placeholder - you would need to implement this API endpoint
+          // const companyPackages = await packageService.getActivePackagesByCompanyId(user.data.companyId);
+
+          // For now, let's simulate checking for existing packages
+          const mockActivePackage = localStorage.getItem(
+            `company_${user.data.companyId}_package`,
+          );
+
+          if (mockActivePackage) {
+            const parsedPackage = JSON.parse(mockActivePackage);
+            // Check if package is still active
+            if (new Date(parsedPackage.expiresAt) > new Date()) {
+              setPackageInfo(parsedPackage);
+              setIsVip(parsedPackage.type === 'vip');
+              toast.info(
+                `You have an active ${parsedPackage.type} package until ${new Date(parsedPackage.expiresAt).toLocaleDateString()}`,
+              );
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching company packages:', error);
+        }
+      }
+    };
+
+    checkExistingPackages();
+  }, [user?.data?.companyId]);
+
+  // Handler for package selection with yearly billing option
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const handlePackageUpdate = (type: PackageType, isYearly: boolean) => {
+    setIsYearlyBilling(isYearly);
+    setIsVip(type === 'vip');
+
+    const newPackageInfo = {
+      type,
+      purchasedAt: new Date().toISOString(),
+      expiresAt: calculateExpirationDate(type, isYearly),
+      isActive: true,
+      transactionId: `TR-${Date.now()}`, // In a real app, this would come from payment processor
+      autoRenew: isYearly, // Auto-renew for yearly subscriptions
+    };
+
+    setPackageInfo(newPackageInfo);
+  };
 
   useEffect(() => {
     const fetchSkills = async () => {
@@ -55,6 +160,29 @@ export default function JobPostingForm() {
 
     fetchSkills();
   }, []);
+
+  // Update priority position when package type changes
+  useEffect(() => {
+    if (packageInfo) {
+      switch (packageInfo.type) {
+        case 'vip':
+          setPriorityPosition(1);
+          break;
+        case 'premium':
+          setPriorityPosition(2);
+          break;
+        case 'basic':
+        default:
+          setPriorityPosition(3);
+          break;
+      }
+
+      // Set VIP expiration date based on package info
+      if (packageInfo.type === 'vip' && packageInfo.expiresAt) {
+        setVipExpiration(packageInfo.expiresAt);
+      }
+    }
+  }, [packageInfo]);
 
   const handleAddSkill = (skillId: string) => {
     const skill = availableSkills.find((s) => s.id === skillId);
@@ -92,28 +220,35 @@ export default function JobPostingForm() {
         categoryId: categoryId || '1',
         companyId: user?.data?.companyId || '1',
         skillIds: selectedSkillIds,
-        responsibility: responsibilities
-          .split('\n')
-          .filter((item) => item.trim() !== ''),
-        jobFitAttributes: whoYouAre
-          .split('\n')
-          .filter((item) => item.trim() !== ''),
-        niceToHave: niceToHaves
-          .split('\n')
-          .filter((item) => item.trim() !== ''),
         benefit: benefits.map((benefit) => benefit.description),
         location: location,
         salaryMin: salaryRange[0],
         salaryMax: salaryRange[1],
         experienceYears: experienceYears,
         isVip: isVip,
-        status: jobStatus,
+        packageInfo: packageInfo,
         deadline: deadline,
         typeOfEmployment: typeOfEmployment,
+        status: jobStatus,
+        priorityPosition: priorityPosition,
+        vip_expiration: vipExpiration,
       };
 
+      // Save the job
       await jobService.create(jobData);
-      toast.success('Job created successfully!');
+
+      // For demo purposes, store the package info in localStorage
+      // In a real app, this would be stored in a database
+      if (user?.data?.companyId) {
+        localStorage.setItem(
+          `company_${user.data.companyId}_package`,
+          JSON.stringify(packageInfo),
+        );
+      }
+
+      toast.success(
+        'Job posted successfully with ' + packageInfo.type + ' visibility!',
+      );
       router.push('/job');
     } catch (error) {
       console.error('Error creating job:', error);
@@ -126,22 +261,22 @@ export default function JobPostingForm() {
     newSkill,
     salaryRange,
     benefits,
+    positions,
+    packageInfo,
     setSkills,
     setNewSkill,
     setSalaryRange,
     setBenefits,
+    setPositions,
+    setPackageInfo,
     handleAddSkill,
     handleRemoveSkill,
     jobTitle,
     setJobTitle,
     jobDescription,
     setJobDescription,
-    responsibilities,
-    setResponsibilities,
     whoYouAre,
     setWhoYouAre,
-    niceToHaves,
-    setNiceToHaves,
     benefit,
     setBenefit,
     typeOfEmployment,
@@ -200,7 +335,7 @@ export default function JobPostingForm() {
                       ? 'Job Information'
                       : step === 2
                         ? 'Job Description'
-                        : 'Perks & Benefit'}
+                        : 'Featured Placement'}
                   </span>
                 </div>
               </div>
@@ -233,7 +368,9 @@ export default function JobPostingForm() {
           </Button>
         ) : (
           <Button onClick={handleSubmit} className="w-full sm:w-auto">
-            Do a Review
+            {packageInfo.type === 'basic'
+              ? 'Post Job'
+              : `Pay & Post Job (${packageInfo.type})`}
           </Button>
         )}
       </div>

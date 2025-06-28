@@ -21,14 +21,23 @@ export type EmploymentType =
   | 'Internship';
 export type JobStatus = 'OPEN' | 'CLOSED' | 'DRAFT';
 
+export type PackageType = 'basic' | 'premium' | 'vip';
+
+export interface PackageInfo {
+  type: PackageType;
+  purchasedAt: string;
+  expiresAt: string;
+  isActive: boolean;
+  transactionId?: string;
+  autoRenew?: boolean;
+  durationDays?: number;
+}
+
 export interface Job {
   id?: string;
   title: string;
   category: Category;
   company: CompanyInfo;
-  responsibility: string[];
-  jobFitAttributes: string[];
-  niceToHave: string[];
   description: string;
   location: string;
   salaryMin: number;
@@ -37,12 +46,15 @@ export interface Job {
   experienceYears: number;
   status: JobStatus;
   isVip: boolean;
+  packageInfo?: PackageInfo;
   deadline: string;
   typeOfEmployment: EmploymentType;
   benefit: string[];
   createdAt?: string;
   updatedAt?: string;
   applicants: number;
+  priorityPosition?: number;
+  vip_expiration?: string;
 }
 
 export interface OpenPositionsJob {
@@ -72,9 +84,6 @@ export interface CreateJobReq {
   title: string;
   categoryId: string;
   companyId: string;
-  responsibility: string[];
-  jobFitAttributes: string[];
-  niceToHave: string[];
   description: string;
   location: string;
   salaryMin: number;
@@ -82,6 +91,7 @@ export interface CreateJobReq {
   experienceYears: number;
   status: JobStatus;
   isVip: boolean;
+  packageInfo?: PackageInfo;
   deadline: string;
   typeOfEmployment: EmploymentType;
   benefit: string[];
@@ -97,12 +107,21 @@ export interface Benefit {
   description: string;
 }
 
+export interface Position {
+  id: number;
+  title: string;
+  description: string;
+  level: number;
+}
+
 export interface JobPostingState {
   currentStep: number;
   skills: string[];
   newSkill: string;
   salaryRange: number[];
   benefits: Benefit[];
+  positions: Position[];
+  packageInfo?: PackageInfo;
 }
 
 export interface StepProps {
@@ -110,22 +129,22 @@ export interface StepProps {
   newSkill: string;
   salaryRange: number[];
   benefits: Benefit[];
+  positions: Position[];
+  packageInfo?: PackageInfo;
   setSkills: (skills: string[]) => void;
   setNewSkill: (newSkill: string) => void;
   setSalaryRange: (range: number[]) => void;
   setBenefits: (benefits: Benefit[]) => void;
+  setPositions: (positions: Position[]) => void;
+  setPackageInfo: (packageInfo: PackageInfo) => void;
   handleAddSkill: (skillId: string) => void;
   handleRemoveSkill: (skill: string) => void;
   jobTitle: string;
   setJobTitle: (title: string) => void;
   jobDescription: string;
   setJobDescription: (description: string) => void;
-  responsibilities: string;
-  setResponsibilities: (responsibilities: string) => void;
   whoYouAre: string;
   setWhoYouAre: (whoYouAre: string) => void;
-  niceToHaves: string;
-  setNiceToHaves: (niceToHaves: string) => void;
   benefit: string;
   setBenefit: (benefit: string) => void;
   typeOfEmployment: EmploymentType;
@@ -151,9 +170,6 @@ export interface JobCategory {
 export interface JobFormData {
   title: string;
   category: Category;
-  responsibility: string[];
-  jobFitAttributes: string[];
-  niceToHave: string[];
   description: string;
   location: string;
   salaryMin: number;
@@ -174,9 +190,6 @@ export interface JobCategory {
 export interface JobFormData {
   title: string;
   category: Category;
-  responsibility: string[];
-  jobFitAttributes: string[];
-  niceToHave: string[];
   description: string;
   location: string;
   salaryMin: number;

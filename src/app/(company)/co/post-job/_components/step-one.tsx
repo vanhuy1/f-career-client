@@ -389,11 +389,17 @@ export default function Step1({
                 selectedDate.setUTCHours(0, 0, 0, 0);
                 setDeadline(selectedDate.toISOString());
               }}
-              min={new Date().toISOString().split('T')[0]} // Set minimum date to today
+              min={(() => {
+                // Set minimum date to 7 days from now
+                const minDate = new Date();
+                minDate.setDate(minDate.getDate() + 7);
+                return minDate.toISOString().split('T')[0];
+              })()}
               className="w-full"
             />
             <p className="mt-1 text-xs text-gray-500">
-              Applications will close at 00:00 (midnight) on the selected date
+              Applications will close at 00:00 (midnight) on the selected date.
+              Minimum deadline is 7 days from today.
             </p>
           </div>
         </div>
