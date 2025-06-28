@@ -1,5 +1,10 @@
 import { RequestBuilder } from '@/utils/axios/request-builder';
-import { JobSearchRequest, JobSearchResponse } from '@/types/JobSearch';
+import {
+  JobSearchRequest,
+  JobSearchResponse,
+  SuggestionQuery,
+  SuggestionsResponse,
+} from '@/types/JobSearch';
 import { httpClient } from '@/utils/axios';
 
 class JobSearchService {
@@ -22,6 +27,28 @@ class JobSearchService {
       },
       config: {
         params,
+        withCredentials: false,
+      },
+    });
+
+    return response;
+  }
+
+  async getJobSuggestions(
+    query: SuggestionQuery,
+  ): Promise<SuggestionsResponse> {
+    const url = this.requestBuilder.buildUrl('suggestions');
+
+    const response = await httpClient.get<SuggestionsResponse>({
+      url,
+      typeCheck: (data) => {
+        return {
+          success: true,
+          data: data as SuggestionsResponse,
+        };
+      },
+      config: {
+        params: query,
         withCredentials: false,
       },
     });

@@ -1,9 +1,5 @@
-export type EmploymentType =
-  | 'FullTime'
-  | 'PartTime'
-  | 'Contract'
-  | 'Internship'
-  | 'Remote';
+import { employmentType } from '@/enums/employmentType';
+
 export type JobSearchSortBy =
   | 'relevance'
   | 'date_posted'
@@ -15,7 +11,7 @@ export interface JobSearchRequest {
   location?: string;
   categoryIds?: string[];
   companyIds?: string[];
-  employmentTypes?: EmploymentType[];
+  employmentTypes?: employmentType[];
   salaryMin?: number;
   salaryMax?: number;
   minExperienceYears?: number;
@@ -33,7 +29,7 @@ export interface Job {
   salaryMin: number;
   salaryMax: number;
   experienceYears: number;
-  typeOfEmployment: EmploymentType;
+  typeOfEmployment: employmentType;
   deadline: string;
   company: {
     id: string;
@@ -83,4 +79,13 @@ export interface JobSearchResponse {
   pagination: Pagination;
   filterSummary: FilterSummary;
   meta: Meta;
+}
+
+// Interface for job search suggestions
+export interface SuggestionsResponse {
+  suggestions: string[];
+}
+
+export interface SuggestionQuery {
+  q: string;
 }

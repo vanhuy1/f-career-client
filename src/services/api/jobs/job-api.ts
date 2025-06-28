@@ -100,7 +100,6 @@ class JobService {
 
     const offset = (page - 1) * itemsPerPage;
 
-
     const queryParams = [`limit=${itemsPerPage}`, `offset=${offset}`];
     url += `?${queryParams.join('&')}`;
 
