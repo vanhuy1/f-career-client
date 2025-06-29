@@ -1,20 +1,18 @@
 import { useState } from 'react';
-import { uploadFile } from '@/lib/storage';
 import { SupabaseBucket, SupabaseFolder } from '@/enums/supabase';
 
 interface FileUploaderProps {
   bucket?: SupabaseBucket;
   folder?: SupabaseFolder;
-  onComplete: (url: string) => void;
+  onComplete?: (url: string) => void;
+  onFileSelect: (file: File) => void;
   wrapperClassName?: string;
   buttonClassName?: string;
   children?: React.ReactNode;
 }
 
 export default function FileUploader({
-  bucket,
-  folder,
-  onComplete,
+  onFileSelect,
   wrapperClassName = '',
   buttonClassName = '',
   children = 'Choose file…',
@@ -26,16 +24,11 @@ export default function FileUploader({
     if (!file) return;
 
     setLoading(true);
-    const { publicUrl, error } = await uploadFile({ file, bucket, folder });
+
+    // Instead of uploading, just pass the file back for preview
+    onFileSelect(file);
+
     setLoading(false);
-
-    if (error || !publicUrl) {
-      console.error(error);
-      alert(`Upload failed: ${error?.message}`);
-      return;
-    }
-
-    onComplete(publicUrl);
   };
 
   return (
@@ -48,7 +41,7 @@ export default function FileUploader({
       />
       {loading ? (
         <div className={buttonClassName}>
-          <span>Uploading…</span>
+          <span>Processing…</span>
         </div>
       ) : (
         <div className={buttonClassName}>{children}</div>

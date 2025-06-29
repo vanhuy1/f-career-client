@@ -29,6 +29,7 @@ import { userService } from '@/services/api/auth/user-api';
 import FileUploader from '@/components/common/FileUploader';
 import { SupabaseBucket, SupabaseFolder } from '@/enums/supabase';
 import Image from 'next/image';
+import { uploadFile } from '@/lib/storage';
 
 const countryCodes = [
   { code: '+84', country: 'Vietnam', flag: '🇻🇳' },
@@ -49,6 +50,8 @@ export default function SettingsPage() {
   const user = useUser();
   const [formattedDob, setFormattedDob] = useState('');
   const [selectedCountryCode, setSelectedCountryCode] = useState('+84');
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
 
   // Set up React Hook Form with Zod
   const form = useForm<z.infer<typeof ProfileFormSchema>>({
@@ -96,6 +99,16 @@ export default function SettingsPage() {
     }
   };
 
+  const handleFileSelect = (file: File) => {
+    // Create a local preview URL
+    const objectUrl = URL.createObjectURL(file);
+    setAvatarPreview(objectUrl);
+    setAvatarFile(file);
+
+    // We don't set the form avatar value yet since we haven't uploaded to Supabase
+    // form.setValue('avatar', null);
+  };
+
   const onSubmit = async (data: z.infer<typeof ProfileFormSchema>) => {
     try {
       setIsSubmitting(true);
@@ -103,17 +116,48 @@ export default function SettingsPage() {
       // Remove any non-digit characters from phone number
       const cleanPhone = data.phone.replace(/\D/g, '');
 
+      let avatarUrl = data.avatar;
+
+      // Upload the file to Supabase if we have a new one
+      if (avatarFile) {
+        const { publicUrl, error } = await uploadFile({
+          file: avatarFile,
+          bucket: SupabaseBucket.USER_SETTINGS,
+          folder: SupabaseFolder.USER_SETTINGS,
+        });
+
+        if (error) {
+          toast.error(`Failed to upload image: ${error.message}`);
+          setIsSubmitting(false);
+          return;
+        }
+
+        avatarUrl = publicUrl;
+      }
+
       const requestData = {
         name: data.name,
         phone: selectedCountryCode + cleanPhone,
         email: data.email,
         gender: data.gender,
         dob: data.dob,
-        avatar: data.avatar,
+        avatar: avatarUrl,
       };
 
       const response = await userService.updateMe(requestData);
       toast.success('Profile updated successfully');
+
+      // Update form with the new avatar URL if we uploaded one
+      if (avatarUrl !== data.avatar) {
+        form.setValue('avatar', avatarUrl);
+      }
+
+      // Clear the temporary file and preview
+      if (avatarFile) {
+        setAvatarFile(null);
+        // Keep the preview since it will be reflected in currentAvatar now
+      }
+
       dispatch(updateUserSuccess(response));
     } catch (error) {
       toast.error('Failed to update profile');
@@ -123,8 +167,21 @@ export default function SettingsPage() {
     }
   };
 
+  // Use the avatar preview if available, otherwise fall back to the stored avatar
   const currentAvatar =
-    form.watch('avatar') || user?.data.avatar || '/Auth/authbg-bear.jpg';
+    avatarPreview ||
+    form.watch('avatar') ||
+    user?.data.avatar ||
+    '/Auth/authbg-bear.jpg';
+
+  // Clean up object URLs when component unmounts
+  useEffect(() => {
+    return () => {
+      if (avatarPreview) {
+        URL.revokeObjectURL(avatarPreview);
+      }
+    };
+  }, [avatarPreview]);
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)}>
@@ -169,9 +226,7 @@ export default function SettingsPage() {
             <FileUploader
               bucket={SupabaseBucket.USER_SETTINGS}
               folder={SupabaseFolder.USER_SETTINGS}
-              onComplete={(url) => {
-                form.setValue('avatar', url);
-              }}
+              onFileSelect={handleFileSelect}
               wrapperClassName="
                 flex
                 h-36
