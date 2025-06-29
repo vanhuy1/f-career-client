@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Trophy, Medal, Clock, DollarSign, Eye, Flame } from 'lucide-react';
+import { employmentType } from '@/enums/employmentType';
 
 interface JobCardProps {
   id?: string;
@@ -16,6 +17,26 @@ interface JobCardProps {
   category: { id: string; name: string };
   salary?: string;
   priorityPosition: number;
+}
+
+// Map the incoming string to the enum value
+function getEmploymentTypeLabel(type: string): string {
+  const normalized = type.replace(/[\s_-]/g, '').toLowerCase();
+
+  // Check both keys and values of the enum
+  for (const key of Object.keys(employmentType) as Array<
+    keyof typeof employmentType
+  >) {
+    const enumValue = employmentType[key];
+    if (
+      key.replace(/[\s_-]/g, '').toLowerCase() === normalized ||
+      enumValue.replace(/[\s_-]/g, '').toLowerCase() === normalized
+    ) {
+      return enumValue;
+    }
+  }
+  // fallback to original string if not found
+  return type;
 }
 
 export default function JobCard({
@@ -32,7 +53,9 @@ export default function JobCard({
 
   // Map typeOfEmployment to badge style
   const getTypeBadge = (t: string) => {
-    switch (t.toLowerCase()) {
+    // You can still style based on the normalized type if you want
+    const normalized = t.replace(/[\s_-]/g, '').toLowerCase();
+    switch (normalized) {
       case 'fulltime':
         return 'bg-gray-50 text-gray-700 border-gray-200';
       case 'parttime':
@@ -202,7 +225,7 @@ export default function JobCard({
                   <span
                     className={`inline-flex rounded-full border px-2 py-0.5 text-xs ${getTypeBadge(typeOfEmployment)}`}
                   >
-                    {typeOfEmployment}
+                    {getEmploymentTypeLabel(typeOfEmployment)}
                   </span>
                   <span
                     className={`inline-flex rounded-full border px-2 py-0.5 text-xs ${getCategoryBadge()}`}

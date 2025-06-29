@@ -1,7 +1,6 @@
 'use client';
 
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { X } from 'lucide-react';
 import {
@@ -13,7 +12,6 @@ import {
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import type { EmploymentType, StepProps } from '@/types/Job';
 import { useEffect, useState } from 'react';
 import { Category } from '@/types/Category';
@@ -36,6 +34,7 @@ import {
 import { companyService } from '@/services/api/company/company-api';
 import { LoadingState } from '@/store/store.model';
 import { useDispatch } from 'react-redux';
+import { employmentType } from '@/enums/employmentType';
 
 const RequiredIndicator = () => <span className="ml-1 text-red-500">*</span>;
 
@@ -189,42 +188,26 @@ export default function Step1({
             </p>
           </div>
           <div className="w-full space-y-2 md:col-span-2 md:w-[70%]">
-            <RadioGroup
-              value={typeOfEmployment || ''}
+            <Select
+              value={typeOfEmployment}
               onValueChange={handleEmploymentTypeChange}
-              className="space-y-3"
+              defaultValue="FULL_TIME"
             >
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="FullTime" id="fullTime" />
-                <Label htmlFor="fullTime" className="font-normal">
-                  Full-Time
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="PartTime" id="partTime" />
-                <Label htmlFor="partTime" className="font-normal">
-                  Part-Time
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="Remote" id="remote" />
-                <Label htmlFor="remote" className="font-normal">
-                  Remote
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="Internship" id="internship" />
-                <Label htmlFor="internship" className="font-normal">
-                  Internship
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="Contract" id="contract" />
-                <Label htmlFor="contract" className="font-normal">
-                  Contract
-                </Label>
-              </div>
-            </RadioGroup>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select employment type">
+                  {employmentType[
+                    typeOfEmployment as keyof typeof employmentType
+                  ] || 'Select employment type'}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(employmentType).map(([key, value]) => (
+                  <SelectItem key={key} value={key}>
+                    {value}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
