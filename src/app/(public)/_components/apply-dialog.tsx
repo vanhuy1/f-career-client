@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -13,6 +13,8 @@ import {
   Phone,
   Calendar,
   Users,
+  FileText,
+  Trash2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -35,15 +37,16 @@ import {
 import FileUploader from '@/components/common/FileUploader';
 import { SupabaseBucket, SupabaseFolder } from '@/enums/supabase';
 import { applicationService } from '@/services/api/applications/application-api';
+import { uploadFile } from '@/lib/storage';
 
-// Updated validation schema to use URL instead of File object
+// Updated validation schema to include cvFile for client-side validation
 const applicationSchema = z.object({
   coverLetter: z
     .string()
     .min(1, 'Description is required')
     .min(10, 'Description must be at least 10 characters')
     .max(500, 'Description must not exceed 500 characters'),
-  cvId: z.string().min(1, 'CV file is required'),
+  cvId: z.string().optional(), // This will hold the uploaded file URL after submission
 });
 
 export type ApplicationFormData = z.infer<typeof applicationSchema>;
@@ -101,6 +104,8 @@ export default function ApplyDialog({
     type: 'success' | 'error';
     text: string;
   } | null>(null);
+  const [cvFile, setCvFile] = useState<File | null>(null);
+  const [cvFileName, setCvFileName] = useState<string>('');
 
   const form = useForm<ApplicationFormData>({
     resolver: zodResolver(applicationSchema),
@@ -114,6 +119,28 @@ export default function ApplyDialog({
   const charCount = watchedDescription?.length || 0;
   const maxChars = 500;
 
+  // Handler for file selection
+  const handleCvFileSelect = (file: File) => {
+    setCvFile(file);
+    setCvFileName(file.name);
+  };
+
+  // Clear the selected file
+  const clearCvFile = () => {
+    setCvFile(null);
+    setCvFileName('');
+    form.setValue('cvId', '');
+  };
+
+  // Clean up object URLs when component unmounts
+  useEffect(() => {
+    return () => {
+      if (cvFile) {
+        // Cleanup if needed
+      }
+    };
+  }, [cvFile]);
+
   const onSubmit = async (data: ApplicationFormData) => {
     setIsSubmitting(true);
     setSubmitMessage(null);
@@ -123,8 +150,31 @@ export default function ApplyDialog({
         throw new Error('Job ID is missing');
       }
 
+      if (!cvFile) {
+        throw new Error('Please select a CV/Resume file');
+      }
+
+      // Upload CV file to Supabase
+      const { publicUrl, error } = await uploadFile({
+        file: cvFile,
+        bucket: SupabaseBucket.CV_UPLOADS,
+        folder: SupabaseFolder.application,
+      });
+
+      if (error || !publicUrl) {
+        throw new Error(
+          `Failed to upload CV: ${error?.message || 'Unknown error'}`,
+        );
+      }
+
+      // Update form data with the uploaded file URL
+      const submissionData = {
+        ...data,
+        cvId: publicUrl,
+      };
+
       // Use the actual API service
-      await applicationService.applyJob(data, Number(jobId));
+      await applicationService.applyJob(submissionData, Number(jobId));
       setSubmitMessage({
         type: 'success',
         text: 'Application submitted successfully!',
@@ -134,6 +184,8 @@ export default function ApplyDialog({
       setTimeout(() => {
         onClose();
         form.reset();
+        setCvFile(null);
+        setCvFileName('');
         setSubmitMessage(null);
       }, 2000);
     } catch (error) {
@@ -153,6 +205,8 @@ export default function ApplyDialog({
     if (!isSubmitting) {
       onClose();
       form.reset();
+      setCvFile(null);
+      setCvFileName('');
       setSubmitMessage(null);
     }
   };
@@ -300,48 +354,81 @@ export default function ApplyDialog({
                         <FormField
                           control={form.control}
                           name="cvId"
-                          render={({ field }) => (
+                          render={() => (
                             <FormItem>
                               <FormControl>
-                                <div className="space-y-2">
-                                  {/* FileUploader Component */}
-                                  <FileUploader
-                                    bucket={SupabaseBucket.CV_UPLOADS}
-                                    folder={SupabaseFolder.application}
-                                    onComplete={(url) => {
-                                      field.onChange(url);
-                                    }}
-                                    wrapperClassName="
-                                      flex
-                                      h-28
-                                      flex-col
-                                      items-center
-                                      justify-center
-                                      rounded-lg
-                                      border-2
-                                      border-dashed
-                                      border-indigo-300
-                                      p-4
-                                      text-center
-                                      hover:border-indigo-400
-                                      transition
-                                      duration-150
-                                      ease-in-out
-                                    "
-                                    buttonClassName="flex flex-col items-center"
-                                  >
-                                    <Paperclip className="h-4 w-4 text-indigo-600" />
-                                    <p className="mt-2 font-medium text-indigo-600">
-                                      Attach CV/Resume
-                                    </p>
-                                    <p className="mt-1 text-xs text-gray-500">
-                                      PDF, DOC, or DOCX (max 5MB)
-                                    </p>
-                                  </FileUploader>
+                                <div className="space-y-3">
+                                  {!cvFile ? (
+                                    <FileUploader
+                                      bucket={SupabaseBucket.CV_UPLOADS}
+                                      folder={SupabaseFolder.application}
+                                      onFileSelect={handleCvFileSelect}
+                                      wrapperClassName="
+                                        flex
+                                        h-28
+                                        flex-col
+                                        items-center
+                                        justify-center
+                                        rounded-lg
+                                        border-2
+                                        border-dashed
+                                        border-indigo-300
+                                        p-4
+                                        text-center
+                                        hover:border-indigo-400
+                                        transition
+                                        duration-150
+                                        ease-in-out
+                                      "
+                                      buttonClassName="flex flex-col items-center"
+                                    >
+                                      <Paperclip className="h-4 w-4 text-indigo-600" />
+                                      <p className="mt-2 font-medium text-indigo-600">
+                                        Attach CV/Resume
+                                      </p>
+                                      <p className="mt-1 text-xs text-gray-500">
+                                        PDF, DOC, or DOCX (max 5MB)
+                                      </p>
+                                    </FileUploader>
+                                  ) : (
+                                    <div className="flex flex-col space-y-2 rounded-lg border border-indigo-200 bg-indigo-50 p-4">
+                                      <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                          <div className="rounded-md bg-indigo-100 p-2">
+                                            <FileText className="h-4 w-4 text-indigo-600" />
+                                          </div>
+                                          <div className="flex flex-col">
+                                            <span className="text-sm font-medium text-gray-900">
+                                              {cvFileName}
+                                            </span>
+                                            <span className="text-xs text-gray-500">
+                                              {(
+                                                cvFile.size /
+                                                1024 /
+                                                1024
+                                              ).toFixed(2)}{' '}
+                                              MB
+                                            </span>
+                                          </div>
+                                        </div>
+                                        <Button
+                                          type="button"
+                                          variant="ghost"
+                                          className="h-8 w-8 p-0"
+                                          onClick={clearCvFile}
+                                        >
+                                          <Trash2 className="h-4 w-4 text-gray-500" />
+                                          <span className="sr-only">
+                                            Remove file
+                                          </span>
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  )}
 
-                                  {field.value && (
-                                    <div className="text-sm text-green-600">
-                                      CV uploaded successfully
+                                  {cvFile && !isSubmitting && (
+                                    <div className="text-sm text-indigo-600">
+                                      File selected and ready for upload
                                     </div>
                                   )}
                                 </div>
@@ -388,7 +475,7 @@ export default function ApplyDialog({
 
                 <Button
                   type="submit"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || !cvFile}
                   className="w-full bg-indigo-600 py-3 text-white hover:bg-indigo-700 disabled:opacity-50"
                 >
                   {isSubmitting ? (
