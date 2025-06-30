@@ -108,8 +108,6 @@ export default function JobListingsPage() {
           sortBy,
         };
 
-        // Add filter parameters from URL
-        // Employment types filter
         const employmentTypesParam = searchParams?.get('employmentTypes');
         if (employmentTypesParam) {
           params.employmentTypes = employmentTypesParam.split(

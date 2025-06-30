@@ -6,12 +6,18 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { categoryService } from '@/services/api/category/category-api';
 import type { Category } from '@/types/Category';
+import { employmentType } from '@/enums/employmentType';
+import { useAppDispatch } from '@/store/hooks';
+import { clearJob } from '@/services/state/jobSlice';
 
 export default function FilterSummary() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [categories, setCategories] = useState<Record<string, string>>({});
-
+  const [activeFilters, setActiveFilters] = useState<
+    { type: string; value: string; label: string }[]
+  >([]);
+  const dispatch = useAppDispatch();
   // Load category names for display
   useEffect(() => {
     async function loadCategories() {
@@ -32,61 +38,72 @@ export default function FilterSummary() {
     loadCategories();
   }, []);
 
-  // Parse the active filters from the URL
-  const activeFilters: { type: string; value: string; label: string }[] = [];
+  // Update active filters whenever searchParams or categories change
+  useEffect(() => {
+    const filters: { type: string; value: string; label: string }[] = [];
 
-  // Category filters
-  const categoryIds = searchParams?.get('categoryIds')?.split(',') || [];
-  categoryIds.forEach((id) => {
-    activeFilters.push({
-      type: 'categoryIds',
-      value: id,
-      label: categories[id] || 'Category',
+    // Category filters
+    const categoryIds = searchParams?.get('categoryIds')?.split(',') || [];
+    categoryIds.forEach((id) => {
+      filters.push({
+        type: 'categoryIds',
+        value: id,
+        label: categories[id] || 'Category',
+      });
     });
-  });
 
-  // Employment type filters
-  const employmentTypes =
-    searchParams?.get('employmentTypes')?.split(',') || [];
-  employmentTypes.forEach((type) => {
-    activeFilters.push({
-      type: 'employmentTypes',
-      value: type,
-      label: type,
+    // Employment type filters
+    const employmentTypes =
+      searchParams?.get('employmentTypes')?.split(',') || [];
+    employmentTypes.forEach((type) => {
+      // Get the display value from employmentType enum
+      const displayValue =
+        Object.entries(employmentType).find(([key]) => key === type)?.[1] ||
+        type;
+
+      filters.push({
+        type: 'employmentTypes',
+        value: type,
+        label: displayValue as string,
+      });
+
+      dispatch(clearJob());
     });
-  });
 
-  // Salary range filter
-  const salaryMin = searchParams?.get('salaryMin');
-  const salaryMax = searchParams?.get('salaryMax');
+    // Salary range filter
+    const salaryMin = searchParams?.get('salaryMin');
+    const salaryMax = searchParams?.get('salaryMax');
 
-  if (salaryMin || salaryMax) {
-    const formatSalary = (value: string | null) => {
-      if (!value) return '';
-      return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-      }).format(parseInt(value));
-    };
+    if (salaryMin || salaryMax) {
+      const formatSalary = (value: string | null) => {
+        if (!value) return '';
+        return new Intl.NumberFormat('en-US', {
+          style: 'currency',
+          currency: 'USD',
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 0,
+        }).format(parseInt(value));
+      };
 
-    let salaryLabel = 'Salary: ';
+      let salaryLabel = 'Salary: ';
 
-    if (salaryMin && salaryMax) {
-      salaryLabel += `${formatSalary(salaryMin)} - ${formatSalary(salaryMax)}`;
-    } else if (salaryMin) {
-      salaryLabel += `Min ${formatSalary(salaryMin)}`;
-    } else if (salaryMax) {
-      salaryLabel += `Max ${formatSalary(salaryMax)}`;
+      if (salaryMin && salaryMax) {
+        salaryLabel += `${formatSalary(salaryMin)} - ${formatSalary(salaryMax)}`;
+      } else if (salaryMin) {
+        salaryLabel += `Min ${formatSalary(salaryMin)}`;
+      } else if (salaryMax) {
+        salaryLabel += `Max ${formatSalary(salaryMax)}`;
+      }
+
+      filters.push({
+        type: 'salary',
+        value: 'salary',
+        label: salaryLabel,
+      });
     }
 
-    activeFilters.push({
-      type: 'salary',
-      value: 'salary',
-      label: salaryLabel,
-    });
-  }
+    setActiveFilters(filters);
+  }, [dispatch, searchParams, categories]);
 
   // No filters applied
   if (activeFilters.length === 0) {
@@ -112,6 +129,8 @@ export default function FilterSummary() {
         params.delete(type);
       }
     }
+    dispatch(clearJob());
+    setActiveFilters([]);
 
     // Reset to page 1 when changing filters
     params.set('page', '1');
@@ -128,7 +147,8 @@ export default function FilterSummary() {
         params.delete(key);
       }
     });
-
+    dispatch(clearJob());
+    setActiveFilters([]);
     router.push(`/job?${params.toString()}`);
   };
 
@@ -138,7 +158,7 @@ export default function FilterSummary() {
 
       {activeFilters.map((filter, index) => (
         <Button
-          key={`${filter.type}-${index}`}
+          key={`${filter.type}-${filter.value}-${index}`}
           variant="outline"
           size="sm"
           className="h-7 rounded-full border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 hover:text-blue-800"

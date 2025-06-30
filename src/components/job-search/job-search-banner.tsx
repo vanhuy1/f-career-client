@@ -94,10 +94,10 @@ export default function JobSearchInterface() {
     e.preventDefault();
     setShowSuggestions(false);
 
-    // Create a new URLSearchParams object
+    // Create a new URLSearchParams object from the current search params
     const params = new URLSearchParams(searchParams?.toString());
 
-    // Update or clear search parameters
+    // Update or clear search parameters while preserving filter parameters
     if (keyword) {
       params.set('q', keyword);
     } else {
@@ -113,6 +113,7 @@ export default function JobSearchInterface() {
     // Reset page to 1 when performing a new search
     params.set('page', '1');
 
+    // Keep all existing filter parameters (they're already in params since we used searchParams)
     router.push(`/job?${params.toString()}`);
   };
 
