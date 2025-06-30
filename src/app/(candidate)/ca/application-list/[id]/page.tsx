@@ -19,7 +19,6 @@ import {
 } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import StatusBadge from '@/app/(candidate)/_components/applications-list/StatusBadge';
-import Image from 'next/image';
 import { useAppDispatch } from '@/store/hooks';
 import {
   setApplicationDetailFailure,
@@ -116,7 +115,7 @@ export default function ApplicationDetailPage() {
         <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
           <div className="flex items-center gap-4">
             <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-md bg-gray-100">
-              {application.job?.company.logoUrl ? (
+              {/* {application.job?.company.logoUrl ? (
                 <Image
                   src={application.job?.company.logoUrl || '/placeholder.svg'}
                   alt={application.job.company.companyName}
@@ -128,13 +127,13 @@ export default function ApplicationDetailPage() {
                 <span className="text-xl text-gray-400">
                   {application.job?.company.companyName.charAt(0)}
                 </span>
-              )}
+              )} */}
             </div>
             <div>
               <h1 className="text-2xl font-bold">{application.job.title}</h1>
               <div className="mt-1 flex items-center gap-2">
                 <span className="text-gray-600">
-                  {application.job?.company.companyName}
+                  {/* {application.job?.company.companyName} */} hello
                 </span>
                 <StatusBadge
                   status={
@@ -246,7 +245,7 @@ export default function ApplicationDetailPage() {
                 <div>
                   <h3 className="text-sm text-gray-500">Company Name</h3>
                   <p className="font-medium">
-                    {application.job?.company.companyName}
+                    {/* {application.job?.company.companyName} */}
                   </p>
                 </div>
                 {application.job?.company.address && (

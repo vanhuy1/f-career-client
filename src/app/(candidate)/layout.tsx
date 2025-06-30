@@ -1,11 +1,9 @@
+'use client';
+
 import React from 'react';
 import Header from './_components/header';
 import Sidebar from './_components/sidebar';
-
-export const metadata = {
-  title: 'Company Site',
-  description: 'Welcome to the Company Site',
-};
+import { CandidatePermission } from '@/providers/authorization/CandidatePermission';
 
 export default function CandidateLayout({
   children,
@@ -13,7 +11,7 @@ export default function CandidateLayout({
   children: React.ReactNode;
 }) {
   return (
-    <>
+    <CandidatePermission>
       <div className="bg-background flex h-screen">
         <Sidebar />
         <div className="flex-1 overflow-auto">
@@ -21,6 +19,6 @@ export default function CandidateLayout({
           {children}
         </div>
       </div>
-    </>
+    </CandidatePermission>
   );
 }
