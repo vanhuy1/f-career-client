@@ -65,24 +65,27 @@ export default function JobFilterSidebar() {
     const employmentTypesParam = searchParams?.get('employmentTypes');
     if (employmentTypesParam) {
       const types = employmentTypesParam.split(',');
-      // Convert keys to values to match the enum type
       const typesAsEnum = types
-        .map((type) =>
-          Object.values(employmentType).find(
-            () =>
-              Object.keys(employmentType).find((key) => key === type) !==
-              undefined,
-          ),
-        )
+        .map((type) => {
+          // Find the corresponding employment type by key
+          const matchingType = Object.entries(employmentType).find(
+            ([key]) => key === type,
+          );
+          return matchingType ? matchingType[1] : null;
+        })
         .filter(Boolean) as employmentType[];
 
       setSelectedEmploymentTypes(typesAsEnum);
+    } else {
+      setSelectedEmploymentTypes([]);
     }
 
     // Get selected categories from URL
     const categoriesParam = searchParams?.get('categoryIds');
     if (categoriesParam) {
       setSelectedCategories(categoriesParam.split(','));
+    } else {
+      setSelectedCategories([]);
     }
 
     // Calculate total applied filters
@@ -180,12 +183,13 @@ export default function JobFilterSidebar() {
     if (selectedEmploymentTypes.length > 0) {
       // Convert employment type values back to keys for the URL
       const typeKeys = selectedEmploymentTypes
-        .map(
-          (type) =>
-            Object.entries(employmentType).find(
-              ([value]) => value === type,
-            )?.[0],
-        )
+        .map((type) => {
+          // Find the key for this value in the employmentType enum
+          const entry = Object.entries(employmentType).find(
+            ([val]) => val === type,
+          );
+          return entry ? entry[0] : null;
+        })
         .filter(Boolean);
 
       params.set('employmentTypes', typeKeys.join(','));
@@ -210,7 +214,7 @@ export default function JobFilterSidebar() {
     if (salaryRange[0] > 0 || salaryRange[1] < 10000) filterCount += 1;
     setAppliedFilters(filterCount);
 
-    // Update URL with new parameters
+    // Update URL with new parameters while preserving search query and location
     router.push(`/job?${params.toString()}`);
   };
 
