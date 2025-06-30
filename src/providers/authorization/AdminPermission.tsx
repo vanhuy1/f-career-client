@@ -9,7 +9,7 @@ interface AdminPermissionProps {
 export function AdminPermission({ children }: AdminPermissionProps) {
   const user = useUser();
 
-  if (!user || user.data.roles !== ROLES.ADMIN) {
+  if (!user || user.data.roles[0] !== ROLES.ADMIN) {
     return <AccessDeniedScreen />;
   }
 

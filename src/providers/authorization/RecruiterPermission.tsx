@@ -9,7 +9,7 @@ interface RecruiterPermissionProps {
 export function RecruiterPermission({ children }: RecruiterPermissionProps) {
   const user = useUser();
 
-  if (!user || user.data.roles !== ROLES.RECRUITER) {
+  if (!user || user.data.roles[0] !== ROLES.RECRUITER) {
     return <AccessDeniedScreen />;
   }
   return <>{children}</>;

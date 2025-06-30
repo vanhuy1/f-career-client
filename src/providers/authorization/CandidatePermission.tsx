@@ -9,7 +9,7 @@ interface CandidatePermissionProps {
 export function CandidatePermission({ children }: CandidatePermissionProps) {
   const user = useUser();
 
-  if (!user || user.data.roles !== ROLES.USER) {
+  if (!user || user.data.roles[0] !== ROLES.USER) {
     return <AccessDeniedScreen />;
   }
 
