@@ -20,7 +20,7 @@ export default function JobFilterSidebar() {
   const [error, setError] = useState<string | null>(null);
   const [salaryRange, setSalaryRange] = useState<number[]>([0, 10000]);
   const [expandedSections, setExpandedSections] = useState<boolean[]>([
-    false,
+    true,
     true,
     true,
   ]);
@@ -64,9 +64,19 @@ export default function JobFilterSidebar() {
     // Get selected employment types from URL
     const employmentTypesParam = searchParams?.get('employmentTypes');
     if (employmentTypesParam) {
-      setSelectedEmploymentTypes(
-        employmentTypesParam.split(',') as employmentType[],
-      );
+      const types = employmentTypesParam.split(',');
+      // Convert keys to values to match the enum type
+      const typesAsEnum = types
+        .map((type) =>
+          Object.values(employmentType).find(
+            () =>
+              Object.keys(employmentType).find((key) => key === type) !==
+              undefined,
+          ),
+        )
+        .filter(Boolean) as employmentType[];
+
+      setSelectedEmploymentTypes(typesAsEnum);
     }
 
     // Get selected categories from URL
@@ -89,8 +99,9 @@ export default function JobFilterSidebar() {
     {
       title: 'Type of Employment',
       type: 'checkbox',
-      options: Object.values(employmentType).map((type) => ({
-        label: type,
+      options: Object.entries(employmentType).map(([key, value]) => ({
+        key,
+        label: value,
       })),
     },
     {
@@ -127,12 +138,12 @@ export default function JobFilterSidebar() {
   };
 
   // Handle employment type selection
-  const handleEmploymentTypeChange = (type: employmentType) => {
+  const handleEmploymentTypeChange = (key: string, value: employmentType) => {
     setSelectedEmploymentTypes((prev) => {
-      if (prev.includes(type)) {
-        return prev.filter((t) => t !== type);
+      if (prev.includes(value)) {
+        return prev.filter((t) => t !== value);
       } else {
-        return [...prev, type];
+        return [...prev, value];
       }
     });
   };
@@ -167,7 +178,17 @@ export default function JobFilterSidebar() {
 
     // Handle employment types
     if (selectedEmploymentTypes.length > 0) {
-      params.set('employmentTypes', selectedEmploymentTypes.join(','));
+      // Convert employment type values back to keys for the URL
+      const typeKeys = selectedEmploymentTypes
+        .map(
+          (type) =>
+            Object.entries(employmentType).find(
+              ([value]) => value === type,
+            )?.[0],
+        )
+        .filter(Boolean);
+
+      params.set('employmentTypes', typeKeys.join(','));
     } else {
       params.delete('employmentTypes');
     }
@@ -282,18 +303,20 @@ export default function JobFilterSidebar() {
                 ) : filter.title === 'Categories' && error ? (
                   <div className="py-1 text-sm text-red-500">{error}</div>
                 ) : filter.title === 'Type of Employment' ? (
-                  Object.values(employmentType).map((type) => (
-                    <div key={type} className="flex items-center space-x-2">
+                  Object.entries(employmentType).map(([key, value]) => (
+                    <div key={key} className="flex items-center space-x-2">
                       <Checkbox
-                        id={`employment-${type}`}
-                        checked={selectedEmploymentTypes.includes(type)}
-                        onCheckedChange={() => handleEmploymentTypeChange(type)}
+                        id={`employment-${key}`}
+                        checked={selectedEmploymentTypes.includes(value)}
+                        onCheckedChange={() =>
+                          handleEmploymentTypeChange(key, value)
+                        }
                       />
                       <Label
-                        htmlFor={`employment-${type}`}
+                        htmlFor={`employment-${key}`}
                         className="flex w-full cursor-pointer items-center justify-between text-sm"
                       >
-                        <span>{type}</span>
+                        <span>{value}</span>
                       </Label>
                     </div>
                   ))
