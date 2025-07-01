@@ -5,6 +5,7 @@ import { Checkbox } from '../ui/checkbox';
 import { Label } from '../ui/label';
 import { Slider } from '../ui/slider';
 import { Button } from '../ui/button';
+import { Input } from '../ui/input';
 import { employmentType } from '@/enums/employmentType';
 import { useState, useEffect } from 'react';
 import { categoryService } from '@/services/api/category/category-api';
@@ -18,7 +19,7 @@ export default function JobFilterSidebar() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [salaryRange, setSalaryRange] = useState<number[]>([0, 10000]);
+  const [salaryRange, setSalaryRange] = useState<number[]>([0, 100000]);
   const [expandedSections, setExpandedSections] = useState<boolean[]>([
     true,
     true,
@@ -28,7 +29,7 @@ export default function JobFilterSidebar() {
   // Filter states
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedEmploymentTypes, setSelectedEmploymentTypes] = useState<
-    employmentType[]
+    string[]
   >([]);
   const [appliedFilters, setAppliedFilters] = useState<number>(0);
 
@@ -58,24 +59,15 @@ export default function JobFilterSidebar() {
       : 0;
     const maxSalary = searchParams?.get('salaryMax')
       ? parseInt(searchParams.get('salaryMax')!)
-      : 10000;
+      : 100000;
     setSalaryRange([minSalary, maxSalary]);
 
     // Get selected employment types from URL
     const employmentTypesParam = searchParams?.get('employmentTypes');
     if (employmentTypesParam) {
       const types = employmentTypesParam.split(',');
-      const typesAsEnum = types
-        .map((type) => {
-          // Find the corresponding employment type by key
-          const matchingType = Object.entries(employmentType).find(
-            ([key]) => key === type,
-          );
-          return matchingType ? matchingType[1] : null;
-        })
-        .filter(Boolean) as employmentType[];
-
-      setSelectedEmploymentTypes(typesAsEnum);
+      // Store the keys directly, not the values
+      setSelectedEmploymentTypes(types);
     } else {
       setSelectedEmploymentTypes([]);
     }
@@ -125,6 +117,21 @@ export default function JobFilterSidebar() {
     setSalaryRange(value);
   };
 
+  const handleSalaryInputChange = (index: number, value: string) => {
+    const numValue = parseInt(value) || 0;
+    const newRange = [...salaryRange];
+    newRange[index] = Math.max(0, Math.min(100000, numValue));
+
+    // Ensure min doesn't exceed max and max doesn't go below min
+    if (index === 0 && newRange[0] > newRange[1]) {
+      newRange[1] = newRange[0];
+    } else if (index === 1 && newRange[1] < newRange[0]) {
+      newRange[0] = newRange[1];
+    }
+
+    setSalaryRange(newRange);
+  };
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -141,12 +148,12 @@ export default function JobFilterSidebar() {
   };
 
   // Handle employment type selection
-  const handleEmploymentTypeChange = (key: string, value: employmentType) => {
+  const handleEmploymentTypeChange = (key: string) => {
     setSelectedEmploymentTypes((prev) => {
-      if (prev.includes(value)) {
-        return prev.filter((t) => t !== value);
+      if (prev.includes(key)) {
+        return prev.filter((t) => t !== key);
       } else {
-        return [...prev, value];
+        return [...prev, key];
       }
     });
   };
@@ -173,7 +180,7 @@ export default function JobFilterSidebar() {
       params.delete('salaryMin');
     }
 
-    if (salaryRange[1] < 10000) {
+    if (salaryRange[1] < 100000) {
       params.set('salaryMax', salaryRange[1].toString());
     } else {
       params.delete('salaryMax');
@@ -181,18 +188,7 @@ export default function JobFilterSidebar() {
 
     // Handle employment types
     if (selectedEmploymentTypes.length > 0) {
-      // Convert employment type values back to keys for the URL
-      const typeKeys = selectedEmploymentTypes
-        .map((type) => {
-          // Find the key for this value in the employmentType enum
-          const entry = Object.entries(employmentType).find(
-            ([val]) => val === type,
-          );
-          return entry ? entry[0] : null;
-        })
-        .filter(Boolean);
-
-      params.set('employmentTypes', typeKeys.join(','));
+      params.set('employmentTypes', selectedEmploymentTypes.join(','));
     } else {
       params.delete('employmentTypes');
     }
@@ -211,7 +207,7 @@ export default function JobFilterSidebar() {
     let filterCount = 0;
     filterCount += selectedEmploymentTypes.length;
     filterCount += selectedCategories.length;
-    if (salaryRange[0] > 0 || salaryRange[1] < 10000) filterCount += 1;
+    if (salaryRange[0] > 0 || salaryRange[1] < 100000) filterCount += 1;
     setAppliedFilters(filterCount);
 
     // Update URL with new parameters while preserving search query and location
@@ -229,7 +225,7 @@ export default function JobFilterSidebar() {
     });
 
     // Reset filter states
-    setSalaryRange([0, 10000]);
+    setSalaryRange([0, 100000]);
     setSelectedEmploymentTypes([]);
     setSelectedCategories([]);
     setAppliedFilters(0);
@@ -283,15 +279,45 @@ export default function JobFilterSidebar() {
                   <Slider
                     value={salaryRange}
                     onValueChange={handleSalaryRangeChange}
-                    max={10000}
+                    max={100000}
                     min={0}
-                    step={100}
+                    step={1000}
                     className="w-full"
                   />
                 </div>
-                <div className="flex items-center justify-between text-sm text-gray-600">
-                  <span>{formatCurrency(salaryRange[0])}</span>
-                  <span>{formatCurrency(salaryRange[1])}</span>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-gray-700">
+                      Min Salary
+                    </label>
+                    <Input
+                      type="number"
+                      value={salaryRange[0]}
+                      onChange={(e) =>
+                        handleSalaryInputChange(0, e.target.value)
+                      }
+                      min={0}
+                      max={100000}
+                      className="h-8 text-sm"
+                      placeholder="0"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-gray-700">
+                      Max Salary
+                    </label>
+                    <Input
+                      type="number"
+                      value={salaryRange[1]}
+                      onChange={(e) =>
+                        handleSalaryInputChange(1, e.target.value)
+                      }
+                      min={0}
+                      max={100000}
+                      className="h-8 text-sm"
+                      placeholder="100000"
+                    />
+                  </div>
                 </div>
                 <div className="text-center text-sm text-gray-500">
                   {formatCurrency(salaryRange[0])} -{' '}
@@ -311,10 +337,8 @@ export default function JobFilterSidebar() {
                     <div key={key} className="flex items-center space-x-2">
                       <Checkbox
                         id={`employment-${key}`}
-                        checked={selectedEmploymentTypes.includes(value)}
-                        onCheckedChange={() =>
-                          handleEmploymentTypeChange(key, value)
-                        }
+                        checked={selectedEmploymentTypes.includes(key)}
+                        onCheckedChange={() => handleEmploymentTypeChange(key)}
                       />
                       <Label
                         htmlFor={`employment-${key}`}

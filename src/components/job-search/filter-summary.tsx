@@ -66,8 +66,6 @@ export default function FilterSummary() {
         value: type,
         label: displayValue as string,
       });
-
-      dispatch(clearJob());
     });
 
     // Salary range filter

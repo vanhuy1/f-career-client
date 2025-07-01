@@ -2,14 +2,7 @@
 
 import type React from 'react';
 import { useState, useRef, useEffect } from 'react';
-import {
-  Search,
-  MapPin,
-  Loader2,
-  TrendingUp,
-  Clock,
-  ListFilter,
-} from 'lucide-react';
+import { Search, MapPin, Loader2, TrendingUp, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { jobSearchService } from '@/services/api/job-search/job-search.api';
@@ -133,56 +126,9 @@ export default function JobSearchInterface() {
     }
   };
 
-  // Import from the utils file
-  const handleToggleFilters = () => {
-    // Using dynamic import to avoid SSR issues with localStorage
-    import('@/lib/utils').then(({ toggleFilterVisibility }) => {
-      toggleFilterVisibility();
-    });
-  };
-
-  // Get initial filter visibility
-  const [filtersVisible, setFiltersVisible] = useState(true);
-
-  useEffect(() => {
-    // Initialize filter visibility state from localStorage
-    import('@/lib/utils').then(({ getFilterVisibility }) => {
-      setFiltersVisible(getFilterVisibility());
-    });
-
-    // Listen for changes from other components
-    const handleVisibilityChange = (e: CustomEvent) => {
-      setFiltersVisible(e.detail);
-    };
-
-    window.addEventListener(
-      'filterVisibilityChanged',
-      handleVisibilityChange as EventListener,
-    );
-    return () => {
-      window.removeEventListener(
-        'filterVisibilityChanged',
-        handleVisibilityChange as EventListener,
-      );
-    };
-  }, []);
-
   return (
     <div className="bg-[#f8f8fd]">
-      <div className="mx-auto w-full max-w-6xl px-4 py-16">
-        <div className="mb-8 text-center">
-          <h1 className="mb-2 text-4xl font-bold tracking-tight md:text-5xl">
-            Find your{' '}
-            <span className="relative text-blue-500">
-              dream job
-              <span className="absolute bottom-0 left-0 h-1 w-full translate-y-1 transform bg-blue-500"></span>
-            </span>
-          </h1>
-          <p className="mt-4 text-lg text-gray-600">
-            Find your next career at companies like HubSpot, Nike, and Dropbox
-          </p>
-        </div>
-
+      <div className="mx-auto w-full max-w-6xl px-4 py-4">
         <form
           onSubmit={handleSearch}
           className="mb-4 rounded-lg border border-gray-200 bg-white p-4 shadow-sm"
@@ -342,24 +288,6 @@ export default function JobSearchInterface() {
             </div>
 
             <div className="flex space-x-2">
-              <Button
-                type="button"
-                variant="outline"
-                className={`flex h-12 items-center gap-2 px-4 transition-colors ${
-                  filtersVisible
-                    ? 'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100'
-                    : 'border-gray-200 text-gray-600 hover:bg-gray-50'
-                }`}
-                onClick={handleToggleFilters}
-                title={filtersVisible ? 'Hide filters' : 'Show filters'}
-              >
-                <ListFilter
-                  className={`h-5 w-5 ${filtersVisible ? 'text-blue-600' : 'text-gray-500'}`}
-                />
-                <span className="hidden md:inline">
-                  {filtersVisible ? 'Hide' : 'Show'} Filters
-                </span>
-              </Button>
               <Button
                 type="submit"
                 className="h-12 bg-blue-600 px-8 hover:bg-blue-700"
