@@ -10,11 +10,13 @@ import {
   RefreshCw,
   FileText,
   LogOut,
+  Database,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 interface PageButtonsProps {
   onPrint: () => void;
   onSave: () => void;
+  onSaveToSystem: () => void;
   onReset: () => void;
   onSampleData: () => void;
   onScaleUp: () => void;
@@ -25,6 +27,7 @@ interface PageButtonsProps {
 const PageButtons = ({
   onPrint,
   onSave,
+  onSaveToSystem,
   onReset,
   onSampleData,
   onScaleUp,
@@ -45,6 +48,9 @@ const PageButtons = ({
       </Button>
       <Button variant="outline" size="icon" onClick={onSave}>
         <Save className="h-4 w-4" />
+      </Button>
+      <Button variant="outline" size="icon" onClick={onSaveToSystem}>
+        <Database className="h-4 w-4" />
       </Button>
       <Button variant="outline" size="icon" onClick={onReset}>
         <RefreshCw className="h-4 w-4" />

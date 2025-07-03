@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import {
@@ -15,6 +15,9 @@ import {
   Users,
   FileText,
   Trash2,
+  FileCheck,
+  Eye,
+  Clock,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -34,10 +37,23 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import FileUploader from '@/components/common/FileUploader';
 import { SupabaseBucket, SupabaseFolder } from '@/enums/supabase';
 import { applicationService } from '@/services/api/applications/application-api';
+import { cvService } from '@/services/api/cv/cv-api';
 import { uploadFile } from '@/lib/storage';
+import type { Cv } from '@/types/Cv';
+import { useRouter } from 'next/navigation';
+import { useUser } from '@/services/state/userSlice';
 
 // Updated validation schema to include cvFile for client-side validation
 const applicationSchema = z.object({
@@ -46,7 +62,9 @@ const applicationSchema = z.object({
     .min(1, 'Description is required')
     .min(10, 'Description must be at least 10 characters')
     .max(500, 'Description must not exceed 500 characters'),
-  cvId: z.string().optional(), // This will hold the uploaded file URL after submission
+  cvId: z.string().optional(),
+  cvSource: z.enum(['upload', 'system']),
+  existingCvId: z.string().optional(),
 });
 
 export type ApplicationFormData = z.infer<typeof applicationSchema>;
@@ -89,6 +107,27 @@ const formatGender = (gender: string) => {
   return genderMap[gender] || gender;
 };
 
+const formatFileSize = (bytes?: number) => {
+  if (!bytes) return 'Unknown size';
+  const mb = bytes / (1024 * 1024);
+  return `${mb.toFixed(2)} MB`;
+};
+
+const formatRelativeTime = (dateString?: string) => {
+  if (!dateString) return 'Unknown date';
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffInDays = Math.floor(
+    (now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24),
+  );
+
+  if (diffInDays === 0) return 'Today';
+  if (diffInDays === 1) return 'Yesterday';
+  if (diffInDays < 7) return `${diffInDays} days ago`;
+  if (diffInDays < 30) return `${Math.floor(diffInDays / 7)} weeks ago`;
+  return date.toLocaleDateString();
+};
+
 export default function ApplyDialog({
   isOpen,
   onClose,
@@ -99,6 +138,8 @@ export default function ApplyDialog({
   jobId,
   applicantInfo,
 }: ApplyDialogProps) {
+  const router = useRouter();
+  const user = useUser();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState<{
     type: 'success' | 'error';
@@ -106,33 +147,56 @@ export default function ApplyDialog({
   } | null>(null);
   const [cvFile, setCvFile] = useState<File | null>(null);
   const [cvFileName, setCvFileName] = useState<string>('');
+  const [selectedCvId, setSelectedCvId] = useState<string>('');
+  const [userCvs, setUserCvs] = useState<Cv[]>([]);
+  const [isLoadingCvs, setIsLoadingCvs] = useState(false);
 
   const form = useForm<ApplicationFormData>({
     resolver: zodResolver(applicationSchema),
     defaultValues: {
       coverLetter: '',
       cvId: '',
+      cvSource: 'upload',
+      existingCvId: '',
     },
   });
 
   const watchedDescription = form.watch('coverLetter');
+  const cvSource = form.watch('cvSource');
+  const existingCvId = form.watch('existingCvId');
   const charCount = watchedDescription?.length || 0;
   const maxChars = 500;
 
-  // Handler for file selection
+  useEffect(() => {
+    const fetchUserCvs = async () => {
+      if (!isOpen || !user?.data?.id) return;
+      setIsLoadingCvs(true);
+      try {
+        const userId = user.data.id;
+        const response = await cvService.findAll(Number(userId));
+        console.log('Fetched user CVs:', response);
+        setUserCvs(response.items || []);
+      } catch (error) {
+        console.error('Error fetching CVs:', error);
+      } finally {
+        setIsLoadingCvs(false);
+      }
+    };
+
+    fetchUserCvs();
+  }, [isOpen, user?.data?.id]);
+
   const handleCvFileSelect = (file: File) => {
     setCvFile(file);
     setCvFileName(file.name);
   };
 
-  // Clear the selected file
   const clearCvFile = () => {
     setCvFile(null);
     setCvFileName('');
     form.setValue('cvId', '');
   };
 
-  // Clean up object URLs when component unmounts
   useEffect(() => {
     return () => {
       if (cvFile) {
@@ -141,7 +205,22 @@ export default function ApplyDialog({
     };
   }, [cvFile]);
 
-  const onSubmit = async (data: ApplicationFormData) => {
+  const handleCvSelect = (cvId: string) => {
+    setSelectedCvId(cvId);
+    form.setValue('existingCvId', cvId);
+  };
+
+  const handlePreviewCv = (url: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    window.open(url, '_blank');
+  };
+
+  const handleCreateCv = () => {
+    router.push('/ca/cv-builder');
+    onClose();
+  };
+
+  const onSubmit: SubmitHandler<ApplicationFormData> = async (data) => {
     setIsSubmitting(true);
     setSubmitMessage(null);
 
@@ -150,27 +229,46 @@ export default function ApplyDialog({
         throw new Error('Job ID is missing');
       }
 
-      if (!cvFile) {
-        throw new Error('Please select a CV/Resume file');
+      let cvUrl = '';
+
+      // Handle CV based on source selection
+      if (data.cvSource === 'upload') {
+        if (!cvFile) {
+          throw new Error('Please select a CV/Resume file');
+        }
+
+        // Upload CV file to Supabase
+        const { publicUrl, error } = await uploadFile({
+          file: cvFile,
+          bucket: SupabaseBucket.CV_UPLOADS,
+          folder: SupabaseFolder.application,
+        });
+
+        if (error || !publicUrl) {
+          throw new Error(
+            `Failed to upload CV: ${error?.message || 'Unknown error'}`,
+          );
+        }
+
+        cvUrl = publicUrl;
+      } else if (data.cvSource === 'system') {
+        if (!data.existingCvId) {
+          throw new Error('Please select a CV from your saved CVs');
+        }
+
+        // Find the selected CV
+        const selectedCv = userCvs.find((cv) => cv.id === data.existingCvId);
+        if (!selectedCv || !selectedCv.url) {
+          throw new Error('Selected CV not found or has no URL');
+        }
+
+        cvUrl = selectedCv.url;
       }
 
-      // Upload CV file to Supabase
-      const { publicUrl, error } = await uploadFile({
-        file: cvFile,
-        bucket: SupabaseBucket.CV_UPLOADS,
-        folder: SupabaseFolder.application,
-      });
-
-      if (error || !publicUrl) {
-        throw new Error(
-          `Failed to upload CV: ${error?.message || 'Unknown error'}`,
-        );
-      }
-
-      // Update form data with the uploaded file URL
+      // Update form data with the CV URL
       const submissionData = {
         ...data,
-        cvId: publicUrl,
+        cvId: cvUrl,
       };
 
       // Use the actual API service
@@ -208,6 +306,15 @@ export default function ApplyDialog({
       setCvFile(null);
       setCvFileName('');
       setSubmitMessage(null);
+    }
+  };
+
+  // Check if form is valid for submission
+  const isCvValid = () => {
+    if (cvSource === 'upload') {
+      return !!cvFile;
+    } else {
+      return !!existingCvId;
     }
   };
 
@@ -348,92 +455,315 @@ export default function ApplyDialog({
                     </AccordionItem>
                     <AccordionItem value="cv-upload">
                       <AccordionTrigger className="text-lg font-semibold text-gray-900">
-                        CV/Resume Upload
+                        CV/Resume
                       </AccordionTrigger>
                       <AccordionContent>
                         <FormField
                           control={form.control}
-                          name="cvId"
-                          render={() => (
+                          name="cvSource"
+                          render={({ field }) => (
                             <FormItem>
-                              <FormControl>
-                                <div className="space-y-3">
-                                  {!cvFile ? (
-                                    <FileUploader
-                                      bucket={SupabaseBucket.CV_UPLOADS}
-                                      folder={SupabaseFolder.application}
-                                      onFileSelect={handleCvFileSelect}
-                                      wrapperClassName="
-                                        flex
-                                        h-28
-                                        flex-col
-                                        items-center
-                                        justify-center
-                                        rounded-lg
-                                        border-2
-                                        border-dashed
-                                        border-indigo-300
-                                        p-4
-                                        text-center
-                                        hover:border-indigo-400
-                                        transition
-                                        duration-150
-                                        ease-in-out
-                                      "
-                                      buttonClassName="flex flex-col items-center"
-                                    >
-                                      <Paperclip className="h-4 w-4 text-indigo-600" />
-                                      <p className="mt-2 font-medium text-indigo-600">
-                                        Attach CV/Resume
-                                      </p>
-                                      <p className="mt-1 text-xs text-gray-500">
-                                        PDF, DOC, or DOCX (max 5MB)
-                                      </p>
-                                    </FileUploader>
-                                  ) : (
-                                    <div className="flex flex-col space-y-2 rounded-lg border border-indigo-200 bg-indigo-50 p-4">
-                                      <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-3">
-                                          <div className="rounded-md bg-indigo-100 p-2">
-                                            <FileText className="h-4 w-4 text-indigo-600" />
-                                          </div>
-                                          <div className="flex flex-col">
-                                            <span className="text-sm font-medium text-gray-900">
-                                              {cvFileName}
-                                            </span>
-                                            <span className="text-xs text-gray-500">
-                                              {(
-                                                cvFile.size /
-                                                1024 /
-                                                1024
-                                              ).toFixed(2)}{' '}
-                                              MB
-                                            </span>
-                                          </div>
-                                        </div>
-                                        <Button
-                                          type="button"
-                                          variant="ghost"
-                                          className="h-8 w-8 p-0"
-                                          onClick={clearCvFile}
-                                        >
-                                          <Trash2 className="h-4 w-4 text-gray-500" />
-                                          <span className="sr-only">
-                                            Remove file
-                                          </span>
-                                        </Button>
-                                      </div>
-                                    </div>
-                                  )}
+                              <FormLabel>CV Source</FormLabel>
+                              <Tabs
+                                defaultValue="upload"
+                                value={field.value}
+                                onValueChange={field.onChange}
+                                className="w-full space-y-6"
+                              >
+                                <TabsList className="grid w-full grid-cols-2 bg-indigo-50/50 p-1">
+                                  <TabsTrigger
+                                    value="upload"
+                                    className="data-[state=active]:bg-white data-[state=active]:text-indigo-700 data-[state=active]:shadow-sm"
+                                  >
+                                    <Paperclip className="mr-2 h-4 w-4" />
+                                    Upload New CV
+                                  </TabsTrigger>
+                                  <TabsTrigger
+                                    value="system"
+                                    className="data-[state=active]:bg-white data-[state=active]:text-indigo-700 data-[state=active]:shadow-sm"
+                                  >
+                                    <FileText className="mr-2 h-4 w-4" />
+                                    Use Saved CV
+                                  </TabsTrigger>
+                                </TabsList>
+                                <TabsContent
+                                  value="upload"
+                                  className="mt-4 space-y-4"
+                                >
+                                  <FormField
+                                    control={form.control}
+                                    name="cvId"
+                                    render={() => (
+                                      <FormItem>
+                                        <FormControl>
+                                          <div className="space-y-3">
+                                            {!cvFile ? (
+                                              <div className="group rounded-lg border-2 border-dashed border-indigo-300 bg-white transition-all hover:border-indigo-400 hover:bg-indigo-50/50">
+                                                <FileUploader
+                                                  bucket={
+                                                    SupabaseBucket.CV_UPLOADS
+                                                  }
+                                                  folder={
+                                                    SupabaseFolder.application
+                                                  }
+                                                  onFileSelect={
+                                                    handleCvFileSelect
+                                                  }
+                                                  wrapperClassName="
+                                                    flex
+                                                    h-32
+                                                    flex-col
+                                                    items-center
+                                                    justify-center
+                                                    p-4
+                                                    text-center
+                                                    cursor-pointer
+                                                    hover:bg-indigo-50
+                                                    transition
+                                                    duration-150
+                                                    ease-in-out
+                                                  "
+                                                  buttonClassName="flex flex-col items-center"
+                                                >
+                                                  <div className="rounded-full bg-indigo-100 p-3">
+                                                    <Paperclip className="h-6 w-6 text-indigo-600" />
+                                                  </div>
+                                                  <p className="mt-2 font-medium text-indigo-600">
+                                                    Click to upload or drag and
+                                                    drop
+                                                  </p>
+                                                  <p className="mt-1 text-sm text-gray-500">
+                                                    PDF, DOC, or DOCX (max 5MB)
+                                                  </p>
+                                                </FileUploader>
+                                              </div>
+                                            ) : (
+                                              <div className="flex flex-col space-y-2 rounded-lg border border-indigo-200 bg-indigo-50 p-4">
+                                                <div className="flex items-center justify-between">
+                                                  <div className="flex items-center gap-3">
+                                                    <div className="rounded-md bg-indigo-100 p-2">
+                                                      <FileText className="h-4 w-4 text-indigo-600" />
+                                                    </div>
+                                                    <div className="flex flex-col">
+                                                      <span className="text-sm font-medium text-gray-900">
+                                                        {cvFileName}
+                                                      </span>
+                                                      <span className="text-xs text-gray-500">
+                                                        {formatFileSize(
+                                                          cvFile?.size,
+                                                        )}
+                                                      </span>
+                                                    </div>
+                                                  </div>
+                                                  <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    className="h-8 w-8 p-0"
+                                                    onClick={clearCvFile}
+                                                  >
+                                                    <Trash2 className="h-4 w-4 text-gray-500" />
+                                                    <span className="sr-only">
+                                                      Remove file
+                                                    </span>
+                                                  </Button>
+                                                </div>
+                                              </div>
+                                            )}
 
-                                  {cvFile && !isSubmitting && (
-                                    <div className="text-sm text-indigo-600">
-                                      File selected and ready for upload
-                                    </div>
-                                  )}
-                                </div>
-                              </FormControl>
-                              <FormMessage />
+                                            {cvFile && !isSubmitting && (
+                                              <div className="text-sm text-indigo-600">
+                                                File selected and ready for
+                                                upload
+                                              </div>
+                                            )}
+                                          </div>
+                                        </FormControl>
+                                        <FormMessage />
+                                      </FormItem>
+                                    )}
+                                  />
+                                </TabsContent>
+                                <TabsContent
+                                  value="system"
+                                  className="mt-4 space-y-4"
+                                >
+                                  <FormField
+                                    control={form.control}
+                                    name="existingCvId"
+                                    render={() => (
+                                      <FormItem>
+                                        <FormLabel>
+                                          Select from your saved CVs
+                                        </FormLabel>
+                                        <FormControl>
+                                          <div className="space-y-4">
+                                            {isLoadingCvs ? (
+                                              <div className="flex items-center justify-center rounded-lg border border-dashed border-indigo-300 bg-white py-8">
+                                                <Loader2 className="h-6 w-6 animate-spin text-indigo-600" />
+                                                <span className="ml-3 text-sm text-gray-600">
+                                                  Loading your CVs...
+                                                </span>
+                                              </div>
+                                            ) : userCvs.length === 0 ? (
+                                              <div className="flex flex-col items-center rounded-lg border-2 border-dashed border-indigo-300 bg-white p-8 text-center transition-all hover:border-indigo-400">
+                                                <FileCheck className="h-12 w-12 text-indigo-600" />
+                                                <p className="mt-4 text-lg font-medium text-gray-900">
+                                                  No saved CVs found
+                                                </p>
+                                                <p className="mt-2 text-sm text-gray-500">
+                                                  Create a professional CV using
+                                                  our CV Builder
+                                                </p>
+                                                <Button
+                                                  type="button"
+                                                  onClick={handleCreateCv}
+                                                  className="mt-4 bg-indigo-600 text-white hover:bg-indigo-700"
+                                                >
+                                                  Create New CV
+                                                </Button>
+                                              </div>
+                                            ) : (
+                                              <div className="space-y-4">
+                                                <div className="grid gap-3 p-2">
+                                                  {userCvs.map((cv) => (
+                                                    <Card
+                                                      key={cv.id}
+                                                      className={`group cursor-pointer border py-0 transition-all duration-200 hover:border-indigo-200 hover:shadow-md ${
+                                                        selectedCvId === cv.id
+                                                          ? 'bg-indigo-50/80 ring-2 ring-indigo-500'
+                                                          : 'hover:bg-gray-50/80'
+                                                      }`}
+                                                      onClick={() =>
+                                                        handleCvSelect(
+                                                          cv.id || '',
+                                                        )
+                                                      }
+                                                    >
+                                                      <CardContent className="p-4">
+                                                        <div className="flex items-start justify-between">
+                                                          <div className="flex flex-1 items-start gap-3">
+                                                            <div
+                                                              className={`rounded-lg p-2.5 transition-colors ${
+                                                                selectedCvId ===
+                                                                cv.id
+                                                                  ? 'bg-indigo-100'
+                                                                  : 'bg-gray-100 group-hover:bg-indigo-50'
+                                                              }`}
+                                                            >
+                                                              <FileText
+                                                                className={`h-5 w-5 transition-colors ${
+                                                                  selectedCvId ===
+                                                                  cv.id
+                                                                    ? 'text-indigo-600'
+                                                                    : 'text-gray-500 group-hover:text-indigo-500'
+                                                                }`}
+                                                              />
+                                                            </div>
+                                                            <div className="min-w-0 flex-1">
+                                                              <div className="flex items-center gap-2">
+                                                                <h4 className="truncate font-medium text-gray-900">
+                                                                  {cv.title ||
+                                                                    cv.name ||
+                                                                    `CV #${cv.id}`}
+                                                                </h4>
+                                                                {selectedCvId ===
+                                                                  cv.id && (
+                                                                  <Badge
+                                                                    variant="secondary"
+                                                                    className="animate-in fade-in bg-indigo-100 text-indigo-700 duration-200"
+                                                                  >
+                                                                    Selected
+                                                                  </Badge>
+                                                                )}
+                                                              </div>
+                                                              <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-gray-500">
+                                                                <span className="flex items-center gap-1.5 rounded-full bg-gray-100/80 px-2 py-1">
+                                                                  <Clock className="h-3 w-3" />
+                                                                  {formatRelativeTime(
+                                                                    cv.updatedAt ||
+                                                                      cv.createdAt,
+                                                                  )}
+                                                                </span>
+                                                                <span className="flex items-center gap-1.5 rounded-full bg-gray-100/80 px-2 py-1">
+                                                                  <FileText className="h-3 w-3" />
+                                                                  {cv.fileType ||
+                                                                    'PDF'}
+                                                                </span>
+                                                              </div>
+                                                            </div>
+                                                          </div>
+
+                                                          <div className="flex items-center gap-2">
+                                                            {cv.url && (
+                                                              <TooltipProvider>
+                                                                <Tooltip>
+                                                                  <TooltipTrigger
+                                                                    asChild
+                                                                  >
+                                                                    <Button
+                                                                      type="button"
+                                                                      variant="outline"
+                                                                      size="sm"
+                                                                      className="flex h-8 items-center gap-1.5 px-3 transition-colors hover:bg-indigo-50 hover:text-indigo-600"
+                                                                      onClick={(
+                                                                        e,
+                                                                      ) =>
+                                                                        cv.url &&
+                                                                        handlePreviewCv(
+                                                                          cv.url,
+                                                                          e,
+                                                                        )
+                                                                      }
+                                                                    >
+                                                                      <Eye className="h-3.5 w-3.5" />
+                                                                      Preview
+                                                                    </Button>
+                                                                  </TooltipTrigger>
+                                                                  <TooltipContent
+                                                                    side="left"
+                                                                    className="bg-gray-900 text-xs"
+                                                                  >
+                                                                    Open CV in
+                                                                    new tab
+                                                                  </TooltipContent>
+                                                                </Tooltip>
+                                                              </TooltipProvider>
+                                                            )}
+                                                          </div>
+                                                        </div>
+                                                      </CardContent>
+                                                    </Card>
+                                                  ))}
+                                                </div>
+
+                                                <div className="mt-4 flex items-center justify-between border-t pt-4">
+                                                  <p className="text-sm text-gray-600">
+                                                    {userCvs.length} CV
+                                                    {userCvs.length !== 1
+                                                      ? 's'
+                                                      : ''}{' '}
+                                                    available
+                                                  </p>
+                                                  <Button
+                                                    type="button"
+                                                    variant="outline"
+                                                    onClick={handleCreateCv}
+                                                    className="text-sm font-medium hover:bg-indigo-50 hover:text-indigo-600"
+                                                  >
+                                                    <FileText className="mr-1.5 h-4 w-4" />
+                                                    Create New CV
+                                                  </Button>
+                                                </div>
+                                              </div>
+                                            )}
+                                          </div>
+                                        </FormControl>
+                                        <FormMessage />
+                                      </FormItem>
+                                    )}
+                                  />
+                                </TabsContent>
+                              </Tabs>
                             </FormItem>
                           )}
                         />
@@ -475,7 +805,7 @@ export default function ApplyDialog({
 
                 <Button
                   type="submit"
-                  disabled={isSubmitting || !cvFile}
+                  disabled={isSubmitting || !isCvValid()}
                   className="w-full bg-indigo-600 py-3 text-white hover:bg-indigo-700 disabled:opacity-50"
                 >
                   {isSubmitting ? (
