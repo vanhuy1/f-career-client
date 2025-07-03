@@ -41,6 +41,8 @@ export interface Cv {
   updatedAt?: string;
   activeColor?: string;
   templateId: number;
+  url?: string;
+  fileType?: string;
   // Local fields
   name: string;
   image: string;
