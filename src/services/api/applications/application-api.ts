@@ -161,6 +161,23 @@ class ApplicationService {
 
     return response;
   }
+
+  async getApplicationByIdInCandidateSite(id: string): Promise<Application> {
+    const url = this.requestBuilder.buildUrl(`${id}`);
+    const response = await httpClient.get<Application>({
+      url,
+      typeCheck: (data) => {
+        return {
+          success: true,
+          data: data as Application,
+        };
+      },
+      config: {
+        withCredentials: false,
+      },
+    });
+    return response;
+  }
 }
 
 export const applicationService = new ApplicationService();

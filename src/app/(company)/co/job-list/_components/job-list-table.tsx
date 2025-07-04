@@ -34,6 +34,7 @@ interface JobListTableProps {
   onViewApplicants: (jobId: string) => void;
   onDeleteJob: (jobId: string) => void;
   companyName: string;
+  totalItems: number;
 }
 
 export default function JobListTable({
@@ -43,6 +44,7 @@ export default function JobListTable({
   onViewApplicants,
   onDeleteJob,
   companyName,
+  totalItems,
 }: JobListTableProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortConfig, setSortConfig] = useState<{
@@ -104,7 +106,7 @@ export default function JobListTable({
       {/* Header */}
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-semibold text-gray-900">
-          Total Jobs: {filteredJobs.length}
+          Total Jobs: {totalItems}
           <p className="mt-1 text-sm text-gray-600">
             Managing jobs for {companyName}
           </p>
