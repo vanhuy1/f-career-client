@@ -248,7 +248,7 @@ export default function ApplicationDetailPage() {
                     {/* {application.job?.company.companyName} */}
                   </p>
                 </div>
-                {application.job?.company.address && (
+                {/* {application.job?.company.address && (
                   <div>
                     <h3 className="text-sm text-gray-500">Website</h3>
                     <a
@@ -260,7 +260,7 @@ export default function ApplicationDetailPage() {
                       {application.job.company.website}
                     </a>
                   </div>
-                )}
+                )} */}
               </div>
             </CardContent>
           </Card>

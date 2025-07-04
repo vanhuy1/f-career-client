@@ -10,6 +10,7 @@ import { JobByCompanyId } from '@/types/Job';
 // Components
 import JobListTable from './_components/job-list-table';
 import JobListPagination from './_components/job-list-pagination';
+import { useRouter } from 'next/navigation';
 
 export default function JobListingDashboard() {
   const [currentPage, setCurrentPage] = useState(1);
@@ -22,6 +23,7 @@ export default function JobListingDashboard() {
 
   const user = useUser();
   const companyId = user?.data?.companyId;
+  const router = useRouter();
 
   // Fetch company data
   useEffect(() => {
@@ -63,7 +65,7 @@ export default function JobListingDashboard() {
         // Check if the response has the expected structure
         if (response && response.data) {
           setJobs(response.data);
-          setTotalItems(response.meta?.count || response.data.length);
+          setTotalItems(response.meta?.count);
         } else {
           // If response structure is not as expected, handle it
           console.log('Empty or invalid response from jobs API:', response);
@@ -97,12 +99,10 @@ export default function JobListingDashboard() {
 
   // Event handlers for job actions
   const handleViewDetails = (jobId: string) => {
-    // Now using real job ID from the API response
     const job = jobs.find((job) => job.jobId === jobId);
     if (!job) return;
 
-    toast.info(`View details for job: ${job.jobTitle}`);
-    // Navigate to a details page or show a modal with job details
+    router.push(`/co/job-list/${jobId}/job-details`);
   };
 
   const handleEditJob = (jobId: string) => {
@@ -110,15 +110,13 @@ export default function JobListingDashboard() {
     if (!job) return;
 
     toast.info(`Edit job: ${job.jobTitle}`);
-    // In a real implementation, you would navigate to the edit page
   };
 
   const handleViewApplicants = (jobId: string) => {
     const job = jobs.find((job) => job.jobId === jobId);
     if (!job) return;
 
-    // Navigate to the applicants page for the specific job
-    window.location.href = `/co/job-list/${jobId}/applicants`;
+    router.push(`/co/job-list/${jobId}/applicants`);
   };
 
   const handleDeleteJob = async (jobId: string) => {
@@ -209,6 +207,7 @@ export default function JobListingDashboard() {
     <div className="overflow-hidde max-h-screen">
       <div className="mx-auto max-w-7xl">
         <JobListTable
+          totalItems={totalItems}
           jobs={jobs}
           onViewDetails={handleViewDetails}
           onEditJob={handleEditJob}
