@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import type { Candidate } from '../_components/types/candidate';
 import { ApplicationStatus } from '@/enums/applicationStatus';
+import { useRouter } from 'next/navigation';
 
 interface CandidateCardProps {
   candidate: Candidate;
@@ -17,6 +18,11 @@ const statusColors: Record<ApplicationStatus, string> = {
 };
 
 export function CandidateCard({ candidate }: CandidateCardProps) {
+  const router = useRouter();
+
+  const handleViewProfile = (candidateId: string) => {
+    router.push(`/co/applicant-list/${candidateId}`);
+  };
   return (
     <Card
       className="mb-4 border-l-4"
@@ -38,7 +44,11 @@ export function CandidateCard({ candidate }: CandidateCardProps) {
           </Avatar>
           <div className="flex-1">
             <h3 className="font-semibold text-gray-900">{candidate.name}</h3>
-            <Button variant="link" className="h-auto p-0 text-sm text-blue-600">
+            <Button
+              variant="link"
+              className="h-auto p-0 text-sm text-blue-600"
+              onClick={() => handleViewProfile(candidate.id)}
+            >
               View Profile
             </Button>
           </div>
