@@ -196,9 +196,9 @@
     print-color-adjust: exact !important;
     color-adjust: exact !important;
   }
-  
+
   /* Override any oklch colors with their fallbacks for printing */
-  [style*="oklch"] {
+  [style*='oklch'] {
     color: var(--fallback-primary) !important;
     background-color: var(--fallback-background) !important;
     border-color: var(--fallback-secondary) !important;

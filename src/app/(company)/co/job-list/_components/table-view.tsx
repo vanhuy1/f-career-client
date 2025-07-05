@@ -10,12 +10,18 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Star } from 'lucide-react';
 import type { Candidate } from '../_components/types/candidate';
+import { useRouter } from 'next/navigation';
 
 interface TableViewProps {
   applicants: Candidate[];
 }
 
 export function TableView({ applicants }: TableViewProps) {
+  const router = useRouter();
+
+  const handleViewProfile = (candidateId: string) => {
+    router.push(`/co/applicant-list/${candidateId}`);
+  };
   return (
     <Table>
       <TableHeader>
@@ -62,8 +68,11 @@ export function TableView({ applicants }: TableViewProps) {
               </div>
             </TableCell>
             <TableCell>
-              <button className="text-blue-600 hover:underline">
-                View Profile
+              <button
+                className="text-blue-600 hover:underline"
+                onClick={() => handleViewProfile(candidate.id)}
+              >
+                View Profile {candidate.id}
               </button>
             </TableCell>
           </TableRow>
