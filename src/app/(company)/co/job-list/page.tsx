@@ -78,7 +78,6 @@ export default function JobListingDashboard() {
           error instanceof Error ? error.message : 'Failed to load jobs';
         setError(errorMessage);
         setIsLoading(false);
-        toast.error('Failed to load jobs. Please try again.');
       }
     };
 
@@ -178,8 +177,9 @@ export default function JobListingDashboard() {
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
           <div className="rounded-md bg-red-100 p-4">
-            <h3 className="text-lg font-medium text-red-800">Error</h3>
-            <p className="text-sm text-red-600">{error}</p>
+            {/* <h3 className="text-lg font-medium text-red-800">Error</h3>
+            <p className="text-sm text-red-600">{error}</p> */}
+            <p>No job open</p>
           </div>
         </div>
       </div>

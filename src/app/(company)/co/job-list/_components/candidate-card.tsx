@@ -8,6 +8,8 @@ import { useRouter } from 'next/navigation';
 
 interface CandidateCardProps {
   candidate: Candidate;
+  getScoreColor: (score: number) => string;
+  getScoreBackgroundColor: (score: number) => string;
 }
 
 const statusColors: Record<ApplicationStatus, string> = {
@@ -17,7 +19,11 @@ const statusColors: Record<ApplicationStatus, string> = {
   [ApplicationStatus.REJECTED]: '#ef4444',
 };
 
-export function CandidateCard({ candidate }: CandidateCardProps) {
+export function CandidateCard({
+  candidate,
+  getScoreColor,
+  getScoreBackgroundColor,
+}: CandidateCardProps) {
   const router = useRouter();
 
   const handleViewProfile = (candidateId: string) => {
@@ -61,13 +67,17 @@ export function CandidateCard({ candidate }: CandidateCardProps) {
             </div>
           </div>
           <div className="text-right">
-            <div>Score</div>
-            <div className="flex items-center gap-1">
+            <div>AI Score</div>
+            <div
+              className={`flex items-center gap-1 rounded-md px-2 py-1 ${getScoreBackgroundColor(candidate.score)}`}
+            >
               <Star
-                className={`h-4 w-4 ${candidate.score > 0 ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
+                className={`h-4 w-4 ${candidate.score > 0 ? `fill-current ${getScoreColor(candidate.score)}` : 'text-gray-300'}`}
               />
-              <span className="font-medium text-gray-900">
-                {candidate.score.toFixed(1)}
+              <span
+                className={`font-semibold ${getScoreColor(candidate.score)}`}
+              >
+                {candidate.score}
               </span>
             </div>
           </div>
