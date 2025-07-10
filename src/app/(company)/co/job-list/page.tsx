@@ -40,7 +40,6 @@ export default function JobListingDashboard() {
             ? error.message
             : 'Failed to load company data';
         setError(errorMessage);
-        toast.error('Failed to load company data. Please try again.');
         setIsLoading(false);
       }
     };
@@ -177,8 +176,6 @@ export default function JobListingDashboard() {
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
           <div className="rounded-md bg-red-100 p-4">
-            {/* <h3 className="text-lg font-medium text-red-800">Error</h3>
-            <p className="text-sm text-red-600">{error}</p> */}
             <p>No job open</p>
           </div>
         </div>

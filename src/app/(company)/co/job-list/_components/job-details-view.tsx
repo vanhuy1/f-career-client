@@ -33,21 +33,10 @@ export function JobDetailsView({ job }: JobDetailsViewProps) {
         <div className="col-span-2 space-y-8">
           <div>
             <h3 className="mb-4 text-xl font-semibold">Description</h3>
-            <p className="leading-relaxed text-gray-600">{job.description}</p>
-          </div>
-
-          <div>
-            <h3 className="mb-4 text-xl font-semibold">Responsibilities</h3>
-            <div className="space-y-3">
-              {job.responsibilities.map((item, index) => (
-                <div key={index} className="flex items-start gap-3">
-                  <div className="mt-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-green-100">
-                    <div className="h-2 w-2 rounded-full bg-green-500" />
-                  </div>
-                  <span className="text-gray-700">{item}</span>
-                </div>
-              ))}
-            </div>
+            <div
+              className="prose max-w-none leading-relaxed text-gray-600"
+              dangerouslySetInnerHTML={{ __html: job.description }}
+            />
           </div>
 
           <div>
