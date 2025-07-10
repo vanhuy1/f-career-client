@@ -117,6 +117,9 @@ export interface ApplicationByJobId {
   applicantName: string;
   applicationStatus: ApplicationStatus;
   appliedDate: string;
+  ai_score?: number; // Score from 0-100
+  ai_analysis?: string; // Detailed text analysis
+  ai_status?: string;
 }
 
 export interface ApplicationByJobIdResponse {

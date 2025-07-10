@@ -14,9 +14,15 @@ import { useRouter } from 'next/navigation';
 
 interface TableViewProps {
   applicants: Candidate[];
+  getScoreColor: (score: number) => string;
+  getScoreBackgroundColor: (score: number) => string;
 }
 
-export function TableView({ applicants }: TableViewProps) {
+export function TableView({
+  applicants,
+  getScoreColor,
+  getScoreBackgroundColor,
+}: TableViewProps) {
   const router = useRouter();
 
   const handleViewProfile = (candidateId: string) => {
@@ -29,7 +35,7 @@ export function TableView({ applicants }: TableViewProps) {
           <TableHead>Candidate</TableHead>
           <TableHead>Status</TableHead>
           <TableHead>Applied Date</TableHead>
-          <TableHead>Score</TableHead>
+          <TableHead>AI Score</TableHead>
           <TableHead>Actions</TableHead>
         </TableRow>
       </TableHeader>
@@ -60,11 +66,19 @@ export function TableView({ applicants }: TableViewProps) {
             </TableCell>
             <TableCell>{candidate.appliedDate}</TableCell>
             <TableCell>
-              <div className="flex items-center gap-1">
-                <Star
-                  className={`h-4 w-4 ${candidate.score > 0 ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
-                />
-                <span>{candidate.score.toFixed(1)}</span>
+              <div className="flex items-center gap-2">
+                <div
+                  className={`flex items-center gap-1 rounded-full px-2 py-1 ${getScoreBackgroundColor(candidate.score)}`}
+                >
+                  <Star
+                    className={`h-4 w-4 ${candidate.score > 0 ? `fill-current ${getScoreColor(candidate.score)}` : 'text-gray-300'}`}
+                  />
+                  <span
+                    className={`font-semibold ${getScoreColor(candidate.score)}`}
+                  >
+                    {candidate.score}
+                  </span>
+                </div>
               </div>
             </TableCell>
             <TableCell>
