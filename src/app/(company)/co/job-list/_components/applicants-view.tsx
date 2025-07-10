@@ -10,9 +10,15 @@ import type { Candidate } from '../_components/types/candidate';
 
 interface ApplicantsViewProps {
   applicants: Candidate[];
+  getScoreColor: (score: number) => string;
+  getScoreBackgroundColor: (score: number) => string;
 }
 
-export function ApplicantsView({ applicants }: ApplicantsViewProps) {
+export function ApplicantsView({
+  applicants,
+  getScoreColor,
+  getScoreBackgroundColor,
+}: ApplicantsViewProps) {
   const [viewMode, setViewMode] = useState<'pipeline' | 'table'>('pipeline');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -70,9 +76,17 @@ export function ApplicantsView({ applicants }: ApplicantsViewProps) {
       </div>
 
       {viewMode === 'pipeline' ? (
-        <PipelineView applicants={filteredApplicants} />
+        <PipelineView
+          applicants={filteredApplicants}
+          getScoreColor={getScoreColor}
+          getScoreBackgroundColor={getScoreBackgroundColor}
+        />
       ) : (
-        <TableView applicants={filteredApplicants} />
+        <TableView
+          applicants={filteredApplicants}
+          getScoreColor={getScoreColor}
+          getScoreBackgroundColor={getScoreBackgroundColor}
+        />
       )}
     </div>
   );

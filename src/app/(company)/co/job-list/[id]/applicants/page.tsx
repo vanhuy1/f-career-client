@@ -9,6 +9,22 @@ import { Candidate } from '../../_components/types/candidate';
 import { toast } from 'react-toastify';
 import { ApplicationStatus } from '@/enums/applicationStatus';
 
+const getScoreColor = (score: number) => {
+  if (score === 100) return 'text-purple-600'; // Perfect score
+  if (score >= 75) return 'text-green-600'; // 75-99: Excellent
+  if (score >= 50) return 'text-blue-600'; // 50-74: Good
+  if (score >= 25) return 'text-yellow-600'; // 25-49: Fair
+  return 'text-red-600'; // 0-24: Poor
+};
+
+const getScoreBackgroundColor = (score: number) => {
+  if (score === 100) return 'bg-purple-100'; // Perfect score
+  if (score >= 75) return 'bg-green-100'; // 75-99: Excellent
+  if (score >= 50) return 'bg-blue-100'; // 50-74: Good
+  if (score >= 25) return 'bg-yellow-100'; // 25-49: Fair
+  return 'bg-red-100'; // 0-24: Poor
+};
+
 export default function ApplicantsPage() {
   const params = useParams() || {};
   const jobId = params?.id
@@ -45,11 +61,15 @@ export default function ApplicantsPage() {
                 : ApplicationStatus.APPLIED,
               appliedDate: app.appliedDate,
               avatar: '', // API doesn't provide avatar, use empty string or default
-              score: 0, // If score is not provided, use a default value
+              score: app.ai_score ?? 0, // Use AI score if available, otherwise default to 0
             }),
           );
 
-          setApplicants(transformedApplicants);
+          // Sort applicants by score from highest to lowest
+          const sortedApplicants = transformedApplicants.sort(
+            (a, b) => b.score - a.score,
+          );
+          setApplicants(sortedApplicants);
         } else {
           setApplicants([]);
         }
@@ -73,5 +93,11 @@ export default function ApplicantsPage() {
     );
   }
 
-  return <ApplicantsView applicants={applicants} />;
+  return (
+    <ApplicantsView
+      applicants={applicants}
+      getScoreColor={getScoreColor}
+      getScoreBackgroundColor={getScoreBackgroundColor}
+    />
+  );
 }

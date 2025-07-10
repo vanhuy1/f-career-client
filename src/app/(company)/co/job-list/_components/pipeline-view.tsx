@@ -5,6 +5,8 @@ import { ApplicationStatus } from '@/enums/applicationStatus';
 
 interface PipelineViewProps {
   applicants: Candidate[];
+  getScoreColor: (score: number) => string;
+  getScoreBackgroundColor: (score: number) => string;
 }
 
 const statusConfig: Record<
@@ -33,7 +35,11 @@ const statusConfig: Record<
   },
 };
 
-export function PipelineView({ applicants }: PipelineViewProps) {
+export function PipelineView({
+  applicants,
+  getScoreColor,
+  getScoreBackgroundColor,
+}: PipelineViewProps) {
   const applicantsByStatus = Object.values(ApplicationStatus).reduce<
     Record<string, Candidate[]>
   >(
@@ -69,7 +75,12 @@ export function PipelineView({ applicants }: PipelineViewProps) {
             </div>
             <div className="space-y-3">
               {statusApplicants.map((candidate) => (
-                <CandidateCard key={candidate.id} candidate={candidate} />
+                <CandidateCard
+                  key={candidate.id}
+                  candidate={candidate}
+                  getScoreColor={getScoreColor}
+                  getScoreBackgroundColor={getScoreBackgroundColor}
+                />
               ))}
             </div>
           </div>
