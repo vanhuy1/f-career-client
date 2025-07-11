@@ -72,15 +72,19 @@ export default function ApplicantLayout({
   }, [applicantId, dispatch, applicant]);
 
   const tabs = [
-    { name: 'Applicant Profile', href: `/co/applicant-list/${applicantId}` },
+    { name: 'Profile', href: `/co/applicant-list/${applicantId}` },
     { name: 'Resume', href: `/co/applicant-list/${applicantId}/resume` },
     {
-      name: 'Hiring Progress',
+      name: 'Progress',
       href: `/co/applicant-list/${applicantId}/hiring-progress`,
     },
     {
-      name: 'Interview Schedule',
+      name: 'Schedule',
       href: `/co/applicant-list/${applicantId}/interview-schedule`,
+    },
+    {
+      name: 'AI Analysis',
+      href: `/co/applicant-list/${applicantId}/ai-analysis`,
     },
   ];
 
@@ -252,7 +256,7 @@ export default function ApplicantLayout({
                     <Link
                       key={tab.name}
                       href={tab.href}
-                      className={`relative px-6 py-4 text-sm font-semibold transition-all duration-200 ${
+                      className={`relative flex-1 px-6 py-4 text-center text-sm font-semibold transition-all duration-200 ${
                         isActive
                           ? 'border-b-2 border-blue-600 bg-white text-blue-600'
                           : 'text-gray-600 hover:bg-white/50 hover:text-gray-900'

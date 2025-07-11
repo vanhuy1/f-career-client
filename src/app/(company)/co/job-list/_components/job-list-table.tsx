@@ -198,7 +198,7 @@ export default function JobListTable({
                     <Badge
                       variant={getStatusBadgeVariant(job.status)}
                       className={
-                        job.status === 'OPEN'
+                        job.status === 'Open'
                           ? 'border-green-200 bg-white text-green-600 hover:bg-white'
                           : 'border-red-200 bg-white text-red-600 hover:bg-white'
                       }

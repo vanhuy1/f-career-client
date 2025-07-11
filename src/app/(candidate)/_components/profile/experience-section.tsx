@@ -167,7 +167,10 @@ export function ExperienceSection({
                   {')'}
                 </div>
                 <div className="mb-3 text-gray-500">{experience.location}</div>
-                <p className="text-gray-600">{experience.description}</p>
+                <div
+                  className="prose max-w-none text-gray-600"
+                  dangerouslySetInnerHTML={{ __html: experience.description }}
+                />
               </div>
             </div>
           </div>

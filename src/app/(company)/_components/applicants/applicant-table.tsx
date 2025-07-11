@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import {
   Search,
-  Filter,
   MoreHorizontal,
   ChevronLeft,
   ChevronRight,
@@ -57,7 +56,6 @@ export default function ApplicantTable() {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [viewMode, setViewMode] = useState<'pipeline' | 'table'>('table');
   const [applicants, setApplicants] = useState<Applicant[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<ApplicationStatus | null>(
@@ -133,10 +131,8 @@ export default function ApplicantTable() {
 
         if (response && response.data) {
           setApplicants(response.data);
-          // setTotalCount(response.total || response.data.length);
         } else {
           setApplicants([]);
-          // setTotalCount(0);
         }
       } catch (error) {
         console.error('Error fetching applicants:', error);
@@ -166,11 +162,11 @@ export default function ApplicantTable() {
               className="w-80 pl-10"
             />
           </div>
-          <Button variant="outline" className="flex items-center gap-2">
+          {/* <Button variant="outline" className="flex items-center gap-2">
             <Filter className="h-4 w-4" />
             Filter
-          </Button>
-          <div className="flex rounded-lg bg-gray-100 p-1">
+          </Button> */}
+          {/* <div className="flex rounded-lg bg-gray-100 p-1">
             <Button
               variant={viewMode === 'pipeline' ? 'default' : 'ghost'}
               size="sm"
@@ -187,7 +183,7 @@ export default function ApplicantTable() {
             >
               Table View
             </Button>
-          </div>
+          </div> */}
         </div>
       </div>
 
@@ -232,18 +228,6 @@ export default function ApplicantTable() {
         ))}
       </div>
 
-      {/* {statusFilter && (
-        <div className="mb-4 flex">
-          <button
-            onClick={() => setStatusFilter(null)}
-            className="flex items-center gap-1 rounded-full bg-blue-50 px-3 py-1 text-sm text-blue-700 hover:bg-blue-100"
-          >
-            Clear filter <X className="h-3 w-3" />
-          </button>
-        </div>
-      )} */}
-
-      {/* Table */}
       <div className="overflow-hidden rounded-xl border">
         <Table className="overflow-hidden">
           <TableHeader>
