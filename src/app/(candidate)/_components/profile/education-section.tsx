@@ -113,7 +113,10 @@ export function EducationSection({
                   {edu.startYear} - {edu.endYear || 'Present'}
                 </div>
                 {edu.description && (
-                  <p className="text-gray-600">{edu.description}</p>
+                  <div
+                    className="prose max-w-none text-gray-600"
+                    dangerouslySetInnerHTML={{ __html: edu.description }}
+                  />
                 )}
               </div>
             </div>

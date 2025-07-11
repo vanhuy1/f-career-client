@@ -18,7 +18,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+import { RichTextEditor } from '@/components/common/RichTextEditor';
 import {
   Select,
   SelectContent,
@@ -392,10 +392,11 @@ export function EducationForm({
             <FormItem>
               <FormLabel>Description</FormLabel>
               <FormControl>
-                <Textarea
+                <RichTextEditor
+                  content={field.value || ''}
+                  onChange={field.onChange}
                   placeholder="Describe your education, achievements, or activities"
-                  className="min-h-[120px]"
-                  {...field}
+                  minHeight="min-h-[120px]"
                 />
               </FormControl>
               <FormMessage />

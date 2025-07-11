@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { Edit2, Save, X, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Textarea } from '@/components/ui/textarea';
 import { candidateProfileService } from '@/services/api/profile/ca-api';
 import { toast } from 'react-toastify';
 import { useDispatch } from 'react-redux';
@@ -16,6 +15,7 @@ import {
   useCaProfileLoading,
 } from '@/services/state/caProfileSlice';
 import { LoadingState } from '@/store/store.model';
+import { RichTextEditor } from '@/components/common/RichTextEditor';
 
 interface AboutSectionProps {
   about: string | null;
@@ -29,8 +29,6 @@ export function AboutSection({ about, onUpdate }: AboutSectionProps) {
   const dispatch = useDispatch();
   const loadingState = useCaProfileLoading();
   const errors = useCaProfileErrors();
-
-  const paragraphs = about ? about.split('\n\n') : [''];
 
   const handleSave = async () => {
     dispatch(updateCaProfileStart());
@@ -57,6 +55,22 @@ export function AboutSection({ about, onUpdate }: AboutSectionProps) {
   const handleCancel = () => {
     setEditedAbout(about || ''); // Reset to original
     setIsEditing(false);
+  };
+
+  // Convert plain text to HTML for backward compatibility
+  const getDisplayContent = () => {
+    if (!about) return '';
+
+    // If the content contains HTML tags, render as HTML
+    if (about.includes('<') && about.includes('>')) {
+      return about;
+    }
+
+    // Otherwise, convert plain text paragraphs to HTML
+    return about
+      .split('\n\n')
+      .map((paragraph) => `<p>${paragraph}</p>`)
+      .join('');
   };
 
   return (
@@ -104,19 +118,17 @@ export function AboutSection({ about, onUpdate }: AboutSectionProps) {
       </CardHeader>
       <CardContent>
         {!isEditing ? (
-          <div className="space-y-4 text-gray-600">
-            {paragraphs.map((paragraph, index) => (
-              <p key={index}>{paragraph}</p>
-            ))}
-          </div>
+          <div
+            className="prose prose-sm max-w-none text-gray-600"
+            dangerouslySetInnerHTML={{ __html: getDisplayContent() }}
+          />
         ) : (
           <div className="space-y-4">
-            <Textarea
-              value={editedAbout}
-              onChange={(e) => setEditedAbout(e.target.value)}
-              className="min-h-[200px] resize-y"
-              placeholder="Write about yourself..."
+            <RichTextEditor
+              content={editedAbout}
+              onChange={setEditedAbout}
               disabled={loadingState === LoadingState.loading}
+              placeholder="Write about yourself..."
             />
           </div>
         )}
