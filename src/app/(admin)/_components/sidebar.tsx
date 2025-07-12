@@ -7,6 +7,8 @@ import {
   Settings,
   Bell,
   MessageSquare,
+  DollarSign,
+  LogOut,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -24,12 +26,21 @@ import {
   SidebarFooter,
 } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import { clearUser, useUser } from '@/services/state/userSlice';
+import { useAppDispatch } from '@/store/hooks';
+import ROUTES from '@/constants/navigation';
 
 const menuItems = [
   {
     title: 'Dashboard',
     url: '/ad',
     icon: BarChart3,
+  },
+  {
+    title: 'Profit',
+    url: '/ad/profit',
+    icon: DollarSign,
   },
   {
     title: 'Manage Companies',
@@ -46,6 +57,7 @@ const menuItems = [
     url: '/ad/notifications',
     icon: Bell,
   },
+
   {
     title: 'Messages',
     url: '/ad/messages',
@@ -60,6 +72,19 @@ const menuItems = [
 
 export function AppSidebar() {
   const pathname = usePathname();
+  const user = useUser();
+  const dispatch = useAppDispatch();
+
+  const handleLogout = () => {
+    // Clear localStorage and cookies manually
+    localStorage.clear();
+    document.cookie =
+      'refreshToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+
+    dispatch(clearUser());
+
+    window.location.href = ROUTES.HOMEPAGE.path;
+  };
 
   return (
     <Sidebar className="border-r border-gray-200">
@@ -102,16 +127,24 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="p-4">
+        <Button
+          onClick={handleLogout}
+          className="mb-4 flex w-full items-center justify-start gap-3 rounded-md bg-white px-3 text-red-500 hover:bg-gray-100 hover:text-red-600"
+        >
+          <LogOut className="h-5 w-5" />
+          <span className="font-medium">Logout</span>
+        </Button>
+
         <div className="flex items-center gap-3 rounded-lg bg-gray-50 p-3">
           <Avatar className="h-8 w-8">
-            <AvatarImage src="/placeholder.svg?height=32&width=32" />
-            <AvatarFallback>AJ</AvatarFallback>
+            <AvatarImage src={user?.data.avatar ?? ''} />
+            <AvatarFallback>{user?.data.name.charAt(0)}</AvatarFallback>
           </Avatar>
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-medium text-gray-900">
-              Admin Johnson
+              {user?.data.name}
             </p>
-            <p className="truncate text-xs text-gray-500">admin@company.com</p>
+            <p className="truncate text-xs text-gray-500">{user?.data.email}</p>
           </div>
         </div>
       </SidebarFooter>

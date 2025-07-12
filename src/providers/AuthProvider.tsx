@@ -1,3 +1,7 @@
+'use client';
+
+import ROUTES from '@/constants/navigation';
+import { ROLES } from '@/enums/roles.enum';
 import LoadingScreen from '@/pages/LoadingScreen';
 import { userService } from '@/services/api/auth/user-api';
 import {
@@ -8,6 +12,7 @@ import {
 } from '@/services/state/userSlice';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { LoadingState } from '@/store/store.model';
+import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
 interface AuthProviderProps {
@@ -18,6 +23,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const dispatch = useAppDispatch();
   const user = useAppSelector((state) => state.user.data);
   const isLoading = useUserLoading();
+  const router = useRouter();
 
   useEffect(() => {
     const setUSer = async () => {
@@ -25,6 +31,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
         dispatch(setUserStart());
         const userProfile = await userService.getMe();
         dispatch(setUserSuccess(userProfile));
+        if (userProfile.data.roles[0] === ROLES.ADMIN) {
+          router.push(ROUTES.ADMIN.Home.path);
+        }
       } catch (error) {
         dispatch(setUserFailure(error as string));
       }
