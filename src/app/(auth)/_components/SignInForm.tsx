@@ -55,14 +55,19 @@ export const SignInForm = () => {
         const userData = await userService.getMe();
         if (userData) {
           dispatch(setUserSuccess(userData));
-          if (userData.data.roles[0] === ROLES.USER) {
-            router.push(ROUTES.CA.HOME.path);
-          } else if (userData.data.roles[0] === ROLES.ADMIN) {
+          // if (userData.data.roles[0] === ROLES.USER) {
+          //   router.push(ROUTES.CA.HOME.path);
+          // } else if (userData.data.roles[0] === ROLES.ADMIN) {
+          //   router.push(ROUTES.ADMIN.Home.path);
+          // } else if (userData.data.roles[0] === ROLES.RECRUITER) {
+          //   router.push(ROUTES.CO.HOME.path);
+          // } else if (userData.data.roles[0] === ROLES.ADMIN_RECRUITER) {
+          //   router.push(ROUTES.CO.HOME.path);
+          // }
+          if (userData.data.roles[0] === ROLES.ADMIN) {
             router.push(ROUTES.ADMIN.Home.path);
-          } else if (userData.data.roles[0] === ROLES.RECRUITER) {
-            router.push(ROUTES.CO.HOME.path);
-          } else if (userData.data.roles[0] === ROLES.ADMIN_RECRUITER) {
-            router.push(ROUTES.CO.HOME.path);
+          } else {
+            router.push(ROUTES.HOMEPAGE.path);
           }
         } else {
           dispatch(loginFailure('Failed to fetch user data'));

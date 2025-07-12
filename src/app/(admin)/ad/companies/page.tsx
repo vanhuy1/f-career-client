@@ -37,70 +37,15 @@ import {
   Filter,
   ArrowUpDown,
 } from 'lucide-react';
-
-// Define Company type
-interface Company {
-  id: number;
-  name: string;
-  email: string;
-  status: 'accepted' | 'pending' | 'denied';
-  submissionDate: string;
-  industry: string;
-  employees: string;
-}
-
-// Mock data
-const companies: Company[] = [
-  {
-    id: 1,
-    name: 'TechCorp Solutions',
-    email: 'contact@techcorp.com',
-    status: 'accepted',
-    submissionDate: '2024-01-15',
-    industry: 'Technology',
-    employees: '50-100',
-  },
-  {
-    id: 2,
-    name: 'Green Energy Ltd',
-    email: 'info@greenenergy.com',
-    status: 'pending',
-    submissionDate: '2024-01-20',
-    industry: 'Energy',
-    employees: '10-50',
-  },
-  {
-    id: 3,
-    name: 'DataFlow Inc',
-    email: 'hello@dataflow.com',
-    status: 'denied',
-    submissionDate: '2024-01-18',
-    industry: 'Data Analytics',
-    employees: '100-500',
-  },
-  {
-    id: 4,
-    name: 'Creative Studios',
-    email: 'team@creativestudios.com',
-    status: 'accepted',
-    submissionDate: '2024-01-12',
-    industry: 'Design',
-    employees: '5-10',
-  },
-  {
-    id: 5,
-    name: 'FinTech Innovations',
-    email: 'support@fintech.com',
-    status: 'pending',
-    submissionDate: '2024-01-22',
-    industry: 'Finance',
-    employees: '20-50',
-  },
-];
+import { useRouter } from 'next/navigation';
+import { mockCompanies, CompanyDetail } from '@/data/mockUsers';
 
 export default function CompaniesPage() {
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
+  const [selectedCompany, setSelectedCompany] = useState<CompanyDetail | null>(
+    null,
+  );
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
   const [profileDialogOpen, setProfileDialogOpen] = useState(false);
 
@@ -129,8 +74,8 @@ export default function CompaniesPage() {
     }
   };
 
-  const filterCompaniesByStatus = (status: Company['status']) => {
-    return companies.filter(
+  const filterCompaniesByStatus = (status: CompanyDetail['status']) => {
+    return mockCompanies.filter(
       (company) =>
         company.status === status &&
         (company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -140,7 +85,7 @@ export default function CompaniesPage() {
 
   const handleStatusChange = (
     companyId: number,
-    newStatus: Company['status'],
+    newStatus: CompanyDetail['status'],
   ) => {
     console.log('status change', companyId, newStatus);
   };
@@ -150,7 +95,11 @@ export default function CompaniesPage() {
     setEmailDialogOpen(false);
   };
 
-  const CompanyTable = ({ companies }: { companies: Company[] }) => (
+  const handleViewProfile = (companyId: number) => {
+    router.push(`/ad/companies/${companyId}`);
+  };
+
+  const CompanyTable = ({ companies }: { companies: CompanyDetail[] }) => (
     <Table>
       <TableHeader>
         <TableRow>
@@ -162,6 +111,7 @@ export default function CompaniesPage() {
           <TableHead>Contact Email</TableHead>
           <TableHead>Industry</TableHead>
           <TableHead>Employees</TableHead>
+          <TableHead>Location</TableHead>
           <TableHead>
             <Button variant="ghost" className="h-auto p-0 font-semibold">
               Submission Date <ArrowUpDown className="ml-2 h-4 w-4" />
@@ -178,6 +128,7 @@ export default function CompaniesPage() {
             <TableCell>{company.email}</TableCell>
             <TableCell>{company.industry}</TableCell>
             <TableCell>{company.employees}</TableCell>
+            <TableCell>{company.location}</TableCell>
             <TableCell>
               {new Date(company.submissionDate).toLocaleDateString()}
             </TableCell>
@@ -191,10 +142,7 @@ export default function CompaniesPage() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem
-                    onClick={() => {
-                      setSelectedCompany(company);
-                      setProfileDialogOpen(true);
-                    }}
+                    onClick={() => handleViewProfile(company.id)}
                   >
                     <Eye className="mr-2 h-4 w-4" />
                     View Profile
@@ -377,6 +325,14 @@ export default function CompaniesPage() {
               </div>
               <div>
                 <Label className="text-sm font-medium text-gray-500">
+                  Location
+                </Label>
+                <p className="text-sm">{selectedCompany?.location}</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label className="text-sm font-medium text-gray-500">
                   Submission Date
                 </Label>
                 <p className="text-sm">
@@ -386,14 +342,38 @@ export default function CompaniesPage() {
                     ).toLocaleDateString()}
                 </p>
               </div>
+              <div>
+                <Label className="text-sm font-medium text-gray-500">
+                  Founded
+                </Label>
+                <p className="text-sm">{selectedCompany?.foundedYear}</p>
+              </div>
+            </div>
+            <div>
+              <Label className="text-sm font-medium text-gray-500">
+                Description
+              </Label>
+              <p className="text-sm text-gray-600">
+                {selectedCompany?.description}
+              </p>
             </div>
           </div>
-          <div className="flex justify-end">
+          <div className="flex justify-end gap-2">
             <Button
               variant="outline"
               onClick={() => setProfileDialogOpen(false)}
             >
               Close
+            </Button>
+            <Button
+              onClick={() => {
+                setProfileDialogOpen(false);
+                if (selectedCompany) {
+                  handleViewProfile(selectedCompany.id);
+                }
+              }}
+            >
+              View Full Profile
             </Button>
           </div>
         </DialogContent>

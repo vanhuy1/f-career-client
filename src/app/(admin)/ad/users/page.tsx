@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
@@ -38,78 +39,13 @@ import {
   Filter,
   ArrowUpDown,
 } from 'lucide-react';
-
-// Define User type
-interface User {
-  id: number;
-  name: string;
-  username: string;
-  email: string;
-  status: 'verified' | 'unverified' | 'banned';
-  lastActive: string;
-  joinDate: string;
-  avatar: string;
-}
-
-// Mock data
-const users: User[] = [
-  {
-    id: 1,
-    name: 'John Smith',
-    username: 'johnsmith',
-    email: 'john.smith@email.com',
-    status: 'verified',
-    lastActive: '2024-01-23',
-    joinDate: '2023-06-15',
-    avatar: '/placeholder.svg?height=32&width=32',
-  },
-  {
-    id: 2,
-    name: 'Sarah Johnson',
-    username: 'sarahj',
-    email: 'sarah.johnson@email.com',
-    status: 'unverified',
-    lastActive: '2024-01-22',
-    joinDate: '2024-01-10',
-    avatar: '/placeholder.svg?height=32&width=32',
-  },
-  {
-    id: 3,
-    name: 'Mike Wilson',
-    username: 'mikew',
-    email: 'mike.wilson@email.com',
-    status: 'banned',
-    lastActive: '2024-01-15',
-    joinDate: '2023-08-20',
-    avatar: '/placeholder.svg?height=32&width=32',
-  },
-  {
-    id: 4,
-    name: 'Emily Davis',
-    username: 'emilyd',
-    email: 'emily.davis@email.com',
-    status: 'verified',
-    lastActive: '2024-01-23',
-    joinDate: '2023-11-05',
-    avatar: '/placeholder.svg?height=32&width=32',
-  },
-  {
-    id: 5,
-    name: 'Alex Brown',
-    username: 'alexb',
-    email: 'alex.brown@email.com',
-    status: 'unverified',
-    lastActive: '2024-01-21',
-    joinDate: '2024-01-18',
-    avatar: '/placeholder.svg?height=32&width=32',
-  },
-];
+import { mockUsers, UserDetail } from '@/data/mockUsers';
 
 export default function UsersPage() {
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [selectedUser, setSelectedUser] = useState<UserDetail | null>(null);
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
-  const [profileDialogOpen, setProfileDialogOpen] = useState(false);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -136,8 +72,8 @@ export default function UsersPage() {
     }
   };
 
-  const filterUsersByStatus = (status: User['status']) => {
-    return users.filter(
+  const filterUsersByStatus = (status: UserDetail['status']) => {
+    return mockUsers.filter(
       (user) =>
         user.status === status &&
         (user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -146,7 +82,10 @@ export default function UsersPage() {
     );
   };
 
-  const handleStatusChange = (userId: number, newStatus: User['status']) => {
+  const handleStatusChange = (
+    userId: number,
+    newStatus: UserDetail['status'],
+  ) => {
     console.log(`Changing status of user ${userId} to ${newStatus}`);
   };
 
@@ -154,7 +93,11 @@ export default function UsersPage() {
     setEmailDialogOpen(false);
   };
 
-  const UserTable = ({ users }: { users: User[] }) => (
+  const handleViewProfile = (userId: number) => {
+    router.push(`/ad/users/${userId}`);
+  };
+
+  const UserTable = ({ users }: { users: UserDetail[] }) => (
     <Table>
       <TableHeader>
         <TableRow>
@@ -189,7 +132,12 @@ export default function UsersPage() {
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <div className="font-medium">{user.name}</div>
+                  <button
+                    onClick={() => handleViewProfile(user.id)}
+                    className="cursor-pointer text-left font-medium hover:text-blue-600"
+                  >
+                    {user.name}
+                  </button>
                   <div className="text-sm text-gray-500">
                     Joined {new Date(user.joinDate).toLocaleDateString()}
                   </div>
@@ -210,12 +158,7 @@ export default function UsersPage() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem
-                    onClick={() => {
-                      setSelectedUser(user);
-                      setProfileDialogOpen(true);
-                    }}
-                  >
+                  <DropdownMenuItem onClick={() => handleViewProfile(user.id)}>
                     <Eye className="mr-2 h-4 w-4" />
                     View Profile
                   </DropdownMenuItem>
@@ -345,82 +288,6 @@ export default function UsersPage() {
               Cancel
             </Button>
             <Button onClick={handleSendEmail}>Send Email</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Profile Dialog */}
-      <Dialog open={profileDialogOpen} onOpenChange={setProfileDialogOpen}>
-        <DialogContent className="sm:max-w-[525px]">
-          <DialogHeader>
-            <DialogTitle>User Profile</DialogTitle>
-            <DialogDescription>
-              Detailed information about {selectedUser?.name}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="flex items-center gap-4">
-              <Avatar className="h-16 w-16">
-                <AvatarImage src={selectedUser?.avatar || '/placeholder.svg'} />
-                <AvatarFallback className="text-lg">
-                  {selectedUser?.name
-                    .split(' ')
-                    .map((n: string) => n[0])
-                    .join('')}
-                </AvatarFallback>
-              </Avatar>
-              <div>
-                <h3 className="text-lg font-semibold">{selectedUser?.name}</h3>
-                <p className="text-sm text-gray-500">
-                  @{selectedUser?.username}
-                </p>
-                <div className="mt-1">
-                  {selectedUser && getStatusBadge(selectedUser.status)}
-                </div>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label className="text-sm font-medium text-gray-500">
-                  Email
-                </Label>
-                <p className="text-sm">{selectedUser?.email}</p>
-              </div>
-              <div>
-                <Label className="text-sm font-medium text-gray-500">
-                  Join Date
-                </Label>
-                <p className="text-sm">
-                  {selectedUser &&
-                    new Date(selectedUser.joinDate).toLocaleDateString()}
-                </p>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label className="text-sm font-medium text-gray-500">
-                  Last Active
-                </Label>
-                <p className="text-sm">
-                  {selectedUser &&
-                    new Date(selectedUser.lastActive).toLocaleDateString()}
-                </p>
-              </div>
-              <div>
-                <Label className="text-sm font-medium text-gray-500">
-                  Account Status
-                </Label>
-                <p className="text-sm capitalize">{selectedUser?.status}</p>
-              </div>
-            </div>
-          </div>
-          <div className="flex justify-end">
-            <Button
-              variant="outline"
-              onClick={() => setProfileDialogOpen(false)}
-            >
-              Close
-            </Button>
           </div>
         </DialogContent>
       </Dialog>
