@@ -12,7 +12,7 @@ import {
 } from '@/services/state/userSlice';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { LoadingState } from '@/store/store.model';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 
 interface AuthProviderProps {
@@ -24,6 +24,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const user = useAppSelector((state) => state.user.data);
   const isLoading = useUserLoading();
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     const setUSer = async () => {
@@ -39,13 +40,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
     };
 
-    if (!user) {
+    if (pathname === ROUTES.AUTH.SUCCESS.path) {
+      return;
+    }
+
+    if (
+      !user &&
+      typeof window !== 'undefined' &&
+      localStorage.getItem('accessToken')
+    ) {
       setUSer();
-    } else {
-      setUserFailure('User already exists');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dispatch]);
+  }, [dispatch, pathname]);
 
   if (isLoading === LoadingState.loading) {
     return <LoadingScreen />;
