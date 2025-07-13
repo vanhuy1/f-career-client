@@ -17,6 +17,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { type SignUpRequest, signUpRequestSchema } from '@/schemas/Auth';
 import { authService } from '@/services/api/auth/auth-api';
 import { CompanyInfoModal } from './CompanyInfoModal';
+import Divider from './Divider';
+import GoogleSignButton from './GoogleSignButton';
 import { toast } from 'react-toastify';
 import {
   User,
@@ -257,6 +259,9 @@ export const UserSignUpForm = ({ isCompany = false }: UserSignUpFormProps) => {
               You&apos;ll be able to add company details in the next step
             </p>
           )}
+
+          <Divider />
+          <GoogleSignButton text="Sign Up with Google" />
         </CardContent>
       </Card>
 

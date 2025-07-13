@@ -28,6 +28,11 @@ const ROUTES = {
       path: '/signup',
       name: 'Sign Up',
     },
+
+    SUCCESS: {
+      path: '/success',
+      name: 'Auth Success',
+    },
   },
 
   //Admin
