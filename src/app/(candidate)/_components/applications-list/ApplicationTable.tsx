@@ -33,13 +33,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { formatDate } from '../../../../utils/helpers';
 
 interface ApplicationTableProps {
@@ -57,7 +50,7 @@ export default function ApplicationTable({
   const dispatch = useAppDispatch();
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [itemsPerPage] = useState(4);
   const [sortConfig, setSortConfig] = useState<{
     key: string;
     direction: 'asc' | 'desc';
@@ -290,7 +283,7 @@ export default function ApplicationTable({
 
       {/* Pagination */}
       <div className="mt-6 flex items-center justify-between">
-        <div className="flex items-center gap-2">
+        {/* <div className="flex items-center gap-2">
           <span className="text-sm text-gray-600">View</span>
           <Select
             value={itemsPerPage.toString()}
@@ -300,14 +293,14 @@ export default function ApplicationTable({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="5">5</SelectItem>
+              <SelectItem value="4">4</SelectItem>
               <SelectItem value="10">10</SelectItem>
               <SelectItem value="20">20</SelectItem>
               <SelectItem value="50">50</SelectItem>
             </SelectContent>
           </Select>
           <span className="text-sm text-gray-600">Applications per page</span>
-        </div>
+        </div> */}
 
         <div className="flex items-center gap-2">
           <Button
