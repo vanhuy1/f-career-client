@@ -86,7 +86,7 @@ export function TableView({
                 className="text-blue-600 hover:underline"
                 onClick={() => handleViewProfile(candidate.id)}
               >
-                View Profile {candidate.id}
+                View Profile
               </button>
             </TableCell>
           </TableRow>

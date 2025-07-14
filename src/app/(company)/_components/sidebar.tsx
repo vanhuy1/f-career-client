@@ -65,13 +65,13 @@ export default function Sidebar({ onClose }: SidebarProps) {
             active={pathname === ROUTES.CO.HOME.path}
             onClick={onClose}
           />
-          <NavItem
+          {/* <NavItem
             href={ROUTES.CO.HOME.APPLICANTLIST.path}
             icon={<FileText />}
             label="Applicant List"
             active={pathname === ROUTES.CO.HOME.APPLICANTLIST.path}
             onClick={onClose}
-          />
+          /> */}
           <NavItem
             href={ROUTES.CO.HOME.JOBLIST.path}
             icon={<FileText />}
