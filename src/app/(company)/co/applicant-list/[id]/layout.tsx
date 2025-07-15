@@ -29,6 +29,7 @@ import {
 import { useDispatch } from 'react-redux';
 import { LoadingState } from '@/store/store.model';
 import LoadingScreen from '@/pages/LoadingScreen';
+import { ApplicationStatus } from '@/enums/applicationStatus';
 
 export default function ApplicantLayout({
   children,
@@ -41,6 +42,50 @@ export default function ApplicantLayout({
   const applicant = useApplicantDetail();
   const loadingState = useApplicantDetailLoadingState();
   const dispatch = useDispatch();
+
+  // Hiring progress configuration
+  const stages = [
+    { key: ApplicationStatus.APPLIED, label: 'Applied' },
+    { key: ApplicationStatus.INTERVIEW, label: 'Interview' },
+    { key: ApplicationStatus.HIRED, label: 'Hired' },
+    { key: ApplicationStatus.REJECTED, label: 'Rejected' },
+  ];
+
+  const getCurrentStageIndex = () => {
+    switch (applicant?.status) {
+      case ApplicationStatus.APPLIED:
+        return 0;
+      case ApplicationStatus.INTERVIEW:
+        return 1;
+      case ApplicationStatus.HIRED:
+        return 2;
+      case ApplicationStatus.REJECTED:
+        return 2; // Show as completed for rejected status
+      default:
+        return 0;
+    }
+  };
+
+  const getProgressPercentage = () => {
+    const currentIndex = getCurrentStageIndex();
+    const totalStages = 3; // Applied, Interview, Hired (excluding rejected as separate path)
+
+    if (applicant?.status === ApplicationStatus.REJECTED) {
+      return 100; // Show as complete but with different color
+    }
+
+    return Math.round(((currentIndex + 1) / totalStages) * 100);
+  };
+
+  const getProgressColor = () => {
+    if (applicant?.status === ApplicationStatus.REJECTED) {
+      return 'bg-red-500';
+    }
+    if (applicant?.status === ApplicationStatus.HIRED) {
+      return 'bg-green-500';
+    }
+    return 'bg-blue-500';
+  };
 
   useEffect(() => {
     return () => {
@@ -184,20 +229,98 @@ export default function ApplicantLayout({
                 <span className="text-sm font-semibold text-gray-700">
                   Hiring Stage
                 </span>
-                <Badge className="bg-blue-600 text-white hover:bg-blue-700">
-                  {applicant?.status || 'Pending'}
+                <Badge
+                  className={
+                    applicant?.status === ApplicationStatus.REJECTED
+                      ? 'bg-red-600 text-white hover:bg-red-700'
+                      : applicant?.status === ApplicationStatus.HIRED
+                        ? 'bg-green-600 text-white hover:bg-green-700'
+                        : 'bg-blue-600 text-white hover:bg-blue-700'
+                  }
+                >
+                  {stages.find((stage) => stage.key === applicant?.status)
+                    ?.label || 'Pending'}
                 </Badge>
               </div>
               <div className="space-y-2">
-                <Progress value={75} className="h-3 bg-gray-100" />
+                <Progress
+                  value={getProgressPercentage()}
+                  className={`h-3 bg-gray-100 [&>div]:${getProgressColor()}`}
+                />
                 <div className="flex justify-between text-xs text-gray-500">
-                  <span>Applied</span>
-                  <span>Screening</span>
-                  <span className="font-medium text-blue-600">Interview</span>
-                  <span>Final</span>
+                  {stages.slice(0, 3).map((stage, index) => {
+                    const currentIndex = getCurrentStageIndex();
+                    const isActive =
+                      index === currentIndex &&
+                      applicant?.status !== ApplicationStatus.REJECTED;
+                    const isCompleted =
+                      index < currentIndex ||
+                      applicant?.status === ApplicationStatus.HIRED;
+
+                    return (
+                      <span
+                        key={stage.key}
+                        className={
+                          isActive
+                            ? 'font-medium text-blue-600'
+                            : isCompleted
+                              ? 'font-medium text-green-600'
+                              : 'text-gray-500'
+                        }
+                      >
+                        {stage.label}
+                      </span>
+                    );
+                  })}
                 </div>
+                {applicant?.status === ApplicationStatus.REJECTED && (
+                  <div className="text-center">
+                    <span className="text-xs font-medium text-red-600">
+                      Application Rejected
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
+
+            {/* AI Analysis Score */}
+            {applicant?.ai_status === 'COMPLETED' && applicant?.ai_score && (
+              <div className="mb-6">
+                <div className="mb-3 flex items-center justify-between">
+                  <span className="text-sm font-semibold text-gray-700">
+                    AI Analysis Score
+                  </span>
+                  <Badge
+                    className={
+                      applicant.ai_score >= 80
+                        ? 'bg-green-600 text-white hover:bg-green-700'
+                        : applicant.ai_score >= 60
+                          ? 'bg-yellow-600 text-white hover:bg-yellow-700'
+                          : 'bg-red-600 text-white hover:bg-red-700'
+                    }
+                  >
+                    {applicant.ai_score}/100
+                  </Badge>
+                </div>
+                <div className="space-y-2">
+                  <Progress
+                    value={applicant.ai_score}
+                    className="h-3 bg-gray-100"
+                  />
+                  <div className="text-center text-xs text-gray-500">
+                    {applicant.ai_score >= 90
+                      ? 'Excellent'
+                      : applicant.ai_score >= 80
+                        ? 'Good'
+                        : applicant.ai_score >= 70
+                          ? 'Fair'
+                          : applicant.ai_score >= 60
+                            ? 'Needs Improvement'
+                            : 'Poor'}
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Schedule Interview Button */}
             <Link href={`/applicants/${applicantId}/interview-schedule`}>

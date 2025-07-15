@@ -44,6 +44,9 @@ export interface ApplicantDetail {
   cover_letter: string;
   applied_at: string;
   updated_at: string;
+  ai_status?: string;
+  ai_score?: number;
+  ai_analysis?: string;
   candidate: {
     id: number;
     name: string;

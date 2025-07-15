@@ -21,6 +21,7 @@ import {
   FileText,
   RefreshCw,
 } from 'lucide-react';
+import { useApplicantDetail } from '@/services/state/applicantDetailSlice';
 
 type AIStatus =
   | 'PENDING'
@@ -28,26 +29,6 @@ type AIStatus =
   | 'PROCESSING'
   | 'COMPLETED'
   | 'FAILED';
-
-interface AIAnalysisData {
-  id: string;
-  status: AIStatus;
-  score?: number;
-  analysis?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-// Mock data - replace with your actual data fetching
-const mockData: AIAnalysisData = {
-  id: '12345',
-  status: 'COMPLETED',
-  score: 85,
-  analysis:
-    'The analysis shows strong performance across multiple metrics. The content demonstrates high quality with excellent structure and clarity. Key strengths include comprehensive coverage of topics, logical flow, and engaging presentation. Areas for improvement include minor optimization opportunities in technical implementation and potential for enhanced user interaction elements.',
-  createdAt: '2024-01-15T10:30:00Z',
-  updatedAt: '2024-01-15T10:45:00Z',
-};
 
 const getStatusConfig = (status: AIStatus) => {
   switch (status) {
@@ -109,10 +90,15 @@ const getScoreLabel = (score: number) => {
 };
 
 export default function AiAnalysisPage() {
-  const [data] = useState<AIAnalysisData>(mockData);
+  const applicant = useApplicantDetail();
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const statusConfig = getStatusConfig(data.status);
+  // Use applicant data or default to PENDING if no AI status is available
+  const aiStatus = (applicant?.ai_status as AIStatus) || 'PENDING';
+  const aiScore = applicant?.ai_score;
+  const aiAnalysis = applicant?.ai_analysis;
+
+  const statusConfig = getStatusConfig(aiStatus);
   const StatusIcon = statusConfig.icon;
 
   const handleRefresh = async () => {
@@ -127,6 +113,16 @@ export default function AiAnalysisPage() {
     return new Date(dateString).toLocaleString();
   };
 
+  if (!applicant) {
+    return (
+      <div className="container mx-auto max-w-4xl p-6">
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto max-w-4xl p-6">
       <div className="mb-8 flex items-center justify-between">
@@ -134,7 +130,9 @@ export default function AiAnalysisPage() {
           <Brain className="text-primary h-8 w-8" />
           <div>
             <h1 className="text-3xl font-bold">AI Analysis</h1>
-            <p className="text-muted-foreground">Analysis ID: {data.id}</p>
+            <p className="text-muted-foreground">
+              Application ID: {applicant.id}
+            </p>
           </div>
         </div>
         <Button
@@ -158,7 +156,7 @@ export default function AiAnalysisPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <StatusIcon
-                className={`h-5 w-5 ${statusConfig.color} ${data.status === 'PROCESSING' ? 'animate-spin' : ''}`}
+                className={`h-5 w-5 ${statusConfig.color} ${aiStatus === 'PROCESSING' ? 'animate-spin' : ''}`}
               />
               Analysis Status
             </CardTitle>
@@ -170,15 +168,15 @@ export default function AiAnalysisPage() {
                 {statusConfig.label}
               </Badge>
               <div className="text-muted-foreground text-sm">
-                <div>Created: {formatDate(data.createdAt)}</div>
-                <div>Updated: {formatDate(data.updatedAt)}</div>
+                <div>Applied: {formatDate(applicant.applied_at)}</div>
+                <div>Updated: {formatDate(applicant.updated_at)}</div>
               </div>
             </div>
           </CardContent>
         </Card>
 
         {/* Score Card */}
-        {data.status === 'COMPLETED' && data.score !== undefined && (
+        {aiStatus === 'COMPLETED' && aiScore !== undefined && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -194,26 +192,26 @@ export default function AiAnalysisPage() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <span
-                      className={`text-4xl font-bold ${getScoreColor(data.score)}`}
+                      className={`text-4xl font-bold ${getScoreColor(aiScore)}`}
                     >
-                      {data.score}
+                      {aiScore}
                     </span>
                     <div>
                       <div className="text-sm font-medium">out of 100</div>
-                      <div className={`text-sm ${getScoreColor(data.score)}`}>
-                        {getScoreLabel(data.score)}
+                      <div className={`text-sm ${getScoreColor(aiScore)}`}>
+                        {getScoreLabel(aiScore)}
                       </div>
                     </div>
                   </div>
                 </div>
-                <Progress value={data.score} className="h-2" />
+                <Progress value={aiScore} className="h-2" />
               </div>
             </CardContent>
           </Card>
         )}
 
         {/* Analysis Card */}
-        {data.status === 'COMPLETED' && data.analysis && (
+        {aiStatus === 'COMPLETED' && aiAnalysis && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -226,8 +224,8 @@ export default function AiAnalysisPage() {
             </CardHeader>
             <CardContent>
               <div className="prose prose-sm max-w-none">
-                <p className="text-muted-foreground text-sm leading-relaxed">
-                  {data.analysis}
+                <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-wrap">
+                  {aiAnalysis}
                 </p>
               </div>
             </CardContent>
@@ -235,19 +233,18 @@ export default function AiAnalysisPage() {
         )}
 
         {/* Loading State for Processing */}
-        {(data.status === 'PROCESSING' ||
-          data.status === 'PENDING' ||
-          data.status === 'PENDING_SCORE') && (
+        {(aiStatus === 'PROCESSING' ||
+          aiStatus === 'PENDING' ||
+          aiStatus === 'PENDING_SCORE') && (
           <Card>
             <CardContent className="pt-6">
               <div className="flex flex-col items-center justify-center space-y-4 py-8">
                 <Loader2 className="text-primary h-8 w-8 animate-spin" />
                 <div className="text-center">
                   <p className="font-medium">
-                    {data.status === 'PROCESSING' &&
-                      'Processing your analysis...'}
-                    {data.status === 'PENDING' && 'Your analysis is queued...'}
-                    {data.status === 'PENDING_SCORE' &&
+                    {aiStatus === 'PROCESSING' && 'Processing your analysis...'}
+                    {aiStatus === 'PENDING' && 'Your analysis is queued...'}
+                    {aiStatus === 'PENDING_SCORE' &&
                       'Calculating final score...'}
                   </p>
                   <p className="text-muted-foreground mt-1 text-sm">
@@ -260,7 +257,7 @@ export default function AiAnalysisPage() {
         )}
 
         {/* Error State */}
-        {data.status === 'FAILED' && (
+        {aiStatus === 'FAILED' && (
           <Card className="border-red-200">
             <CardContent className="pt-6">
               <div className="flex flex-col items-center justify-center space-y-4 py-8">
