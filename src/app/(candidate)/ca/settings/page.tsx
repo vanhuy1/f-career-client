@@ -67,11 +67,11 @@ export default function SettingsPage() {
   });
 
   // Whenever the raw ISO dob changes, format for the <input type="date">
+  const dobValue = form.watch('dob');
   useEffect(() => {
-    const raw = form.watch('dob');
-    if (raw) {
+    if (dobValue) {
       try {
-        const date = new Date(raw);
+        const date = new Date(dobValue);
         if (!isNaN(date.getTime())) {
           setFormattedDob(date.toISOString().split('T')[0]); // "YYYY-MM-DD"
         }
@@ -79,7 +79,7 @@ export default function SettingsPage() {
         // ignore formatting errors
       }
     }
-  }, [form.watch('dob')]);
+  }, [dobValue]);
 
   // Handler for the date picker
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -428,7 +428,7 @@ export default function SettingsPage() {
             )}
           </div>
         </div>
-        <div className="mt-8 border-t border-gray-200"></div>
+        <div className="bopnpmrder-gray-200 mt-8 border-t"></div>
       </section>
 
       {/* ————— Save Button ————— */}
