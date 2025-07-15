@@ -29,7 +29,7 @@ export function ApplicantsView({
   getScoreColor,
   getScoreBackgroundColor,
 }: ApplicantsViewProps) {
-  const [viewMode, setViewMode] = useState<'pipeline' | 'table'>('pipeline');
+  const [viewMode, setViewMode] = useState<'pipeline' | 'table'>('table');
   const [searchQuery, setSearchQuery] = useState('');
   const [isFilterSidebarOpen, setIsFilterSidebarOpen] = useState(false);
   const [activeFilters, setActiveFilters] = useState<ApplicantFilters>({
@@ -39,7 +39,6 @@ export function ApplicantsView({
   });
 
   const applyFilters = (candidate: Candidate): boolean => {
-    // Age filter
     if (
       candidate.age < activeFilters.ageRange[0] ||
       candidate.age > activeFilters.ageRange[1]
@@ -47,7 +46,6 @@ export function ApplicantsView({
       return false;
     }
 
-    // Gender filter
     if (
       activeFilters.genderOptions.length > 0 &&
       !activeFilters.genderOptions.includes(candidate.gender)
@@ -55,7 +53,6 @@ export function ApplicantsView({
       return false;
     }
 
-    // Score filter
     if (
       candidate.score < activeFilters.scoreRange[0] ||
       candidate.score > activeFilters.scoreRange[1]
@@ -67,12 +64,10 @@ export function ApplicantsView({
   };
 
   const filteredApplicants = applicants.filter((candidate) => {
-    // Apply search filter
     const matchesSearch = candidate.name
       .toLowerCase()
       .includes(searchQuery.toLowerCase());
 
-    // Apply filters
     const matchesFilters = applyFilters(candidate);
 
     return matchesSearch && matchesFilters;

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import { useDispatch } from 'react-redux';
 import {
@@ -33,7 +33,7 @@ export default function JobDetailsPage() {
   const error = useJobDetailErrors();
   const isLoading = loadingState === LoadingState.loading;
 
-  const fetchJobData = async () => {
+  const fetchJobData = useCallback(async () => {
     if (!jobId) return;
 
     dispatch(setJobDetailStart());
@@ -49,13 +49,13 @@ export default function JobDetailsPage() {
         toastId: 'job-data-error',
       });
     }
-  };
+  }, [jobId, dispatch]);
 
   useEffect(() => {
     if (!job) {
       fetchJobData();
     }
-  }, [jobId, job, dispatch]);
+  }, [jobId, job, dispatch, fetchJobData]);
 
   if (error) {
     return <JobDetailError error={error} onRetry={fetchJobData} />;
