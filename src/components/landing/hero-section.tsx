@@ -1,6 +1,4 @@
-import { ChevronDown, MapPin, Search } from 'lucide-react';
-import { Input } from '../ui/input';
-import { Button } from '../ui/button';
+import HeroSearchForm from '@/components/common/HeroSearchForm';
 
 export function HeroSection() {
   return (
@@ -36,34 +34,8 @@ export function HeroSection() {
             heights and passionate about startups.
           </p>
 
-          {/* Search Form */}
-          <div className="flex flex-col rounded-md bg-white p-2 md:flex-row">
-            {/* Job Search Input */}
-            <div className="flex flex-1 items-center border-b border-gray-200 p-2 md:border-r md:border-b-0">
-              <Search size={20} className="mr-2 text-gray-400" />
-              <Input
-                type="text"
-                placeholder="Job title or keyword"
-                className="border-none text-black shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
-              />
-            </div>
-
-            {/* Location Dropdown */}
-            <div className="flex flex-1 items-center border-b border-gray-200 p-2 md:border-r md:border-b-0">
-              <MapPin size={20} className="mr-2 text-gray-400" />
-              <div className="flex w-full items-center justify-between text-black">
-                <span>Florence, Italy</span>
-                <ChevronDown size={16} className="text-gray-400" />
-              </div>
-            </div>
-
-            {/* Search Button */}
-            <div className="p-2">
-              <Button className="w-full bg-blue-700 text-white hover:bg-blue-900">
-                Search my job
-              </Button>
-            </div>
-          </div>
+          {/* Enhanced Search Form */}
+          <HeroSearchForm />
 
           {/* Popular Searches */}
           <div className="mt-4 text-sm text-gray-500">
