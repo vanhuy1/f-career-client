@@ -31,3 +31,7 @@ export interface UserProfile {
     statusCode: number;
   };
 }
+
+export interface UpdatePasswordRequest {
+  password: string;
+}

@@ -6,13 +6,13 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { z } from 'zod';
 import {
   updateEmailSchema,
-  changePasswordSchema,
   type UpdateEmailFormValues,
-  type ChangePasswordFormValues,
 } from '@/schemas/CandidateSettings';
 import { userApi } from '@/app/(candidate)/_components/settings/api';
+import { userService } from '@/services/api/auth/user-api';
 import type { UserProfile } from '@/types/CandidateSettings';
 import {
   Form,
@@ -23,6 +23,18 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { toast } from 'react-toastify';
+
+// New simplified password schema that only requires new password
+const updatePasswordSchema = z.object({
+  newPassword: z
+    .string()
+    .min(8, 'Password must be at least 8 characters')
+    .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
+    .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
+    .regex(/[0-9]/, 'Password must contain at least one number'),
+});
+
+type UpdatePasswordFormValues = z.infer<typeof updatePasswordSchema>;
 
 export default function LoginDetailsPage() {
   // User profile state
@@ -44,10 +56,9 @@ export default function LoginDetailsPage() {
   });
 
   // Password change form
-  const passwordForm = useForm<ChangePasswordFormValues>({
-    resolver: zodResolver(changePasswordSchema),
+  const passwordForm = useForm<UpdatePasswordFormValues>({
+    resolver: zodResolver(updatePasswordSchema),
     defaultValues: {
-      oldPassword: '',
       newPassword: '',
     },
   });
@@ -76,16 +87,19 @@ export default function LoginDetailsPage() {
   };
 
   // Handle password change submission
-  const handleChangePassword = async (data: ChangePasswordFormValues) => {
+  const handleChangePassword = async (data: UpdatePasswordFormValues) => {
     try {
       setIsChangingPassword(true);
-      const response = await userApi.changePassword(data);
+      // Map newPassword to password for the API
+      const response = await userService.updatePassword({
+        password: data.newPassword,
+      });
 
-      if (response.success && response.data) {
+      if (response) {
         passwordForm.reset();
-        toast.success('Success', {});
+        toast.success('Password updated successfully', {});
       } else {
-        toast.error('Error', {});
+        toast.error('Failed to update password', {});
       }
     } catch (error) {
       toast.error(error as string, {});
@@ -175,9 +189,9 @@ export default function LoginDetailsPage() {
           <div className="flex-1">
             <h3 className="text-lg font-medium text-gray-900">New Password</h3>
             <p className="mt-1 text-gray-600">
-              Manage your password to make
+              Set a new password to make
               <br />
-              sure it is safe
+              sure your account is safe
             </p>
           </div>
           <div className="flex-1">
@@ -186,29 +200,6 @@ export default function LoginDetailsPage() {
                 onSubmit={passwordForm.handleSubmit(handleChangePassword)}
                 className="space-y-6"
               >
-                <FormField
-                  control={passwordForm.control}
-                  name="oldPassword"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-base font-medium text-gray-700">
-                        Old Password
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="Enter your old password"
-                          type="password"
-                          {...field}
-                        />
-                      </FormControl>
-                      <p className="text-xs text-gray-500">
-                        Minimum 8 characters
-                      </p>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
                 <FormField
                   control={passwordForm.control}
                   name="newPassword"
@@ -225,7 +216,8 @@ export default function LoginDetailsPage() {
                         />
                       </FormControl>
                       <p className="text-xs text-gray-500">
-                        Minimum 8 characters
+                        Minimum 8 characters with uppercase, lowercase, and
+                        number
                       </p>
                       <FormMessage />
                     </FormItem>
@@ -240,7 +232,7 @@ export default function LoginDetailsPage() {
                   {isChangingPassword && (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   )}
-                  Change Password
+                  Update Password
                 </Button>
               </form>
             </Form>
