@@ -71,8 +71,6 @@ export default function AuthSuccessPage() {
           } else {
             router.push(ROUTES.HOMEPAGE.path);
           }
-
-          toast.success('Successfully signed in with Google!');
         } else {
           throw new Error('Failed to fetch user data');
         }

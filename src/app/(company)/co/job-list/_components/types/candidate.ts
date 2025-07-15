@@ -7,4 +7,6 @@ export interface Candidate {
   appliedDate: string;
   score: number;
   status: ApplicationStatus;
+  age: number;
+  gender: 'male' | 'female' | 'other' | 'prefer_not_to_say';
 }

@@ -99,7 +99,7 @@ export default function ApplicantLayout({
       <div className="sticky top-0 z-10 border-b border-gray-200/60 bg-white/80 px-6 py-4 backdrop-blur-sm">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link href="/co/applicant-list">
+            <Link href={`/co/job-list/${applicant?.job?.id}/applicants`}>
               <Button
                 variant="ghost"
                 size="sm"

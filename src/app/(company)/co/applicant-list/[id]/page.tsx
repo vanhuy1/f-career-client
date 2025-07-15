@@ -27,6 +27,7 @@ export default function ApplicantProfilePage() {
             <label className="text-sm text-gray-600">Date of Birth</label>
             <p className="mt-1 text-sm font-medium text-gray-900">
               {/* {applicant?.candidateProfile.birthDate}<span className="text-gray-500">(26 y.o)</span> */}
+              {applicant?.candidateProfile.birthDate}
             </p>
           </div>
           <div>

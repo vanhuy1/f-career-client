@@ -4,7 +4,7 @@ import { AboutSection } from '../../_components/profile/about-section';
 import { ExperienceSection } from '../../_components/profile/experience-section';
 import { EducationSection } from '../../_components/profile/education-section';
 import { SkillsSection } from '../../_components/profile/skills-section';
-import { PortfolioSection } from '../../_components/profile/portfolio-section';
+// import { PortfolioSection } from '../../_components/profile/portfolio-section';
 import { ContactSection } from '../../_components/profile/contact-section';
 // import { SocialSection } from '../../_components/profile/social-section';
 import { useDispatch } from 'react-redux';
@@ -84,7 +84,7 @@ export default function ProfilePage() {
                 showMoreCount={2}
               />
               <SkillsSection skills={profile.skills} />
-              <PortfolioSection portfolios={profile.portfolios} />
+              {/* <PortfolioSection portfolios={profile.portfolios} /> */}
             </div>
 
             <div className="space-y-[3%] md:col-span-1">

@@ -50,7 +50,7 @@ export default function ApplicantsPage() {
         // Transform the API response to match the Candidate type expected by ApplicantsView
         if (response && response.applications) {
           const transformedApplicants = response.applications.map(
-            (app: ApplicationByJobId) => ({
+            (app: ApplicationByJobId, index: number) => ({
               id: app.id,
               name: app.applicantName,
               // Map status string to ApplicationStatus enum value, defaulting to APPLIED if not recognized
@@ -62,6 +62,11 @@ export default function ApplicantsPage() {
               appliedDate: app.appliedDate,
               avatar: '', // API doesn't provide avatar, use empty string or default
               score: app.ai_score ?? 0, // Use AI score if available, otherwise default to 0
+              // Mock data for testing filter functionality
+              age: 22 + ((index * 7) % 40), // Generate ages between 22-62
+              gender: (
+                ['male', 'female', 'other', 'prefer_not_to_say'] as const
+              )[index % 4],
             }),
           );
 
