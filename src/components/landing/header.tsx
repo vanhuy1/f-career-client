@@ -21,6 +21,7 @@ import { LoadingState } from '@/store/store.model';
 import { useState } from 'react';
 import { ROLES } from '@/enums/roles.enum';
 import { Badge } from '@/components/ui/badge';
+import NotificationsBell from './notifications-bell';
 
 export default function Header() {
   const pathname = usePathname();
@@ -108,151 +109,154 @@ export default function Header() {
           {/* Auth Section */}
           <div className="flex items-center gap-4">
             {user ? (
-              <DropdownMenu
-                open={isDropdownOpen}
-                onOpenChange={setIsDropdownOpen}
-              >
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    className="relative h-10 w-10 rounded-full ring-2 ring-transparent transition-all hover:ring-[#5e5cff]/20"
-                  >
-                    <Avatar className="h-9 w-9">
-                      <AvatarImage
-                        src={user.data.avatar}
-                        alt={user.data.name}
-                      />
-                      <AvatarFallback className="bg-gradient-to-br from-blue-700 to-blue-900 font-semibold text-white">
-                        {user.data.name
-                          .split(' ')
-                          .map((n) => n[0])
-                          .join('')}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="absolute -right-1 -bottom-1">
-                      <div className="h-3 w-3 rounded-full border-2 border-white bg-green-400"></div>
-                    </div>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  className="w-64 p-2"
-                  align="end"
-                  forceMount
+              <>
+                <NotificationsBell />
+                <DropdownMenu
+                  open={isDropdownOpen}
+                  onOpenChange={setIsDropdownOpen}
                 >
-                  <DropdownMenuLabel className="p-3 font-normal">
-                    <div className="flex flex-col space-y-2">
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-10 w-10">
-                          <AvatarImage
-                            src={user.data.avatar}
-                            alt={user.data.name}
-                          />
-                          <AvatarFallback className="bg-gradient-to-br from-blue-500 to-blue-700 text-white">
-                            {user.data.name
-                              .split(' ')
-                              .map((n) => n[0])
-                              .join('')}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex flex-col">
-                          <p className="text-sm font-semibold text-gray-900">
-                            {user.data.name}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {user.data.email}
-                          </p>
-                        </div>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      className="relative h-10 w-10 rounded-full ring-2 ring-transparent transition-all hover:ring-[#5e5cff]/20"
+                    >
+                      <Avatar className="h-9 w-9">
+                        <AvatarImage
+                          src={user.data.avatar}
+                          alt={user.data.name}
+                        />
+                        <AvatarFallback className="bg-gradient-to-br from-blue-700 to-blue-900 font-semibold text-white">
+                          {user.data.name
+                            .split(' ')
+                            .map((n) => n[0])
+                            .join('')}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="absolute -right-1 -bottom-1">
+                        <div className="h-3 w-3 rounded-full border-2 border-white bg-green-400"></div>
                       </div>
-                      <Badge variant="secondary" className="w-fit text-xs">
-                        {user?.data.roles[0] === ROLES.USER
-                          ? 'Job Seeker'
-                          : 'Employer'}
-                      </Badge>
-                    </div>
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild className="cursor-pointer">
-                    {user.data.roles[0] === ROLES.USER ? (
-                      <Link
-                        href={ROUTES.CA.HOME.PROFILE.path}
-                        className="flex items-center gap-2 p-2"
-                      >
-                        <div className="flex h-4 w-4 items-center justify-center rounded bg-blue-100">
-                          <div className="h-2 w-2 rounded-full bg-blue-500"></div>
-                        </div>
-                        Profile
-                      </Link>
-                    ) : (
-                      <Link
-                        href={ROUTES.CO.HOME.PROFILE.path}
-                        className="flex items-center gap-2 p-2"
-                      >
-                        <div className="flex h-4 w-4 items-center justify-center rounded bg-blue-100">
-                          <div className="h-2 w-2 rounded-full bg-blue-500"></div>
-                        </div>
-                        Profile
-                      </Link>
-                    )}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild className="cursor-pointer">
-                    {user.data.roles[0] === ROLES.USER ? (
-                      <Link
-                        href={ROUTES.CA.HOME.SETTINGS.path}
-                        className="flex items-center gap-2 p-2"
-                      >
-                        <div className="flex h-4 w-4 items-center justify-center rounded bg-gray-100">
-                          <div className="h-2 w-2 rounded-full bg-gray-500"></div>
-                        </div>
-                        Settings
-                      </Link>
-                    ) : (
-                      <Link
-                        href={ROUTES.CO.HOME.SETTINGS.path}
-                        className="flex items-center gap-2 p-2"
-                      >
-                        <div className="flex h-4 w-4 items-center justify-center rounded bg-gray-100">
-                          <div className="h-2 w-2 rounded-full bg-gray-500"></div>
-                        </div>
-                        Settings
-                      </Link>
-                    )}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild className="cursor-pointer">
-                    {user && (
-                      <Link
-                        href={
-                          user?.data.roles[0] === ROLES.USER
-                            ? ROUTES.CA.HOME.path
-                            : ROUTES.CO.HOME.path
-                        }
-                        className="flex items-center gap-2 p-2"
-                      >
-                        <div className="flex h-4 w-4 items-center justify-center rounded bg-purple-100">
-                          <div className="h-2 w-2 rounded-full bg-blue-600"></div>
-                        </div>
-                        {user?.data.roles[0] === ROLES.USER
-                          ? ROUTES.CA.HOME.name
-                          : ROUTES.CO.HOME.name}
-                      </Link>
-                    )}
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onClick={() => {
-                      setIsDropdownOpen(false);
-                      handleLogout();
-                    }}
-                    className="cursor-pointer p-2 text-red-600 focus:text-red-600"
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    className="w-64 p-2"
+                    align="end"
+                    forceMount
                   >
-                    <div className="flex items-center gap-2">
-                      <div className="flex h-4 w-4 items-center justify-center rounded bg-red-100">
-                        <div className="h-2 w-2 rounded-full bg-red-500"></div>
+                    <DropdownMenuLabel className="p-3 font-normal">
+                      <div className="flex flex-col space-y-2">
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-10 w-10">
+                            <AvatarImage
+                              src={user.data.avatar}
+                              alt={user.data.name}
+                            />
+                            <AvatarFallback className="bg-gradient-to-br from-blue-500 to-blue-700 text-white">
+                              {user.data.name
+                                .split(' ')
+                                .map((n) => n[0])
+                                .join('')}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex flex-col">
+                            <p className="text-sm font-semibold text-gray-900">
+                              {user.data.name}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              {user.data.email}
+                            </p>
+                          </div>
+                        </div>
+                        <Badge variant="secondary" className="w-fit text-xs">
+                          {user?.data.roles[0] === ROLES.USER
+                            ? 'Job Seeker'
+                            : 'Employer'}
+                        </Badge>
                       </div>
-                      Log out
-                    </div>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild className="cursor-pointer">
+                      {user.data.roles[0] === ROLES.USER ? (
+                        <Link
+                          href={ROUTES.CA.HOME.PROFILE.path}
+                          className="flex items-center gap-2 p-2"
+                        >
+                          <div className="flex h-4 w-4 items-center justify-center rounded bg-blue-100">
+                            <div className="h-2 w-2 rounded-full bg-blue-500"></div>
+                          </div>
+                          Profile
+                        </Link>
+                      ) : (
+                        <Link
+                          href={ROUTES.CO.HOME.PROFILE.path}
+                          className="flex items-center gap-2 p-2"
+                        >
+                          <div className="flex h-4 w-4 items-center justify-center rounded bg-blue-100">
+                            <div className="h-2 w-2 rounded-full bg-blue-500"></div>
+                          </div>
+                          Profile
+                        </Link>
+                      )}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild className="cursor-pointer">
+                      {user.data.roles[0] === ROLES.USER ? (
+                        <Link
+                          href={ROUTES.CA.HOME.SETTINGS.path}
+                          className="flex items-center gap-2 p-2"
+                        >
+                          <div className="flex h-4 w-4 items-center justify-center rounded bg-gray-100">
+                            <div className="h-2 w-2 rounded-full bg-gray-500"></div>
+                          </div>
+                          Settings
+                        </Link>
+                      ) : (
+                        <Link
+                          href={ROUTES.CO.HOME.SETTINGS.path}
+                          className="flex items-center gap-2 p-2"
+                        >
+                          <div className="flex h-4 w-4 items-center justify-center rounded bg-gray-100">
+                            <div className="h-2 w-2 rounded-full bg-gray-500"></div>
+                          </div>
+                          Settings
+                        </Link>
+                      )}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild className="cursor-pointer">
+                      {user && (
+                        <Link
+                          href={
+                            user?.data.roles[0] === ROLES.USER
+                              ? ROUTES.CA.HOME.path
+                              : ROUTES.CO.HOME.path
+                          }
+                          className="flex items-center gap-2 p-2"
+                        >
+                          <div className="flex h-4 w-4 items-center justify-center rounded bg-purple-100">
+                            <div className="h-2 w-2 rounded-full bg-blue-600"></div>
+                          </div>
+                          {user?.data.roles[0] === ROLES.USER
+                            ? ROUTES.CA.HOME.name
+                            : ROUTES.CO.HOME.name}
+                        </Link>
+                      )}
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() => {
+                        setIsDropdownOpen(false);
+                        handleLogout();
+                      }}
+                      className="cursor-pointer p-2 text-red-600 focus:text-red-600"
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className="flex h-4 w-4 items-center justify-center rounded bg-red-100">
+                          <div className="h-2 w-2 rounded-full bg-red-500"></div>
+                        </div>
+                        Log out
+                      </div>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
             ) : (
               <div className="flex items-center gap-3">
                 <Link
