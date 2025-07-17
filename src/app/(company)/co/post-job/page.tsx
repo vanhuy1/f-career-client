@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { ArrowLeft, Pencil } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -100,6 +100,62 @@ export default function JobPostingForm() {
   const [vipExpiration, setVipExpiration] = useState<string>('');
   const user = useUser();
 
+  const handleCreateJob = useCallback(async () => {
+    try {
+      const jobData = {
+        title: jobTitle,
+        description: jobDescription,
+        categoryId: categoryId || '1',
+        companyId: user?.data?.companyId || '1',
+        skillIds: selectedSkillIds,
+        benefit: benefits.map((benefit) => benefit.description),
+        location: location,
+        salaryMin: salaryRange[0],
+        salaryMax: salaryRange[1],
+        experienceYears: experienceYears,
+        isVip: isVip,
+        packageInfo: packageInfo,
+        deadline: deadline,
+        typeOfEmployment: typeOfEmployment,
+        status: jobStatus,
+        priorityPosition: priorityPosition,
+        vip_expiration: vipExpiration,
+      };
+
+      await jobService.create(jobData);
+
+      if (user?.data?.companyId) {
+        localStorage.setItem(
+          `company_${user.data.companyId}_package`,
+          JSON.stringify(packageInfo),
+        );
+      }
+
+      router.push('/job');
+    } catch (error) {
+      console.error('Error creating job:', error);
+      toast.error('Failed to create job. Please try again.');
+    }
+  }, [
+    jobTitle,
+    jobDescription,
+    categoryId,
+    user?.data?.companyId,
+    selectedSkillIds,
+    benefits,
+    location,
+    salaryRange,
+    experienceYears,
+    isVip,
+    packageInfo,
+    deadline,
+    typeOfEmployment,
+    jobStatus,
+    priorityPosition,
+    vipExpiration,
+    router,
+  ]);
+
   // Check for payment completion
   useEffect(() => {
     const orderCode = searchParams?.get('orderCode');
@@ -122,7 +178,7 @@ export default function JobPostingForm() {
     };
 
     checkPayment();
-  }, [searchParams]);
+  }, [searchParams, handleCreateJob]);
 
   // Check if company has active packages from previous purchases
   useEffect(() => {
@@ -237,44 +293,6 @@ export default function JobPostingForm() {
   const prevStep = () => {
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1);
-    }
-  };
-
-  const handleCreateJob = async () => {
-    try {
-      const jobData = {
-        title: jobTitle,
-        description: jobDescription,
-        categoryId: categoryId || '1',
-        companyId: user?.data?.companyId || '1',
-        skillIds: selectedSkillIds,
-        benefit: benefits.map((benefit) => benefit.description),
-        location: location,
-        salaryMin: salaryRange[0],
-        salaryMax: salaryRange[1],
-        experienceYears: experienceYears,
-        isVip: isVip,
-        packageInfo: packageInfo,
-        deadline: deadline,
-        typeOfEmployment: typeOfEmployment,
-        status: jobStatus,
-        priorityPosition: priorityPosition,
-        vip_expiration: vipExpiration,
-      };
-
-      await jobService.create(jobData);
-
-      if (user?.data?.companyId) {
-        localStorage.setItem(
-          `company_${user.data.companyId}_package`,
-          JSON.stringify(packageInfo),
-        );
-      }
-
-      router.push('/job');
-    } catch (error) {
-      console.error('Error creating job:', error);
-      toast.error('Failed to create job. Please try again.');
     }
   };
 

@@ -8,17 +8,29 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { employmentType } from '@/enums/employmentType';
 import { useState, useEffect } from 'react';
-import { categoryService } from '@/services/api/category/category-api';
-import type { Category } from '@/types/Category';
+import {
+  useCategories,
+  useCategoryLoadingState,
+  useCategoryErrors,
+  fetchCategories,
+} from '@/services/state/categorySlice';
+import { LoadingState } from '@/store/store.model';
+import { useAppDispatch } from '@/store/hooks';
 import { useSearchParams, useRouter } from 'next/navigation';
 
 export default function JobFilterSidebar() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const dispatch = useAppDispatch();
+  const categories = useCategories();
+  const categoryLoadingState = useCategoryLoadingState();
+  const categoryError = useCategoryErrors();
+
+  const isLoading =
+    categoryLoadingState === LoadingState.loading ||
+    categoryLoadingState === LoadingState.init;
+  const error = categoryError;
   const [salaryRange, setSalaryRange] = useState<number[]>([0, 100000]);
   const [expandedSections, setExpandedSections] = useState<boolean[]>([
     true,
@@ -34,22 +46,11 @@ export default function JobFilterSidebar() {
   const [appliedFilters, setAppliedFilters] = useState<number>(0);
 
   useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        setError(null);
-        const response = await categoryService.findAll();
-        setCategories(response);
-      } catch (error) {
-        console.error('Error fetching categories:', error);
-        setError('Failed to load categories');
-        setCategories([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchCategories();
-  }, []);
+    // Fetch categories only if not already loaded
+    if (categoryLoadingState === LoadingState.init) {
+      dispatch(fetchCategories());
+    }
+  }, [dispatch, categoryLoadingState]);
 
   // Initialize filter state from URL params
   useEffect(() => {
@@ -104,7 +105,7 @@ export default function JobFilterSidebar() {
       type: 'checkbox',
       options: isLoading
         ? [{ label: 'Loading...' }]
-        : categories.map((category) => ({ label: category.name })),
+        : (categories || []).map((category) => ({ label: category.name })),
     },
     {
       title: 'Salary Range',
@@ -349,7 +350,7 @@ export default function JobFilterSidebar() {
                     </div>
                   ))
                 ) : filter.title === 'Categories' ? (
-                  categories.map((category) => (
+                  (categories || []).map((category) => (
                     <div
                       key={category.id}
                       className="flex items-center space-x-2"

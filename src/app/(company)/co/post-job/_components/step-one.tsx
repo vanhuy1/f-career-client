@@ -14,8 +14,13 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import type { EmploymentType, StepProps } from '@/types/Job';
 import { useEffect, useState } from 'react';
-import { Category } from '@/types/Category';
-import { categoryService } from '@/services/api/category/category-api';
+import {
+  useCategories,
+  useCategoryLoadingState,
+  fetchCategories,
+} from '@/services/state/categorySlice';
+import { LoadingState } from '@/store/store.model';
+import { useAppDispatch } from '@/store/hooks';
 import {
   Dialog,
   DialogContent,
@@ -32,8 +37,7 @@ import {
   setCompanyDetailFailure,
 } from '@/services/state/companySlice';
 import { companyService } from '@/services/api/company/company-api';
-import { LoadingState } from '@/store/store.model';
-import { useDispatch } from 'react-redux';
+
 import { employmentType } from '@/enums/employmentType';
 
 const RequiredIndicator = () => <span className="ml-1 text-red-500">*</span>;
@@ -58,8 +62,9 @@ export default function Step1({
   setDeadline,
   availableSkills,
 }: StepProps) {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(false);
+  const categories = useCategories();
+  const categoryLoadingState = useCategoryLoadingState();
+  const loading = categoryLoadingState === LoadingState.loading;
   const [isSkillDialogOpen, setIsSkillDialogOpen] = useState(false);
   const [salaryType, setSalaryType] = useState<'range' | 'min' | 'max'>(
     'range',
@@ -67,7 +72,7 @@ export default function Step1({
   const [skillSearch, setSkillSearch] = useState('');
 
   // Get company data from Redux store
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
   const user = useUser();
   const companyId = user?.data?.companyId;
   const company = useCompanyDetailById(companyId || '');
@@ -96,22 +101,13 @@ export default function Step1({
     fetchCompanyData();
   }, [companyId, company, dispatch]);
 
-  // Fetch categories from API
+  // Fetch categories from Redux store
   useEffect(() => {
-    const fetchCategories = async () => {
-      setLoading(true);
-      try {
-        const response = await categoryService.findAll();
-        setCategories(response);
-      } catch (error) {
-        console.error('Error fetching categories:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchCategories();
-  }, []);
+    // Fetch categories only if not already loaded
+    if (categoryLoadingState === LoadingState.init) {
+      dispatch(fetchCategories());
+    }
+  }, [dispatch, categoryLoadingState]);
 
   const handleEmploymentTypeChange = (type: EmploymentType) => {
     setTypeOfEmployment(type);
@@ -408,8 +404,8 @@ export default function Step1({
                 />
               </SelectTrigger>
               <SelectContent>
-                {categories.length > 0 ? (
-                  categories.map((category) => (
+                {(categories || []).length > 0 ? (
+                  (categories || []).map((category) => (
                     <SelectItem key={category.id} value={category.id}>
                       {category.name}
                     </SelectItem>

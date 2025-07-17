@@ -4,8 +4,12 @@ import { X } from 'lucide-react';
 import { Button } from '../ui/button';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { categoryService } from '@/services/api/category/category-api';
-import type { Category } from '@/types/Category';
+import {
+  useCategories,
+  useCategoryLoadingState,
+  fetchCategories,
+} from '@/services/state/categorySlice';
+import { LoadingState } from '@/store/store.model';
 import { employmentType } from '@/enums/employmentType';
 import { useAppDispatch } from '@/store/hooks';
 import { clearJob } from '@/services/state/jobSlice';
@@ -13,30 +17,34 @@ import { clearJob } from '@/services/state/jobSlice';
 export default function FilterSummary() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const dispatch = useAppDispatch();
+
+  const categoriesFromStore = useCategories();
+  const categoryLoadingState = useCategoryLoadingState();
+
   const [categories, setCategories] = useState<Record<string, string>>({});
   const [activeFilters, setActiveFilters] = useState<
     { type: string; value: string; label: string }[]
   >([]);
-  const dispatch = useAppDispatch();
-  // Load category names for display
+
+  // Load categories from Redux store
   useEffect(() => {
-    async function loadCategories() {
-      try {
-        const response = await categoryService.findAll();
-        const categoryMap: Record<string, string> = {};
-
-        response.forEach((category: Category) => {
-          categoryMap[category.id] = category.name;
-        });
-
-        setCategories(categoryMap);
-      } catch (error) {
-        console.error('Error loading categories:', error);
-      }
+    // Fetch categories if not already loaded
+    if (categoryLoadingState === LoadingState.init) {
+      dispatch(fetchCategories());
     }
+  }, [dispatch, categoryLoadingState]);
 
-    loadCategories();
-  }, []);
+  // Convert categories array to map for easy lookup
+  useEffect(() => {
+    if (categoriesFromStore) {
+      const categoryMap: Record<string, string> = {};
+      categoriesFromStore.forEach((category) => {
+        categoryMap[category.id] = category.name;
+      });
+      setCategories(categoryMap);
+    }
+  }, [categoriesFromStore]);
 
   // Update active filters whenever searchParams or categories change
   useEffect(() => {
