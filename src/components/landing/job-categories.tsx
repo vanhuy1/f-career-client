@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import {
   ArrowRight,
   Code,
@@ -13,8 +13,14 @@ import {
   Wrench,
 } from 'lucide-react';
 import Link from 'next/link';
-import { categoryService } from '@/services/api/category/category-api';
-import { Category } from '@/types/Category';
+import {
+  useCategories,
+  useCategoryLoadingState,
+  useCategoryErrors,
+  fetchCategories,
+} from '@/services/state/categorySlice';
+import { LoadingState } from '@/store/store.model';
+import { useAppDispatch } from '@/store/hooks';
 
 // Icon mapping for categories
 const getCategoryIcon = (categoryName: string, isActive: boolean = false) => {
@@ -35,27 +41,20 @@ const getCategoryIcon = (categoryName: string, isActive: boolean = false) => {
 };
 
 export default function JobCategories() {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const dispatch = useAppDispatch();
+  const categories = useCategories();
+  const loadingState = useCategoryLoadingState();
+  const error = useCategoryErrors();
+
+  const isLoading =
+    loadingState === LoadingState.loading || loadingState === LoadingState.init;
 
   useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        const response = await categoryService.findAll();
-        setCategories(response);
-      } catch (err) {
-        console.error('Error fetching categories:', err);
-        setError('Failed to load categories');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchCategories();
-  }, []);
+    // Fetch categories only if not already loaded
+    if (loadingState === LoadingState.init) {
+      dispatch(fetchCategories());
+    }
+  }, [dispatch, loadingState]);
 
   // Loading skeleton
   const LoadingSkeleton = () => (
@@ -110,7 +109,7 @@ export default function JobCategories() {
           <LoadingSkeleton />
         ) : (
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {categories.map((category, index) => (
+            {categories?.map((category, index) => (
               <Link
                 key={category.id}
                 href={`/job?categoryIds=${category.id}`}
