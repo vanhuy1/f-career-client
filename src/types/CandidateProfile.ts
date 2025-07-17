@@ -9,6 +9,7 @@ export interface CandidateProfile {
   isOpenToOpportunities: boolean;
   about: string | null;
   birthDate: string | null;
+  hasUpdated: boolean;
   contact: {
     email: string;
     phone: string;
