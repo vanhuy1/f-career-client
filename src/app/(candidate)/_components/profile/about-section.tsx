@@ -31,6 +31,16 @@ export function AboutSection({ about, onUpdate }: AboutSectionProps) {
   const errors = useCaProfileErrors();
 
   const handleSave = async () => {
+    // Validate that the content is not empty
+    const trimmedContent = editedAbout.trim();
+    // Remove HTML tags and check if there's actual content
+    const textContent = trimmedContent.replace(/<[^>]*>/g, '').trim();
+
+    if (!textContent) {
+      toast.dark('You should have something about yourself', {});
+      return;
+    }
+
     dispatch(updateCaProfileStart());
     try {
       await candidateProfileService.updateAboutSectionCandidateProfile({

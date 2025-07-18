@@ -6,6 +6,7 @@ import { EducationSection } from '../../_components/profile/education-section';
 import { SkillsSection } from '../../_components/profile/skills-section';
 // import { PortfolioSection } from '../../_components/profile/portfolio-section';
 import { ContactSection } from '../../_components/profile/contact-section';
+import { ProfileCompletionSection } from '../../_components/profile/profile-completion-section';
 // import { SocialSection } from '../../_components/profile/social-section';
 import { useDispatch } from 'react-redux';
 import { useEffect } from 'react';
@@ -93,6 +94,7 @@ export default function ProfilePage() {
                 phone={profile.contact?.phone}
                 languages={profile.contact?.languages}
               />
+              <ProfileCompletionSection profile={profile} />
               {/* <SocialSection
                 instagram={profile.social?.instagram}
                 twitter={profile.social?.twitter}
