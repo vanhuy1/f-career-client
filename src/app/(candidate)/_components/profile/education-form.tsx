@@ -182,172 +182,138 @@ export function EducationForm({
   }
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-        <FormField
-          control={form.control}
-          name="institution"
-          render={({ field }) => (
-            <FormItem className="relative">
-              <FormLabel>Institution*</FormLabel>
-              <FormControl>
-                <Input
-                  placeholder="Enter institution name"
-                  {...field}
-                  onChange={(e) => {
-                    field.onChange(e);
-                    debouncedHandleInstitutionChange(e.target.value);
-                  }}
-                />
-              </FormControl>
-              {loadingInstitutions && (
-                <p className="text-sm text-gray-500">Loading...</p>
-              )}
-              {institutionSuggestions.length > 0 && (
-                <div className="relative mt-1">
-                  <ul className="absolute z-50 max-h-60 w-full overflow-auto rounded-md border bg-white shadow-lg">
-                    {institutionSuggestions.map((institution, index) => (
-                      <li
-                        key={index}
-                        className="cursor-pointer border-b p-2.5 text-sm last:border-b-0 hover:bg-gray-100"
-                        onClick={() => {
-                          form.setValue('institution', institution.name);
-                          setInstitutionSuggestions([]);
-                        }}
-                      >
-                        {institution.name} - {institution.country}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+    <div
+      className="max-h-[80vh] overflow-y-auto [&::-webkit-scrollbar]:hidden"
+      style={{
+        scrollbarWidth: 'none' /* Firefox */,
+        msOverflowStyle: 'none' /* Internet Explorer 10+ */,
+      }}
+    >
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
           <FormField
             control={form.control}
-            name="degree"
+            name="institution"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>Degree*</FormLabel>
-                <Select
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                >
-                  <FormControl>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select degree" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="Bachelors">Bachelor&aposs</SelectItem>
-                    <SelectItem value="Master's">Master&aposs</SelectItem>
-                    <SelectItem value="Ph.D">Ph.D</SelectItem>
-                    <SelectItem value="Associate">Associate</SelectItem>
-                    <SelectItem value="Diploma">Diploma</SelectItem>
-                    <SelectItem value="Certificate">Certificate</SelectItem>
-                    <SelectItem value="High School">High School</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="field"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Field of Study*</FormLabel>
+              <FormItem className="relative">
+                <FormLabel>Institution*</FormLabel>
                 <FormControl>
-                  <Input placeholder="Computer Science" {...field} />
+                  <Input
+                    placeholder="Enter institution name"
+                    {...field}
+                    onChange={(e) => {
+                      field.onChange(e);
+                      debouncedHandleInstitutionChange(e.target.value);
+                    }}
+                  />
                 </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        <FormField
-          control={form.control}
-          name="logo"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Institution Logo URL</FormLabel>
-              <FormControl>
-                <Input placeholder="https://example.com/logo.png" {...field} />
-              </FormControl>
-              <FormDescription>
-                Enter a URL for the institution logo (optional)
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <FormField
-            control={form.control}
-            name="startYear"
-            render={({ field }) => (
-              <FormItem className="flex flex-col">
-                <FormLabel>Start Year*</FormLabel>
-                <Select
-                  onValueChange={(value) =>
-                    field.onChange(Number.parseInt(value))
-                  }
-                  defaultValue={field.value?.toString()}
-                >
-                  <FormControl>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select year" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {years.map((year) => (
-                      <SelectItem key={year} value={year.toString()}>
-                        {year}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {loadingInstitutions && (
+                  <p className="text-sm text-gray-500">Loading...</p>
+                )}
+                {institutionSuggestions.length > 0 && (
+                  <div className="relative mt-1">
+                    <ul className="absolute z-50 max-h-60 w-full overflow-auto rounded-md border bg-white shadow-lg">
+                      {institutionSuggestions.map((institution, index) => (
+                        <li
+                          key={index}
+                          className="cursor-pointer border-b p-2.5 text-sm last:border-b-0 hover:bg-gray-100"
+                          onClick={() => {
+                            form.setValue('institution', institution.name);
+                            setInstitutionSuggestions([]);
+                          }}
+                        >
+                          {institution.name} - {institution.country}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
                 <FormMessage />
               </FormItem>
             )}
           />
 
-          <div className="space-y-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <FormField
               control={form.control}
-              name="endYear"
+              name="degree"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Degree*</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select degree" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="Bachelors">Bachelor&aposs</SelectItem>
+                      <SelectItem value="Master's">Master&aposs</SelectItem>
+                      <SelectItem value="Ph.D">Ph.D</SelectItem>
+                      <SelectItem value="Associate">Associate</SelectItem>
+                      <SelectItem value="Diploma">Diploma</SelectItem>
+                      <SelectItem value="Certificate">Certificate</SelectItem>
+                      <SelectItem value="High School">High School</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="field"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Field of Study*</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Computer Science" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          <FormField
+            control={form.control}
+            name="logo"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Institution Logo URL</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder="https://example.com/logo.png"
+                    {...field}
+                  />
+                </FormControl>
+                <FormDescription>
+                  Enter a URL for the institution logo (optional)
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <FormField
+              control={form.control}
+              name="startYear"
               render={({ field }) => (
                 <FormItem className="flex flex-col">
-                  <FormLabel
-                    className={
-                      isCurrentlyStudying ? 'text-muted-foreground' : ''
-                    }
-                  >
-                    End Year
-                  </FormLabel>
+                  <FormLabel>Start Year*</FormLabel>
                   <Select
                     onValueChange={(value) =>
                       field.onChange(Number.parseInt(value))
                     }
                     defaultValue={field.value?.toString()}
-                    disabled={isCurrentlyStudying}
                   >
                     <FormControl>
-                      <SelectTrigger
-                        className={
-                          isCurrentlyStudying
-                            ? 'w-full cursor-not-allowed opacity-50'
-                            : 'w-full'
-                        }
-                      >
+                      <SelectTrigger className="w-full">
                         <SelectValue placeholder="Select year" />
                       </SelectTrigger>
                     </FormControl>
@@ -363,60 +329,105 @@ export function EducationForm({
                 </FormItem>
               )}
             />
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="currentlyStudying"
-                checked={isCurrentlyStudying}
-                onCheckedChange={(checked) => {
-                  setIsCurrentlyStudying(!!checked);
-                  form.setValue('currentlyStudying', !!checked);
-                  if (checked) {
-                    form.setValue('endYear', null);
-                  }
-                }}
+
+            <div className="space-y-2">
+              <FormField
+                control={form.control}
+                name="endYear"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel
+                      className={
+                        isCurrentlyStudying ? 'text-muted-foreground' : ''
+                      }
+                    >
+                      End Year
+                    </FormLabel>
+                    <Select
+                      onValueChange={(value) =>
+                        field.onChange(Number.parseInt(value))
+                      }
+                      defaultValue={field.value?.toString()}
+                      disabled={isCurrentlyStudying}
+                    >
+                      <FormControl>
+                        <SelectTrigger
+                          className={
+                            isCurrentlyStudying
+                              ? 'w-full cursor-not-allowed opacity-50'
+                              : 'w-full'
+                          }
+                        >
+                          <SelectValue placeholder="Select year" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {years.map((year) => (
+                          <SelectItem key={year} value={year.toString()}>
+                            {year}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-              <label
-                htmlFor="currentlyStudying"
-                className="text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-              >
-                I am currently studying here
-              </label>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="currentlyStudying"
+                  checked={isCurrentlyStudying}
+                  onCheckedChange={(checked) => {
+                    setIsCurrentlyStudying(!!checked);
+                    form.setValue('currentlyStudying', !!checked);
+                    if (checked) {
+                      form.setValue('endYear', null);
+                    }
+                  }}
+                />
+                <label
+                  htmlFor="currentlyStudying"
+                  className="text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                  I am currently studying here
+                </label>
+              </div>
             </div>
           </div>
-        </div>
 
-        <FormField
-          control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Description</FormLabel>
-              <FormControl>
-                <RichTextEditor
-                  content={field.value || ''}
-                  onChange={field.onChange}
-                  placeholder="Describe your education, achievements, or activities"
-                  minHeight="min-h-[120px]"
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+          <FormField
+            control={form.control}
+            name="description"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Description</FormLabel>
+                <FormControl>
+                  <RichTextEditor
+                    content={field.value || ''}
+                    onChange={field.onChange}
+                    placeholder="Describe your education, achievements, or activities"
+                    minHeight="min-h-[120px]"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-        <div className="flex justify-end space-x-4">
-          <Button type="button" variant="outline" onClick={onCancel}>
-            Cancel
-          </Button>
-          <Button type="submit" disabled={form.formState.isSubmitting}>
-            {form.formState.isSubmitting
-              ? 'Saving...'
-              : mode === 'add'
-                ? 'Save Education'
-                : 'Update Education'}
-          </Button>
-        </div>
-      </form>
-    </Form>
+          <div className="flex justify-end space-x-4">
+            <Button type="button" variant="outline" onClick={onCancel}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={form.formState.isSubmitting}>
+              {form.formState.isSubmitting
+                ? 'Saving...'
+                : mode === 'add'
+                  ? 'Save Education'
+                  : 'Update Education'}
+            </Button>
+          </div>
+        </form>
+      </Form>
+    </div>
   );
 }
