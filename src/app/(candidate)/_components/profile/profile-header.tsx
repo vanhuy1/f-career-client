@@ -48,11 +48,13 @@ import { useUser } from '@/services/state/userSlice';
 interface ProfileHeaderProps {
   profile: CandidateProfile | null;
   onProfileUpdate?: (updatedProfile: Partial<CandidateProfile>) => void;
+  readOnly?: boolean;
 }
 
 export function ProfileHeader({
   profile,
   onProfileUpdate,
+  readOnly = false,
 }: ProfileHeaderProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editedProfile, setEditedProfile] = useState({
@@ -137,16 +139,18 @@ export function ProfileHeader({
         <div className="absolute inset-0 opacity-20">
           <div className="absolute inset-0 bg-[radial-gradient(white_1px,transparent_1px)] [background-size:16px_16px]"></div>
         </div>
-        <div className="absolute right-4 bottom-4 flex gap-2">
-          <Button
-            variant="secondary"
-            size="sm"
-            className="h-9 gap-1.5 bg-white/90 px-3 text-sm font-medium text-gray-700 shadow-sm backdrop-blur-sm hover:bg-white"
-          >
-            <Camera className="h-4 w-4" />
-            Change Cover
-          </Button>
-        </div>
+        {!readOnly && (
+          <div className="absolute right-4 bottom-4 flex gap-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              className="h-9 gap-1.5 bg-white/90 px-3 text-sm font-medium text-gray-700 shadow-sm backdrop-blur-sm hover:bg-white"
+            >
+              <Camera className="h-4 w-4" />
+              Change Cover
+            </Button>
+          </div>
+        )}
       </div>
       <CardContent className="relative px-6 pt-0 pb-6">
         <div className="flex flex-col items-start gap-6 md:flex-row md:items-end">
@@ -164,16 +168,18 @@ export function ProfileHeader({
               ) : (
                 <AvatarInitial name={profile?.name} fontSize="text-4xl" />
               )}
-              <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
-                <Button
-                  variant="secondary"
-                  size="icon"
-                  className="h-10 w-10 rounded-full bg-white/80 text-gray-700 backdrop-blur-sm hover:bg-white"
-                >
-                  <Camera className="h-5 w-5" />
-                  <span className="sr-only">Change profile picture</span>
-                </Button>
-              </div>
+              {!readOnly && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
+                  <Button
+                    variant="secondary"
+                    size="icon"
+                    className="h-10 w-10 rounded-full bg-white/80 text-gray-700 backdrop-blur-sm hover:bg-white"
+                  >
+                    <Camera className="h-5 w-5" />
+                    <span className="sr-only">Change profile picture</span>
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
           <div className="flex-1 space-y-4 pt-2 md:pt-0">
@@ -214,120 +220,122 @@ export function ProfileHeader({
                 )}
               </div>
 
-              <Dialog open={isDialogOpen} onOpenChange={handleDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="h-10 gap-1.5 border-gray-200 bg-white px-4 text-gray-700 shadow-sm hover:bg-gray-50"
-                  >
-                    <Edit className="h-4 w-4" />
-                    Edit Profile
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[500px]">
-                  <DialogHeader>
-                    <DialogTitle>Edit Profile</DialogTitle>
-                    <DialogDescription>
-                      Update your profile information. Click save when
-                      you&apos;re done.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-4 py-4">
-                    <div className="space-y-2">
-                      <Label
-                        htmlFor="title"
-                        className="text-sm font-medium text-gray-700"
-                      >
-                        Position
-                      </Label>
-                      <div className="flex items-center rounded-md border border-gray-200 bg-white px-3 focus-within:ring-1 focus-within:ring-blue-400">
-                        <Briefcase className="mr-2 h-4 w-4 text-gray-400" />
-                        <Input
-                          id="title"
-                          name="title"
-                          value={editedProfile.title || ''}
-                          onChange={handleInputChange}
-                          className="h-10 border-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
-                          placeholder="Your position"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label
-                        htmlFor="company"
-                        className="text-sm font-medium text-gray-700"
-                      >
-                        Company
-                      </Label>
-                      <div className="flex items-center rounded-md border border-gray-200 bg-white px-3 focus-within:ring-1 focus-within:ring-blue-400">
-                        <Building className="mr-2 h-4 w-4 text-gray-400" />
-                        <Input
-                          id="company"
-                          name="company"
-                          value={editedProfile.company || ''}
-                          onChange={handleInputChange}
-                          className="h-10 border-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
-                          placeholder="Your company"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label
-                        htmlFor="location"
-                        className="text-sm font-medium text-gray-700"
-                      >
-                        Location
-                      </Label>
-                      <div className="flex items-center rounded-md border border-gray-200 bg-white px-3 focus-within:ring-1 focus-within:ring-blue-400">
-                        <MapPin className="mr-2 h-4 w-4 text-gray-400" />
-                        <Input
-                          id="location"
-                          name="location"
-                          value={editedProfile.location || ''}
-                          onChange={handleInputChange}
-                          className="h-10 border-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
-                          placeholder="Your location"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="flex items-center space-x-2 pt-2">
-                      <Switch
-                        id="isOpenToOpportunities"
-                        checked={editedProfile.isOpenToOpportunities || false}
-                        onCheckedChange={handleSwitchChange}
-                      />
-                      <Label
-                        htmlFor="isOpenToOpportunities"
-                        className="font-medium"
-                      >
-                        Open to opportunities
-                      </Label>
-                    </div>
-                  </div>
-                  <DialogFooter>
+              {!readOnly && (
+                <Dialog open={isDialogOpen} onOpenChange={handleDialogOpen}>
+                  <DialogTrigger asChild>
                     <Button
-                      onClick={handleSave}
-                      className="gap-1.5 bg-blue-700 hover:bg-blue-800"
-                      disabled={loadingState === LoadingState.loading}
+                      variant="outline"
+                      className="h-10 gap-1.5 border-gray-200 bg-white px-4 text-gray-700 shadow-sm hover:bg-gray-50"
                     >
-                      {loadingState === LoadingState.loading ? (
-                        <>
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                          Saving...
-                        </>
-                      ) : (
-                        <>
-                          <Save className="h-4 w-4" />
-                          Save Changes
-                        </>
-                      )}
+                      <Edit className="h-4 w-4" />
+                      Edit Profile
                     </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-[500px]">
+                    <DialogHeader>
+                      <DialogTitle>Edit Profile</DialogTitle>
+                      <DialogDescription>
+                        Update your profile information. Click save when
+                        you&apos;re done.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <div className="space-y-2">
+                        <Label
+                          htmlFor="title"
+                          className="text-sm font-medium text-gray-700"
+                        >
+                          Position
+                        </Label>
+                        <div className="flex items-center rounded-md border border-gray-200 bg-white px-3 focus-within:ring-1 focus-within:ring-blue-400">
+                          <Briefcase className="mr-2 h-4 w-4 text-gray-400" />
+                          <Input
+                            id="title"
+                            name="title"
+                            value={editedProfile.title || ''}
+                            onChange={handleInputChange}
+                            className="h-10 border-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                            placeholder="Your position"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label
+                          htmlFor="company"
+                          className="text-sm font-medium text-gray-700"
+                        >
+                          Company
+                        </Label>
+                        <div className="flex items-center rounded-md border border-gray-200 bg-white px-3 focus-within:ring-1 focus-within:ring-blue-400">
+                          <Building className="mr-2 h-4 w-4 text-gray-400" />
+                          <Input
+                            id="company"
+                            name="company"
+                            value={editedProfile.company || ''}
+                            onChange={handleInputChange}
+                            className="h-10 border-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                            placeholder="Your company"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label
+                          htmlFor="location"
+                          className="text-sm font-medium text-gray-700"
+                        >
+                          Location
+                        </Label>
+                        <div className="flex items-center rounded-md border border-gray-200 bg-white px-3 focus-within:ring-1 focus-within:ring-blue-400">
+                          <MapPin className="mr-2 h-4 w-4 text-gray-400" />
+                          <Input
+                            id="location"
+                            name="location"
+                            value={editedProfile.location || ''}
+                            onChange={handleInputChange}
+                            className="h-10 border-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                            placeholder="Your location"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex items-center space-x-2 pt-2">
+                        <Switch
+                          id="isOpenToOpportunities"
+                          checked={editedProfile.isOpenToOpportunities || false}
+                          onCheckedChange={handleSwitchChange}
+                        />
+                        <Label
+                          htmlFor="isOpenToOpportunities"
+                          className="font-medium"
+                        >
+                          Open to opportunities
+                        </Label>
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button
+                        onClick={handleSave}
+                        className="gap-1.5 bg-blue-700 hover:bg-blue-800"
+                        disabled={loadingState === LoadingState.loading}
+                      >
+                        {loadingState === LoadingState.loading ? (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            Saving...
+                          </>
+                        ) : (
+                          <>
+                            <Save className="h-4 w-4" />
+                            Save Changes
+                          </>
+                        )}
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              )}
             </div>
           </div>
         </div>

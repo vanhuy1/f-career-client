@@ -9,18 +9,25 @@ interface ContactSectionProps {
   email: string;
   phone: string;
   languages: string[];
+  readOnly?: boolean;
 }
 
-export function ContactSection({ email, phone }: ContactSectionProps) {
+export function ContactSection({
+  email,
+  phone,
+  readOnly = false,
+}: ContactSectionProps) {
   return (
     <Card className="mb-6">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle>Additional Details</CardTitle>
-        <Button variant="outline" size="icon" className="h-8 w-8">
-          <Link href={ROUTES.CA.HOME.SETTINGS.path}>
-            <Edit2 className="h-4 w-4" />
-          </Link>
-        </Button>
+        {!readOnly && (
+          <Button variant="outline" size="icon" className="h-8 w-8">
+            <Link href={ROUTES.CA.HOME.SETTINGS.path}>
+              <Edit2 className="h-4 w-4" />
+            </Link>
+          </Button>
+        )}
       </CardHeader>
       <CardContent>
         <div className="space-y-6">

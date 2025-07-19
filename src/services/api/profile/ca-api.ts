@@ -79,6 +79,23 @@ class CandidateProfileService {
     });
     return response;
   }
+
+  async getCandidateProfileById(userId: string): Promise<CandidateProfile> {
+    const url = this.requestBuilder.buildUrl(userId);
+    const response = await httpClient.get<CandidateProfile>({
+      url,
+      typeCheck: (data) => {
+        return {
+          success: true,
+          data: data as CandidateProfile,
+        };
+      },
+      config: {
+        withCredentials: false,
+      },
+    });
+    return response;
+  }
 }
 
 export const candidateProfileService = new CandidateProfileService();

@@ -58,12 +58,14 @@ interface ExperienceSectionProps {
   experiences: Experience[];
   onAddExperience?: (experience: Experience) => void;
   onUpdateExperience?: (experience: Experience) => void;
+  readOnly?: boolean;
 }
 
 export function ExperienceSection({
   experiences,
   onAddExperience,
   onUpdateExperience,
+  readOnly = false,
 }: ExperienceSectionProps) {
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -108,23 +110,25 @@ export function ExperienceSection({
     <Card className="mb-6">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle>Experiences</CardTitle>
-        <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
-          <DialogTrigger asChild>
-            <Button variant="outline" size="icon" className="h-8 w-8">
-              <Plus className="h-4 w-4" />
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[550px]">
-            <DialogHeader>
-              <DialogTitle>Add New Experience</DialogTitle>
-            </DialogHeader>
-            <ExperienceForm
-              mode="add"
-              onSubmit={handleAddExperience}
-              onCancel={() => setAddDialogOpen(false)}
-            />
-          </DialogContent>
-        </Dialog>
+        {!readOnly && (
+          <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="icon" className="h-8 w-8">
+                <Plus className="h-4 w-4" />
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[550px]">
+              <DialogHeader>
+                <DialogTitle>Add New Experience</DialogTitle>
+              </DialogHeader>
+              <ExperienceForm
+                mode="add"
+                onSubmit={handleAddExperience}
+                onCancel={() => setAddDialogOpen(false)}
+              />
+            </DialogContent>
+          </Dialog>
+        )}
       </CardHeader>
       <CardContent>
         {displayedExperiences.map((experience, index) => (
@@ -136,14 +140,16 @@ export function ExperienceSection({
                 : 'mb-4'
             } relative`}
           >
-            <Button
-              variant="outline"
-              size="icon"
-              className="absolute top-0 right-0 h-8 w-8"
-              onClick={() => handleEditExperience(experience)}
-            >
-              <Edit2 className="h-4 w-4" />
-            </Button>
+            {!readOnly && (
+              <Button
+                variant="outline"
+                size="icon"
+                className="absolute top-0 right-0 h-8 w-8"
+                onClick={() => handleEditExperience(experience)}
+              >
+                <Edit2 className="h-4 w-4" />
+              </Button>
+            )}
             <div className="flex gap-4">
               <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded-full border bg-white">
                 <Image
