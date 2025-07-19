@@ -8,6 +8,7 @@ import cvReducer from '@/services/state/cvSlice';
 import applicationReducer from '@/services/state/applicationsSlice';
 import { applicantDetailReducer } from '@/services/state/applicantDetailSlice';
 import categoryReducer from '@/services/state/categorySlice';
+import roomReducer from '@/services/state/roomSlice';
 
 export const makeStore = () => {
   return configureStore({
@@ -21,6 +22,7 @@ export const makeStore = () => {
       application: applicationReducer,
       applicantDetail: applicantDetailReducer,
       category: categoryReducer,
+      room: roomReducer,
     },
   });
 };
