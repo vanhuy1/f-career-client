@@ -3,8 +3,10 @@
 import { useSelector } from 'react-redux';
 import { useAppDispatch } from '@/store/hooks';
 import { RootState } from '@/store/store';
-import { cn } from '@/lib/utils';
-import { toggleTimerVisibility, toggleProgressVisibility } from '@/services/state/roomSlice';
+import {
+  toggleTimerVisibility,
+  toggleProgressVisibility,
+} from '@/services/state/roomSlice';
 import IconButton from '../ui/IconButton';
 
 export default function PomodoroFAB() {
@@ -27,7 +29,7 @@ export default function PomodoroFAB() {
         }}
         tooltipClassName="font-medium"
       />
-      
+
       <IconButton
         icon="Calendar"
         label="Stats"
@@ -38,4 +40,4 @@ export default function PomodoroFAB() {
       />
     </>
   );
-} 
+}

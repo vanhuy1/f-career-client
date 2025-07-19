@@ -1,10 +1,10 @@
 'use client';
 
 import { useRef, useEffect, useState } from 'react';
-import Draggable from 'react-draggable';
+import { DraggableEvent, DraggableData } from 'react-draggable';
 
 interface DraggableOptions {
-  defaultPosition?: { x: number, y: number };
+  defaultPosition?: { x: number; y: number };
   bounds?: string | object;
   handle?: string;
   grid?: [number, number];
@@ -14,15 +14,15 @@ interface DraggableOptions {
 
 export interface DraggableProps {
   nodeRef: React.RefObject<HTMLDivElement>;
-  defaultPosition: { x: number, y: number };
+  defaultPosition: { x: number; y: number };
   bounds?: string | object;
   handle?: string;
   grid?: [number, number];
   scale?: number;
   zIndex?: number;
-  onStart?: (e: any, data: any) => void | false;
-  onDrag?: (e: any, data: any) => void | false;
-  onStop?: (e: any, data: any) => void | false;
+  onStart?: (e: DraggableEvent, data: DraggableData) => void | false;
+  onDrag?: (e: DraggableEvent, data: DraggableData) => void | false;
+  onStop?: (e: DraggableEvent, data: DraggableData) => void | false;
 }
 
 export function useDraggable(options: DraggableOptions = {}) {
@@ -33,13 +33,17 @@ export function useDraggable(options: DraggableOptions = {}) {
   // Set initial position to center of the screen
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const centerX = options.defaultPosition?.x ?? (window.innerWidth / 2 - (nodeRef.current?.offsetWidth || 0) / 2);
-      const centerY = options.defaultPosition?.y ?? (window.innerHeight / 2 - (nodeRef.current?.offsetHeight || 0) / 2);
+      const centerX =
+        options.defaultPosition?.x ??
+        window.innerWidth / 2 - (nodeRef.current?.offsetWidth || 0) / 2;
+      const centerY =
+        options.defaultPosition?.y ??
+        window.innerHeight / 2 - (nodeRef.current?.offsetHeight || 0) / 2;
       setDefaultPosition({ x: centerX, y: centerY });
     }
   }, [options.defaultPosition]);
 
-  const handleDrag = (e: any, data: any) => {
+  const handleDrag = (e: DraggableEvent, data: DraggableData) => {
     setPosition({ x: data.x, y: data.y });
   };
 
@@ -56,4 +60,4 @@ export function useDraggable(options: DraggableOptions = {}) {
   };
 
   return { nodeRef, position, draggableProps };
-} 
+}
