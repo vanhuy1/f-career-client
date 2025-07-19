@@ -33,7 +33,7 @@ export default function CompanyProfileSection({
     {
       id: 'profile',
       label: 'Company Profile',
-      type: 'textarea',
+      type: 'richtext',
       defaultValue: profile,
       placeholder: 'Enter company profile',
     },
@@ -73,7 +73,10 @@ export default function CompanyProfileSection({
         />
       </div>
       <div className="rounded-lg border bg-white p-5 text-sm leading-relaxed text-gray-700">
-        <p>{profile}</p>
+        <div
+          className="prose prose-sm max-w-none"
+          dangerouslySetInnerHTML={{ __html: profile }}
+        />
       </div>
     </div>
   );

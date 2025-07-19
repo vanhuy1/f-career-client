@@ -15,11 +15,12 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { RichTextEditor } from '@/components/common/RichTextEditor';
 
 export type FormField = {
   id: string;
   label: string;
-  type: 'text' | 'textarea' | 'email' | 'url' | 'date';
+  type: 'text' | 'textarea' | 'email' | 'url' | 'date' | 'richtext';
   placeholder?: string;
   defaultValue?: string;
 };
@@ -64,7 +65,7 @@ export default function EditFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[800px]">
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[900px]">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
@@ -74,12 +75,26 @@ export default function EditFormDialog({
             {fields.map((field) => (
               <div
                 key={field.id}
-                className="grid grid-cols-4 items-center gap-4"
+                className={`grid gap-4 ${field.type === 'richtext' ? 'grid-cols-1' : 'grid-cols-4 items-center'}`}
               >
-                <Label htmlFor={field.id} className="text-right">
+                <Label
+                  htmlFor={field.id}
+                  className={
+                    field.type === 'richtext' ? 'text-left' : 'text-right'
+                  }
+                >
                   {field.label}
                 </Label>
-                {field.type === 'textarea' ? (
+                {field.type === 'richtext' ? (
+                  <div className="w-full">
+                    <RichTextEditor
+                      content={formData[field.id]}
+                      onChange={(content) => handleChange(field.id, content)}
+                      placeholder={field.placeholder}
+                      minHeight="min-h-[300px]"
+                    />
+                  </div>
+                ) : field.type === 'textarea' ? (
                   <Textarea
                     id={field.id}
                     placeholder={field.placeholder}

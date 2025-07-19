@@ -32,9 +32,10 @@ export default function CompanyProfileSection({
       <div className="relative">
         {company.description ? (
           <div className="prose prose-gray max-w-none">
-            <p className="text-base leading-relaxed text-gray-700">
-              {company.description}
-            </p>
+            <div
+              className="text-base leading-relaxed text-gray-700"
+              dangerouslySetInnerHTML={{ __html: company.description }}
+            />
           </div>
         ) : (
           <div className="flex items-center gap-3 rounded-xl border border-gray-200 bg-gray-50 p-6">

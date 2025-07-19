@@ -160,9 +160,14 @@ export default function ApplicationDetailPage() {
                   <h3 className="mb-2 font-medium text-gray-900">
                     Description
                   </h3>
-                  <p className="text-gray-600">
-                    {application.job?.description}
-                  </p>
+                  {application.job?.description && (
+                    <div
+                      className="prose max-w-none text-gray-600"
+                      dangerouslySetInnerHTML={{
+                        __html: application.job.description,
+                      }}
+                    />
+                  )}
                 </div>
 
                 <div className="grid grid-cols-1 gap-4 pt-4 md:grid-cols-2">
@@ -245,22 +250,30 @@ export default function ApplicationDetailPage() {
                 <div>
                   <h3 className="text-sm text-gray-500">Company Name</h3>
                   <p className="font-medium">
-                    {/* {application.job?.company.companyName} */}
+                    {application.company.companyName}
                   </p>
                 </div>
-                {/* {application.job?.company.address && (
-                  <div>
-                    <h3 className="text-sm text-gray-500">Website</h3>
-                    <a
-                      href={application.job.company.website}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="font-medium text-black hover:underline"
-                    >
-                      {application.job.company.website}
-                    </a>
-                  </div>
-                )} */}
+                {application.company.address && (
+                  <>
+                    <div>
+                      <h3 className="text-sm text-gray-500">Address</h3>
+                      <p className="font-medium">
+                        {application.company.address.join(', ')}
+                      </p>
+                    </div>
+                    <div>
+                      <h3 className="text-sm text-gray-500">Website</h3>
+                      <a
+                        href={application.company.website}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-medium text-black hover:underline"
+                      >
+                        {application.company.website}
+                      </a>
+                    </div>
+                  </>
+                )}
               </div>
             </CardContent>
           </Card>
