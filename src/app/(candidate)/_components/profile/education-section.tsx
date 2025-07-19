@@ -20,12 +20,14 @@ interface EducationSectionProps {
   showMoreCount?: number;
   onAddEducation?: (education: Education) => void;
   onUpdateEducation?: (education: Education) => void;
+  readOnly?: boolean;
 }
 
 export function EducationSection({
   education,
   onAddEducation,
   onUpdateEducation,
+  readOnly = false,
 }: EducationSectionProps) {
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -62,23 +64,25 @@ export function EducationSection({
     <Card className="mb-6">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle>Educations</CardTitle>
-        <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
-          <DialogTrigger asChild>
-            <Button variant="outline" size="icon" className="h-8 w-8">
-              <Plus className="h-4 w-4" />
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[550px]">
-            <DialogHeader>
-              <DialogTitle>Add New Education</DialogTitle>
-            </DialogHeader>
-            <EducationForm
-              mode="add"
-              onSubmit={handleAddEducation}
-              onCancel={() => setAddDialogOpen(false)}
-            />
-          </DialogContent>
-        </Dialog>
+        {!readOnly && (
+          <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="icon" className="h-8 w-8">
+                <Plus className="h-4 w-4" />
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[550px]">
+              <DialogHeader>
+                <DialogTitle>Add New Education</DialogTitle>
+              </DialogHeader>
+              <EducationForm
+                mode="add"
+                onSubmit={handleAddEducation}
+                onCancel={() => setAddDialogOpen(false)}
+              />
+            </DialogContent>
+          </Dialog>
+        )}
       </CardHeader>
       <CardContent>
         {education.map((edu, index) => (
@@ -86,14 +90,16 @@ export function EducationSection({
             key={edu.id}
             className={`${index < education.length - 1 ? 'mb-8 border-b pb-8' : 'mb-4'} relative`}
           >
-            <Button
-              variant="outline"
-              size="icon"
-              className="absolute top-0 right-0 h-8 w-8"
-              onClick={() => handleEditEducation(edu)}
-            >
-              <Edit2 className="h-4 w-4" />
-            </Button>
+            {!readOnly && (
+              <Button
+                variant="outline"
+                size="icon"
+                className="absolute top-0 right-0 h-8 w-8"
+                onClick={() => handleEditEducation(edu)}
+              >
+                <Edit2 className="h-4 w-4" />
+              </Button>
+            )}
             <div className="flex gap-4">
               <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded-full border bg-white">
                 <Image

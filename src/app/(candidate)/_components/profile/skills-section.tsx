@@ -17,9 +17,13 @@ import { SkillSearchInput } from '@/components/skill-input-form';
 
 interface SkillsSectionProps {
   skills: string[];
+  readOnly?: boolean;
 }
 
-export function SkillsSection({ skills: initialSkills }: SkillsSectionProps) {
+export function SkillsSection({
+  skills: initialSkills,
+  readOnly = false,
+}: SkillsSectionProps) {
   const [skills, setSkills] = useState<string[]>(initialSkills);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
@@ -55,24 +59,26 @@ export function SkillsSection({ skills: initialSkills }: SkillsSectionProps) {
       <Card className="mb-6">
         <CardHeader className="flex flex-row items-center justify-between pb-2">
           <CardTitle>Skills</CardTitle>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => setIsAddDialogOpen(true)}
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
-            <Button
-              variant={isEditMode ? 'default' : 'outline'}
-              size="icon"
-              className="h-8 w-8"
-              onClick={toggleEditMode}
-            >
-              <Edit2 className="h-4 w-4" />
-            </Button>
-          </div>
+          {!readOnly && (
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => setIsAddDialogOpen(true)}
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={isEditMode ? 'default' : 'outline'}
+                size="icon"
+                className="h-8 w-8"
+                onClick={toggleEditMode}
+              >
+                <Edit2 className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-2">
@@ -81,10 +87,10 @@ export function SkillsSection({ skills: initialSkills }: SkillsSectionProps) {
                 <Badge
                   key={skill}
                   variant="secondary"
-                  className={`px-4 py-2 text-sm font-normal ${isEditMode ? 'pr-2' : ''}`}
+                  className={`px-4 py-2 text-sm font-normal ${isEditMode && !readOnly ? 'pr-2' : ''}`}
                 >
                   {skill}
-                  {isEditMode && (
+                  {isEditMode && !readOnly && (
                     <Button
                       variant="ghost"
                       size="icon"

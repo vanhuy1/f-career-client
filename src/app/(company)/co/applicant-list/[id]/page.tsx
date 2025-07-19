@@ -1,11 +1,25 @@
 'use client';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { User } from 'lucide-react';
+import Link from 'next/link';
 import { useApplicantDetail } from '@/services/state/applicantDetailSlice';
 
 export default function ApplicantProfilePage() {
   const applicant = useApplicantDetail();
   return (
     <>
+      <div className="mb-6 flex items-center justify-between">
+        <h2 className="text-2xl font-bold text-gray-900">Applicant Profile</h2>
+        {applicant?.candidate?.id && (
+          <Link href={`/co/candidate/${applicant.candidateProfile.id}`}>
+            <Button variant="outline" className="gap-2">
+              <User className="h-4 w-4" />
+              View Full Profile
+            </Button>
+          </Link>
+        )}
+      </div>
       <div className="mb-8">
         <h3 className="mb-6 text-lg font-semibold text-gray-900">
           Personal Info

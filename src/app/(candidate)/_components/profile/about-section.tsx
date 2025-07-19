@@ -20,9 +20,14 @@ import { RichTextEditor } from '@/components/common/RichTextEditor';
 interface AboutSectionProps {
   about: string | null;
   onUpdate?: (newAbout: string) => void;
+  readOnly?: boolean;
 }
 
-export function AboutSection({ about, onUpdate }: AboutSectionProps) {
+export function AboutSection({
+  about,
+  onUpdate,
+  readOnly = false,
+}: AboutSectionProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editedAbout, setEditedAbout] = useState(about || '');
 
@@ -87,47 +92,48 @@ export function AboutSection({ about, onUpdate }: AboutSectionProps) {
     <Card className="mb-6">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle>About Me</CardTitle>
-        {!isEditing ? (
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-8 w-8"
-            onClick={() => setIsEditing(true)}
-          >
-            <Edit2 className="h-4 w-4" />
-            <span className="sr-only">Edit about section</span>
-          </Button>
-        ) : (
-          <div className="flex gap-2">
+        {!readOnly &&
+          (!isEditing ? (
             <Button
               variant="outline"
               size="icon"
               className="h-8 w-8"
-              onClick={handleCancel}
-              disabled={loadingState === LoadingState.loading}
+              onClick={() => setIsEditing(true)}
             >
-              <X className="h-4 w-4" />
-              <span className="sr-only">Cancel editing</span>
+              <Edit2 className="h-4 w-4" />
+              <span className="sr-only">Edit about section</span>
             </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-8 w-8"
-              onClick={handleSave}
-              disabled={loadingState === LoadingState.loading}
-            >
-              {loadingState === LoadingState.loading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Save className="h-4 w-4" />
-              )}
-              <span className="sr-only">Save changes</span>
-            </Button>
-          </div>
-        )}
+          ) : (
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8"
+                onClick={handleCancel}
+                disabled={loadingState === LoadingState.loading}
+              >
+                <X className="h-4 w-4" />
+                <span className="sr-only">Cancel editing</span>
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8"
+                onClick={handleSave}
+                disabled={loadingState === LoadingState.loading}
+              >
+                {loadingState === LoadingState.loading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Save className="h-4 w-4" />
+                )}
+                <span className="sr-only">Save changes</span>
+              </Button>
+            </div>
+          ))}
       </CardHeader>
       <CardContent>
-        {!isEditing ? (
+        {!isEditing || readOnly ? (
           <div
             className="prose prose-sm max-w-none text-gray-600"
             dangerouslySetInnerHTML={{ __html: getDisplayContent() }}
