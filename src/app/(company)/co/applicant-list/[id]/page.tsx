@@ -66,9 +66,14 @@ export default function ApplicantProfilePage() {
 
         <div className="mb-6">
           <label className="text-sm text-gray-600">About Me</label>
-          <p className="mt-2 text-sm leading-relaxed text-gray-900">
-            {applicant?.candidateProfile?.about}
-          </p>
+          {applicant?.candidateProfile?.about && (
+            <div
+              className="prose mt-2 max-w-none text-sm leading-relaxed text-gray-900"
+              dangerouslySetInnerHTML={{
+                __html: applicant.candidateProfile.about,
+              }}
+            />
+          )}
         </div>
 
         <div className="grid grid-cols-2 gap-6">
