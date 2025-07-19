@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/dialog';
 import { EducationForm } from './education-form';
 import type { Education } from '@/types/CandidateProfile';
+import { createSafeHtml } from '@/utils/html-sanitizer';
 
 interface EducationSectionProps {
   education: Education[];
@@ -121,7 +122,7 @@ export function EducationSection({
                 {edu.description && (
                   <div
                     className="prose max-w-none text-gray-600"
-                    dangerouslySetInnerHTML={{ __html: edu.description }}
+                    dangerouslySetInnerHTML={createSafeHtml(edu.description)}
                   />
                 )}
               </div>

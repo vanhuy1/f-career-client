@@ -31,6 +31,7 @@ import {
   clearSelectedApplication,
 } from '@/services/state/applicationsSlice';
 import { LoadingState } from '@/store/store.model';
+import { createSafeHtml } from '@/utils/html-sanitizer';
 
 export default function ApplicationDetailPage() {
   const params = useParams();
@@ -163,9 +164,9 @@ export default function ApplicationDetailPage() {
                   {application.job?.description && (
                     <div
                       className="prose max-w-none text-gray-600"
-                      dangerouslySetInnerHTML={{
-                        __html: application.job.description,
-                      }}
+                      dangerouslySetInnerHTML={createSafeHtml(
+                        application.job.description,
+                      )}
                     />
                   )}
                 </div>

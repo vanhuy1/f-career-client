@@ -1,6 +1,7 @@
 import { Job } from '@/types/Job';
 import JobSection from '@/components/job-search/job-section';
 import { Gift } from 'lucide-react';
+import { createSafeHtml } from '@/utils/html-sanitizer';
 
 interface JobDetailContentProps {
   job: Job;
@@ -12,7 +13,7 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
       <JobSection title="Description">
         <div
           className="prose max-w-none leading-relaxed text-gray-600"
-          dangerouslySetInnerHTML={{ __html: job.description }}
+          dangerouslySetInnerHTML={createSafeHtml(job.description)}
         />
       </JobSection>
 

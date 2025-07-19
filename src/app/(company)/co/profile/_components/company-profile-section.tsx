@@ -6,6 +6,7 @@ import type { FormField } from '../../../_components/edit-form-dialog';
 import { Company } from '@/types/Company';
 import { toast } from 'react-toastify';
 import { CreateCompanyReq } from '@/types/Company';
+import { createSafeHtml } from '@/utils/html-sanitizer';
 
 interface CompanyProfileSectionProps {
   company: Company;
@@ -75,7 +76,7 @@ export default function CompanyProfileSection({
       <div className="rounded-lg border bg-white p-5 text-sm leading-relaxed text-gray-700">
         <div
           className="prose prose-sm max-w-none"
-          dangerouslySetInnerHTML={{ __html: profile }}
+          dangerouslySetInnerHTML={createSafeHtml(profile)}
         />
       </div>
     </div>

@@ -16,6 +16,7 @@ import {
 } from '@/services/state/caProfileSlice';
 import { LoadingState } from '@/store/store.model';
 import { RichTextEditor } from '@/components/common/RichTextEditor';
+import { createSafeHtml } from '@/utils/html-sanitizer';
 
 interface AboutSectionProps {
   about: string | null;
@@ -136,7 +137,7 @@ export function AboutSection({
         {!isEditing || readOnly ? (
           <div
             className="prose prose-sm max-w-none text-gray-600"
-            dangerouslySetInnerHTML={{ __html: getDisplayContent() }}
+            dangerouslySetInnerHTML={createSafeHtml(getDisplayContent())}
           />
         ) : (
           <div className="space-y-4">
