@@ -1,6 +1,7 @@
 'use client';
 
 import { Company } from '@/types/Company';
+import { createSafeHtml } from '@/utils/html-sanitizer';
 import { FileText, Info } from 'lucide-react';
 
 interface CompanyProfileSectionProps {
@@ -34,7 +35,7 @@ export default function CompanyProfileSection({
           <div className="prose prose-gray max-w-none">
             <div
               className="text-base leading-relaxed text-gray-700"
-              dangerouslySetInnerHTML={{ __html: company.description }}
+              dangerouslySetInnerHTML={createSafeHtml(company.description)}
             />
           </div>
         ) : (

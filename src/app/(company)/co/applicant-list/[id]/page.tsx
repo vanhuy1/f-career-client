@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { User } from 'lucide-react';
 import Link from 'next/link';
 import { useApplicantDetail } from '@/services/state/applicantDetailSlice';
+import { createSafeHtml } from '@/utils/html-sanitizer';
 
 export default function ApplicantProfilePage() {
   const applicant = useApplicantDetail();
@@ -69,9 +70,9 @@ export default function ApplicantProfilePage() {
           {applicant?.candidateProfile?.about && (
             <div
               className="prose mt-2 max-w-none text-sm leading-relaxed text-gray-900"
-              dangerouslySetInnerHTML={{
-                __html: applicant.candidateProfile.about,
-              }}
+              dangerouslySetInnerHTML={createSafeHtml(
+                applicant.candidateProfile.about,
+              )}
             />
           )}
         </div>

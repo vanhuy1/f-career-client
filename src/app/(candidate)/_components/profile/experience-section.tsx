@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/dialog';
 import { ExperienceForm } from './experience-form';
 import type { Experience } from '@/types/CandidateProfile';
+import { createSafeHtml } from '@/utils/html-sanitizer';
 
 // Function to calculate duration between two dates
 const calculateDuration = (startDate: string, endDate?: string): string => {
@@ -175,7 +176,9 @@ export function ExperienceSection({
                 <div className="mb-3 text-gray-500">{experience.location}</div>
                 <div
                   className="prose max-w-none text-gray-600"
-                  dangerouslySetInnerHTML={{ __html: experience.description }}
+                  dangerouslySetInnerHTML={createSafeHtml(
+                    experience.description,
+                  )}
                 />
               </div>
             </div>

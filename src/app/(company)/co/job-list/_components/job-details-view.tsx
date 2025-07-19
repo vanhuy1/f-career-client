@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardHeader } from '@/components/ui/card';
 import type { JobDetails } from './types/job';
+import { createSafeHtml } from '@/utils/html-sanitizer';
 
 interface JobDetailsViewProps {
   job: JobDetails;
@@ -35,7 +36,7 @@ export function JobDetailsView({ job }: JobDetailsViewProps) {
             <h3 className="mb-4 text-xl font-semibold">Description</h3>
             <div
               className="prose max-w-none leading-relaxed text-gray-600"
-              dangerouslySetInnerHTML={{ __html: job.description }}
+              dangerouslySetInnerHTML={createSafeHtml(job.description)}
             />
           </div>
 
