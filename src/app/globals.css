@@ -190,6 +190,14 @@
   margin-top: 0.25em;
 }
 
+.filter-green-glow {
+  filter: drop-shadow(0 0 5px rgba(74, 222, 128, 0.5));
+}
+
+.filter-blue-glow {
+  filter: drop-shadow(0 0 5px rgba(59, 130, 246, 0.5));
+}
+
 @media print {
   /* Remove any backgrounds, gradients, and shadows for print */
   * {
