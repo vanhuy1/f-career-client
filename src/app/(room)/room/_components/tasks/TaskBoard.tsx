@@ -7,10 +7,22 @@ import { useOutsideClick } from '../../hooks/useOutsideClick';
 import TaskCard from './TaskCard';
 import TaskModal from './TaskModal';
 import Icon from '../ui/Icon';
+import { taskService } from '@/services/api/room/task-api';
+import { toast } from 'react-toastify';
+import { RefreshCw } from 'lucide-react';
 
 export type TaskStatus = 'todo' | 'in-progress' | 'review' | 'done';
 export type TaskPriority = 'low' | 'medium' | 'high';
 
+// Map from frontend status to backend status
+const statusMapToBackend = {
+  todo: 'TODO',
+  'in-progress': 'IN_PROGRESS',
+  review: 'REVIEW',
+  done: 'DONE',
+} as const;
+
+// Local Task interface for the TaskBoard component
 export interface Task {
   id: string;
   title: string;
@@ -22,13 +34,6 @@ export interface Task {
   tags: string[];
   dueDate?: string;
   reminderTime?: string;
-  assignee?: string;
-  attachments?: Array<{
-    id: string;
-    name: string;
-    url: string;
-    type: string;
-  }>;
   checklist?: Array<{
     id: string;
     text: string;
@@ -42,7 +47,45 @@ export interface Task {
   estimatedTime?: number; // in minutes
 }
 
-export default function TaskBoard() {
+// Backend Task interface matching the API
+export interface BackendTask {
+  id: string;
+  title: string;
+  description?: string;
+  status: 'TODO' | 'IN_PROGRESS' | 'REVIEW' | 'DONE';
+  priority: 'low' | 'medium' | 'high';
+  createdAt: string;
+  updatedAt: string;
+  tags?: string[];
+  dueDate?: string;
+  reminderTime?: string;
+  checklist?: Array<{
+    id: string;
+    text: string;
+    completed: boolean;
+  }>;
+  recurring?: {
+    frequency: 'daily' | 'weekly' | 'monthly' | null;
+    interval: number;
+  };
+  estimatedTime?: number;
+  progress?: number;
+  userId: number;
+}
+
+interface TaskBoardProps {
+  keepParentOpen?: boolean;
+  onTaskModalOpen?: () => void;
+  onTaskModalClose?: () => void;
+  userId?: number;
+}
+
+export default function TaskBoard({
+  keepParentOpen = false,
+  onTaskModalOpen,
+  onTaskModalClose,
+  userId,
+}: TaskBoardProps) {
   const [tasks, setTasks] = useLocalStorageState<Task[]>(
     [],
     'study-room-tasks',
@@ -61,9 +104,23 @@ export default function TaskBoard() {
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false);
   const [isActionsMenuOpen, setIsActionsMenuOpen] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   const filterMenuRef = useRef<HTMLDivElement>(null);
   const actionsMenuRef = useRef<HTMLDivElement>(null);
+
+  // Notify parent when task modal is opened or closed
+  useEffect(() => {
+    if (filterAssignee) {
+    }
+
+    if (isAddingTask || editingTask) {
+      onTaskModalOpen?.();
+    } else {
+      onTaskModalClose?.();
+    }
+  }, [isAddingTask, editingTask, onTaskModalOpen, onTaskModalClose]);
 
   // Close menus when clicking outside
   useOutsideClick(filterMenuRef, () => {
@@ -73,6 +130,138 @@ export default function TaskBoard() {
   useOutsideClick(actionsMenuRef, () => {
     if (isActionsMenuOpen) setIsActionsMenuOpen(false);
   });
+
+  // First time join room - initialize tasks from server
+  useEffect(() => {
+    const initializeTasksFromServer = async () => {
+      try {
+        // Check if we've already initialized
+        const initialized = localStorage.getItem(
+          'study-room-tasks-initialized',
+        );
+
+        // Check if we already have tasks in local storage
+        const localStorageTasks = localStorage.getItem('study-room-tasks');
+
+        if (!initialized) {
+          // If we have tasks in local storage but haven't initialized from server
+          if (localStorageTasks) {
+            try {
+              const parsedTasks = JSON.parse(localStorageTasks);
+              if (Array.isArray(parsedTasks) && parsedTasks.length > 0) {
+                // Fix any status format issues in local storage
+                const fixedTasks = parsedTasks.map((task) => {
+                  // Handle underscore format (in_progress) vs hyphen format (in-progress)
+                  const status = task.status.replace('_', '-');
+                  return {
+                    ...task,
+                    status: status as TaskStatus,
+                  };
+                });
+
+                setTasks(fixedTasks);
+                console.log(
+                  'Loaded and fixed tasks from local storage:',
+                  fixedTasks,
+                );
+                localStorage.setItem('study-room-tasks-initialized', 'true');
+                setIsInitialized(true);
+                return;
+              }
+            } catch (e) {
+              console.error('Error parsing local storage tasks:', e);
+            }
+          }
+
+          // If no valid tasks in local storage, fetch from server
+          const serverTasks = await taskService.initTasksFromServer(
+            userId ?? 0,
+          );
+          if (serverTasks && serverTasks.length > 0) {
+            // Convert server tasks to local task format if needed
+            const localTasks = serverTasks.map((task) => {
+              // Convert backend status to frontend status
+              const status =
+                task.status === 'TODO'
+                  ? 'todo'
+                  : task.status === 'IN_PROGRESS'
+                    ? 'in-progress'
+                    : task.status === 'REVIEW'
+                      ? 'review'
+                      : 'done';
+
+              return {
+                id: task.id,
+                title: task.title,
+                description: task.description || '',
+                status: status as TaskStatus,
+                priority: task.priority,
+                createdAt: task.createdAt,
+                updatedAt: task.updatedAt,
+                tags: task.tags || [],
+                dueDate: task.dueDate,
+                reminderTime: task.reminderTime,
+                checklist: task.checklist,
+                recurring: task.recurring,
+                estimatedTime: task.estimatedTime,
+                progress: task.progress,
+              };
+            });
+
+            setTasks(localTasks);
+            console.log('Loaded tasks from server:', localTasks);
+          }
+          localStorage.setItem('study-room-tasks-initialized', 'true');
+          setIsInitialized(true);
+        } else {
+          setIsInitialized(true);
+        }
+      } catch (error) {
+        console.error('Failed to initialize tasks from server:', error);
+        setIsInitialized(true);
+      }
+    };
+
+    initializeTasksFromServer();
+  }, [userId]);
+
+  // Sync tasks to server
+  const handleSyncToServer = async () => {
+    try {
+      setIsSyncing(true);
+
+      // Ensure userId is a number
+      const userIdToUse = userId ?? 0;
+
+      // Convert local tasks to server format
+      const serverTasks: BackendTask[] = tasks.map((task) => ({
+        id: task.id,
+        title: task.title,
+        description: task.description,
+        status: statusMapToBackend[task.status],
+        priority: task.priority,
+        createdAt: task.createdAt,
+        updatedAt: task.updatedAt,
+        tags: task.tags,
+        dueDate: task.dueDate,
+        reminderTime: task.reminderTime,
+        checklist: task.checklist,
+        recurring: task.recurring,
+        estimatedTime: task.estimatedTime,
+        progress: task.progress,
+        userId: userIdToUse,
+      }));
+
+      const syncedTasks = await taskService.syncTasksToServer(serverTasks);
+      console.log('Tasks synced successfully:', syncedTasks);
+      toast.success(`${tasks.length} tasks have been synced to the server.`);
+    } catch (error) {
+      console.error('Failed to sync tasks to server:', error);
+      toast.error('There was a problem syncing your tasks. Please try again.');
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -103,11 +292,6 @@ export default function TaskBoard() {
 
   // Get all unique tags from tasks
   const allTags = Array.from(new Set(tasks.flatMap((task) => task.tags || [])));
-
-  // Get all unique assignees from tasks
-  const allAssignees = Array.from(
-    new Set(tasks.map((task) => task.assignee).filter(Boolean) as string[]),
-  );
 
   const handleAddTask = (
     task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>,
@@ -209,11 +393,6 @@ export default function TaskBoard() {
         return false;
       }
 
-      // Assignee filter
-      if (filterAssignee !== 'all' && task.assignee !== filterAssignee) {
-        return false;
-      }
-
       return true;
     })
     .sort((a, b) => {
@@ -269,6 +448,16 @@ export default function TaskBoard() {
             <span className="absolute -top-8 left-1/2 -translate-x-1/2 transform rounded bg-stone-800 px-2 py-1 text-xs opacity-0 transition-opacity group-hover:opacity-100">
               Ctrl+N
             </span>
+          </button>
+
+          <button
+            onClick={handleSyncToServer}
+            className="group relative flex items-center gap-1 rounded-md bg-blue-700 px-4 py-2 text-white hover:bg-blue-600"
+            title="Sync tasks to server"
+            disabled={isSyncing || !isInitialized}
+          >
+            <RefreshCw className={cn('h-4 w-4', isSyncing && 'animate-spin')} />
+            <span>{isSyncing ? 'Syncing...' : 'Sync to Server'}</span>
           </button>
 
           <div className="relative" ref={filterMenuRef}>
@@ -339,27 +528,6 @@ export default function TaskBoard() {
                         {allTags.map((tag) => (
                           <option key={tag} value={tag}>
                             {tag}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
-
-                  {/* Assignee filter */}
-                  {allAssignees.length > 0 && (
-                    <div>
-                      <label className="mb-1 block text-sm text-stone-400">
-                        Assignee
-                      </label>
-                      <select
-                        value={filterAssignee}
-                        onChange={(e) => setFilterAssignee(e.target.value)}
-                        className="w-full rounded-md border border-stone-600 bg-stone-700 px-3 py-2 text-white"
-                      >
-                        <option value="all">All Assignees</option>
-                        {allAssignees.map((assignee) => (
-                          <option key={assignee} value={assignee}>
-                            {assignee}
                           </option>
                         ))}
                       </select>
@@ -539,12 +707,14 @@ export default function TaskBoard() {
       )}
 
       {/* Add task modal */}
-      <TaskModal
-        isOpen={isAddingTask}
-        onClose={() => setIsAddingTask(false)}
-        onSave={handleAddTask}
-        roomUsers={['You', 'User 1', 'User 2', 'User 3']} // Example room users
-      />
+      {isAddingTask && (
+        <TaskModal
+          isOpen={isAddingTask}
+          onClose={() => setIsAddingTask(false)}
+          onSave={handleAddTask}
+          keepParentOpen={keepParentOpen}
+        />
+      )}
 
       {/* Edit task modal */}
       {editingTask && (
@@ -554,7 +724,7 @@ export default function TaskBoard() {
           onSave={handleUpdateTask}
           onDelete={handleDeleteTask}
           task={editingTask}
-          roomUsers={['You', 'User 1', 'User 2', 'User 3']} // Example room users
+          keepParentOpen={keepParentOpen}
         />
       )}
     </div>

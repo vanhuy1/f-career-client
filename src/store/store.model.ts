@@ -2,6 +2,7 @@ export enum LoadingState {
   loaded = 'loaded',
   loading = 'loading',
   init = 'init',
+  error = 'error',
 }
 
 export interface AppStoreState<T> {
