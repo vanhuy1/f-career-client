@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -38,55 +38,127 @@ import {
   Eye,
   Filter,
   ArrowUpDown,
+  Loader2,
+  EyeOff,
 } from 'lucide-react';
-import { mockUsers, UserDetail } from '@/data/mockUsers';
+import { userManagementService } from '@/services/api/admin/user-mgm.api';
+import { User, UserResponse } from '@/types/admin/UserManagement';
+import { ROLES } from '@/enums/roles.enum';
+
+type UserStatus = 'active' | 'disabled';
+type RoleFilter = 'all' | ROLES;
+
+// Utility functions for masking PII data
+const maskEmail = (email: string): string => {
+  const [localPart, domain] = email.split('@');
+  if (localPart.length <= 2) {
+    return `${localPart[0]}***@${domain}`;
+  }
+  return `${localPart.substring(0, 2)}***@${domain}`;
+};
+
+const maskName = (name: string): string => {
+  const parts = name.split(' ');
+  return parts
+    .map((part) => {
+      if (part.length <= 2) return part;
+      return `${part[0]}***${part[part.length - 1]}`;
+    })
+    .join(' ');
+};
 
 export default function UsersPage() {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedUser, setSelectedUser] = useState<UserDetail | null>(null);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [showPII, setShowPII] = useState(false);
+  const [roleFilter, setRoleFilter] = useState<RoleFilter>('all');
+  const [pagination, setPagination] = useState({
+    count: 0,
+    limit: 100,
+    offset: 0,
+  });
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'verified':
-        return (
-          <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
-            Verified
-          </Badge>
-        );
-      case 'unverified':
-        return (
-          <Badge className="bg-orange-100 text-orange-800 hover:bg-orange-100">
-            Unverified
-          </Badge>
-        );
-      case 'banned':
-        return (
-          <Badge className="bg-red-100 text-red-800 hover:bg-red-100">
-            Banned
-          </Badge>
-        );
-      default:
-        return <Badge variant="secondary">{status}</Badge>;
+  const fetchUsers = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response: UserResponse = await userManagementService.getUsers({
+        limit: pagination.limit,
+        offset: pagination.offset,
+      });
+      setUsers(response.data.users);
+      setPagination((prev) => ({
+        ...prev,
+        count: response.data.count,
+      }));
+    } catch (err) {
+      setError('Failed to fetch users');
+      console.error('Error fetching users:', err);
+    } finally {
+      setLoading(false);
     }
-  };
+  }, [pagination.limit, pagination.offset]);
+  useEffect(() => {
+    fetchUsers();
+  }, [pagination.offset, pagination.limit, fetchUsers]);
 
-  const filterUsersByStatus = (status: UserDetail['status']) => {
-    return mockUsers.filter(
-      (user) =>
-        user.status === status &&
-        (user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          user.email.toLowerCase().includes(searchTerm.toLowerCase())),
+  const getStatusBadge = (user: User) => {
+    if (user.isAccountDisabled) {
+      return (
+        <Badge className="bg-red-100 text-red-800 hover:bg-red-100">
+          Disabled
+        </Badge>
+      );
+    }
+
+    return (
+      <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
+        Active
+      </Badge>
     );
   };
 
-  const handleStatusChange = (
+  const getUserStatus = (user: User): UserStatus => {
+    return user.isAccountDisabled ? 'disabled' : 'active';
+  };
+
+  const filterUsers = (status: UserStatus) => {
+    return users.filter((user) => {
+      const userStatus = getUserStatus(user);
+      const matchesStatus = userStatus === status;
+      const matchesRole =
+        roleFilter === 'all' || user.roles.includes(roleFilter as ROLES);
+      const matchesSearch =
+        user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.email.toLowerCase().includes(searchTerm.toLowerCase());
+
+      return matchesStatus && matchesRole && matchesSearch;
+    });
+  };
+
+  const handleStatusChange = async (
     userId: number,
-    newStatus: UserDetail['status'],
+    newStatus: 'active' | 'disabled',
   ) => {
-    console.log(`Changing status of user ${userId} to ${newStatus}`);
+    try {
+      const isAccountDisabled = newStatus === 'disabled';
+      await userManagementService.updateUserStatus({
+        id: userId.toString(),
+        isAccountDisabled,
+      });
+
+      // Refresh the users list
+      await fetchUsers();
+    } catch (err) {
+      console.error('Error updating user status:', err);
+      setError('Failed to update user status');
+    }
   };
 
   const handleSendEmail = () => {
@@ -97,7 +169,7 @@ export default function UsersPage() {
     router.push(`/ad/users/${userId}`);
   };
 
-  const UserTable = ({ users }: { users: UserDetail[] }) => (
+  const UserTable = ({ users: tableUsers }: { users: User[] }) => (
     <Table>
       <TableHeader>
         <TableRow>
@@ -108,9 +180,10 @@ export default function UsersPage() {
           </TableHead>
           <TableHead>Username</TableHead>
           <TableHead>Email</TableHead>
+          <TableHead>Role</TableHead>
           <TableHead>
             <Button variant="ghost" className="h-auto p-0 font-semibold">
-              Last Active <ArrowUpDown className="ml-2 h-4 w-4" />
+              Created <ArrowUpDown className="ml-2 h-4 w-4" />
             </Button>
           </TableHead>
           <TableHead>Status</TableHead>
@@ -118,7 +191,7 @@ export default function UsersPage() {
         </TableRow>
       </TableHeader>
       <TableBody>
-        {users.map((user) => (
+        {tableUsers.map((user) => (
           <TableRow key={user.id}>
             <TableCell>
               <div className="flex items-center gap-3">
@@ -136,20 +209,33 @@ export default function UsersPage() {
                     onClick={() => handleViewProfile(user.id)}
                     className="cursor-pointer text-left font-medium hover:text-blue-600"
                   >
-                    {user.name}
+                    {showPII ? user.name : maskName(user.name)}
                   </button>
                   <div className="text-sm text-gray-500">
-                    Joined {new Date(user.joinDate).toLocaleDateString()}
+                    Joined {new Date(user.createdAt).toLocaleDateString()}
                   </div>
                 </div>
               </div>
             </TableCell>
-            <TableCell>@{user.username}</TableCell>
-            <TableCell>{user.email}</TableCell>
             <TableCell>
-              {new Date(user.lastActive).toLocaleDateString()}
+              @{showPII ? user.username : maskName(user.username)}
             </TableCell>
-            <TableCell>{getStatusBadge(user.status)}</TableCell>
+            <TableCell>
+              {showPII ? user.email : maskEmail(user.email)}
+            </TableCell>
+            <TableCell>
+              <div className="flex flex-wrap gap-1">
+                {user.roles.map((role) => (
+                  <Badge key={role} variant="outline" className="text-xs">
+                    {role.replace('_', ' ')}
+                  </Badge>
+                ))}
+              </div>
+            </TableCell>
+            <TableCell>
+              {new Date(user.updatedAt).toLocaleDateString()}
+            </TableCell>
+            <TableCell>{getStatusBadge(user)}</TableCell>
             <TableCell className="text-right">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -172,19 +258,16 @@ export default function UsersPage() {
                     Send Email
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    onClick={() => handleStatusChange(user.id, 'verified')}
+                    onClick={() => handleStatusChange(user.id, 'active')}
+                    disabled={!user.isAccountDisabled}
                   >
-                    Set as Verified
+                    Enable Account
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    onClick={() => handleStatusChange(user.id, 'unverified')}
+                    onClick={() => handleStatusChange(user.id, 'disabled')}
+                    disabled={user.isAccountDisabled}
                   >
-                    Set as Unverified
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => handleStatusChange(user.id, 'banned')}
-                  >
-                    Ban User
+                    Disable Account
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -194,6 +277,36 @@ export default function UsersPage() {
       </TableBody>
     </Table>
   );
+
+  if (loading) {
+    return (
+      <div className="p-8">
+        <div className="flex h-64 items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin" />
+          <span className="ml-2">Loading users...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-8">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Manage Users</h1>
+          <p className="mt-2 text-gray-600">Review and manage user accounts</p>
+        </div>
+        <Card className="border border-red-200 bg-red-50">
+          <CardContent className="p-6">
+            <div className="font-medium text-red-800">Error: {error}</div>
+            <Button onClick={fetchUsers} className="mt-4" variant="outline">
+              Retry
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="p-8">
@@ -206,7 +319,7 @@ export default function UsersPage() {
         <CardHeader>
           <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
             <CardTitle className="text-xl font-semibold text-gray-900">
-              User Accounts
+              User Accounts ({pagination.count} total)
             </CardTitle>
             <div className="flex w-full gap-2 sm:w-auto">
               <div className="relative flex-1 sm:flex-initial">
@@ -218,39 +331,90 @@ export default function UsersPage() {
                   className="w-full pl-10 sm:w-[300px]"
                 />
               </div>
-              <Button variant="outline" size="icon">
-                <Filter className="h-4 w-4" />
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="icon">
+                    <Filter className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <div className="px-2 py-1.5 text-sm font-semibold text-gray-700">
+                    Filter by Role
+                  </div>
+                  <DropdownMenuItem
+                    onClick={() => setRoleFilter('all')}
+                    className={
+                      roleFilter === 'all' ? 'bg-blue-50 text-blue-600' : ''
+                    }
+                  >
+                    {roleFilter === 'all' && '✓ '}All Roles
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setRoleFilter(ROLES.USER)}
+                    className={
+                      roleFilter === ROLES.USER
+                        ? 'bg-blue-50 text-blue-600'
+                        : ''
+                    }
+                  >
+                    {roleFilter === ROLES.USER && '✓ '}User
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setRoleFilter(ROLES.RECRUITER)}
+                    className={
+                      roleFilter === ROLES.RECRUITER
+                        ? 'bg-blue-50 text-blue-600'
+                        : ''
+                    }
+                  >
+                    {roleFilter === ROLES.RECRUITER && '✓ '}Recruiter
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setRoleFilter(ROLES.ADMIN_RECRUITER)}
+                    className={
+                      roleFilter === ROLES.ADMIN_RECRUITER
+                        ? 'bg-blue-50 text-blue-600'
+                        : ''
+                    }
+                  >
+                    {roleFilter === ROLES.ADMIN_RECRUITER && '✓ '}Admin
+                    Recruiter
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <Button
+                variant={showPII ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setShowPII(!showPII)}
+                className="flex items-center gap-2"
+              >
+                {showPII ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
+                {showPII ? 'Hide PII' : 'Show PII'}
               </Button>
             </div>
           </div>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="verified" className="w-full">
-            <TabsList className="mb-6 grid w-full grid-cols-3">
-              <TabsTrigger value="verified" className="flex items-center gap-2">
-                Verified ({filterUsersByStatus('verified').length})
+          <Tabs defaultValue="active" className="w-full">
+            <TabsList className="mb-6 grid w-full grid-cols-2">
+              <TabsTrigger value="active" className="flex items-center gap-2">
+                Active ({filterUsers('active').length})
               </TabsTrigger>
-              <TabsTrigger
-                value="unverified"
-                className="flex items-center gap-2"
-              >
-                Unverified ({filterUsersByStatus('unverified').length})
-              </TabsTrigger>
-              <TabsTrigger value="banned" className="flex items-center gap-2">
-                Banned ({filterUsersByStatus('banned').length})
+              <TabsTrigger value="disabled" className="flex items-center gap-2">
+                Disabled ({filterUsers('disabled').length})
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="verified">
-              <UserTable users={filterUsersByStatus('verified')} />
+            <TabsContent value="active">
+              <UserTable users={filterUsers('active')} />
             </TabsContent>
 
-            <TabsContent value="unverified">
-              <UserTable users={filterUsersByStatus('unverified')} />
-            </TabsContent>
-
-            <TabsContent value="banned">
-              <UserTable users={filterUsersByStatus('banned')} />
+            <TabsContent value="disabled">
+              <UserTable users={filterUsers('disabled')} />
             </TabsContent>
           </Tabs>
         </CardContent>
@@ -262,13 +426,28 @@ export default function UsersPage() {
           <DialogHeader>
             <DialogTitle>Send Email</DialogTitle>
             <DialogDescription>
-              Send an email to {selectedUser?.name}
+              Send an email to{' '}
+              {selectedUser
+                ? showPII
+                  ? selectedUser.name
+                  : maskName(selectedUser.name)
+                : ''}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
               <Label htmlFor="to">To</Label>
-              <Input id="to" value={selectedUser?.email || ''} disabled />
+              <Input
+                id="to"
+                value={
+                  selectedUser
+                    ? showPII
+                      ? selectedUser.email
+                      : maskEmail(selectedUser.email)
+                    : ''
+                }
+                disabled
+              />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="subject">Subject</Label>
