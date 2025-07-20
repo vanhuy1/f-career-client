@@ -3,6 +3,7 @@ import JobDetails from '@/components/job-search/job-detail';
 import JobCategories from '@/components/job-search/job-categories';
 import JobSkills from '@/components/job-search/job-skill';
 import { formatDate, formatSalaryRange } from '../utils/formatters';
+import GenerateRoadmapButton from './GenerateRoadmapButton';
 
 interface JobDetailSidebarProps {
   job: Job;
@@ -22,6 +23,13 @@ export default function JobDetailSidebar({ job }: JobDetailSidebarProps) {
         />
         <JobCategories categories={[job.category.name]} />
         <JobSkills skills={job.skills.map((skill) => skill.name)} />
+
+        <div className="border-t pt-4">
+          <GenerateRoadmapButton
+            jobId={job.id?.toString() || ''}
+            jobTitle={job.title}
+          />
+        </div>
       </div>
     </div>
   );

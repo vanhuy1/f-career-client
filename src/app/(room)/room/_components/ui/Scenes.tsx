@@ -3,6 +3,7 @@
 import { useSelector } from 'react-redux';
 import { cn } from '@/lib/utils';
 import { RootState } from '@/store/store';
+import Image from 'next/image';
 
 export default function Scenes() {
   const selectedScene = useSelector(
@@ -27,12 +28,14 @@ export default function Scenes() {
         'absolute inset-0 z-0 flex items-center justify-center overflow-hidden',
       )}
     >
-      <img
+      <Image
         className={cn(
           'h-full w-full object-cover transition-all duration-500 ease-in-out',
         )}
         src={selectedScene.image}
         alt={selectedScene.name}
+        width={1920}
+        height={1080}
       />
     </div>
   );

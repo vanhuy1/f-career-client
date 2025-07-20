@@ -204,7 +204,7 @@ export default function MusicSelector() {
         }
       }
     }
-  }, [isApiReady, currentTrack, isPlaying, dispatch, volume]);
+  }, [isApiReady, currentTrack, isPlaying, dispatch, volume, player]);
 
   // Update player volume when volume state changes
   useEffect(() => {

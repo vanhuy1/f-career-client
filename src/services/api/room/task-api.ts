@@ -156,11 +156,8 @@ class TaskService {
           };
         },
       });
-
-      console.log(`Fetched tasks for user ${userId}:`, response.items);
       return response.items;
-    } catch (error) {
-      console.error(`Error fetching tasks for user ${userId}:`, error);
+    } catch (_) {
       return [];
     }
   }
