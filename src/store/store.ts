@@ -9,6 +9,7 @@ import applicationReducer from '@/services/state/applicationsSlice';
 import { applicantDetailReducer } from '@/services/state/applicantDetailSlice';
 import categoryReducer from '@/services/state/categorySlice';
 import roomReducer from '@/services/state/roomSlice';
+import tasksReducer from '@/services/state/taskSlice';
 
 export const makeStore = () => {
   return configureStore({
@@ -23,6 +24,7 @@ export const makeStore = () => {
       applicantDetail: applicantDetailReducer,
       category: categoryReducer,
       room: roomReducer,
+      tasks: tasksReducer,
     },
   });
 };

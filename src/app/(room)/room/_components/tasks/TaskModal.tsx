@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import Modal from '../ui/Modal';
 import Icon from '../ui/Icon';
@@ -12,7 +12,8 @@ interface TaskModalProps {
   onSave: (task: Task | Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => void;
   onDelete?: (taskId: string) => void;
   task?: Task;
-  roomUsers?: string[]; // List of users in the room
+  roomUsers?: string[];
+  keepParentOpen?: boolean;
 }
 
 export default function TaskModal({
@@ -21,7 +22,7 @@ export default function TaskModal({
   onSave,
   onDelete,
   task,
-  roomUsers = ['You', 'User 1', 'User 2', 'User 3'], // Default users for demo
+  keepParentOpen = false,
 }: TaskModalProps) {
   const [formData, setFormData] = useState<Partial<Task>>({
     title: '',
@@ -36,7 +37,6 @@ export default function TaskModal({
   const [tagInput, setTagInput] = useState('');
   const [checklistInput, setChecklistInput] = useState('');
   const [reminderHours, setReminderHours] = useState('1');
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (task) {
@@ -60,7 +60,6 @@ export default function TaskModal({
         priority: 'medium',
         tags: [],
         checklist: [],
-        attachments: [],
         recurring: { frequency: null, interval: 1 },
       });
       setReminderHours('1');
@@ -155,45 +154,6 @@ export default function TaskModal({
     setFormData((prev) => ({ ...prev, progress }));
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-
-    const newAttachments = Array.from(files).map((file) => {
-      // Create object URL for preview
-      const url = URL.createObjectURL(file);
-
-      return {
-        id: Date.now().toString() + Math.random().toString(36).substring(2, 10),
-        name: file.name,
-        url: url,
-        type: file.type,
-      };
-    });
-
-    setFormData({
-      ...formData,
-      attachments: [...(formData.attachments || []), ...newAttachments],
-    });
-
-    // Reset file input
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  };
-
-  const handleRemoveAttachment = (id: string) => {
-    const attachment = formData.attachments?.find((a) => a.id === id);
-    if (attachment && attachment.url.startsWith('blob:')) {
-      URL.revokeObjectURL(attachment.url);
-    }
-
-    setFormData({
-      ...formData,
-      attachments: formData.attachments?.filter((a) => a.id !== id) || [],
-    });
-  };
-
   const handleDueDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const dueDate = e.target.value;
     setFormData({
@@ -276,15 +236,39 @@ export default function TaskModal({
     }
   };
 
+  const handleModalClose = () => {
+    if (!keepParentOpen) {
+      onClose();
+    } else {
+      // Just reset the form without closing the parent modal
+      if (task) {
+        setFormData({
+          ...task,
+        });
+      } else {
+        setFormData({
+          title: '',
+          description: '',
+          status: 'todo',
+          priority: 'medium',
+          tags: [],
+          checklist: [],
+          recurring: { frequency: null, interval: 1 },
+        });
+      }
+      onClose();
+    }
+  };
+
   // Calculate progress
   const progress = formData.progress || 0;
 
   return (
     <Modal
       isOpen={isOpen}
-      onClose={onClose}
+      onClose={handleModalClose}
       title={task ? 'Edit Task' : 'Add New Task'}
-      size="xl"
+      size="lg"
     >
       <form
         onSubmit={handleSubmit}
@@ -346,25 +330,6 @@ export default function TaskModal({
               <option value="low">Low</option>
               <option value="medium">Medium</option>
               <option value="high">High</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="mb-1 block text-sm text-stone-400">
-              Assignee
-            </label>
-            <select
-              name="assignee"
-              value={formData.assignee || ''}
-              onChange={handleChange}
-              className="w-full rounded-md border border-stone-700 bg-stone-800 px-3 py-2 text-white"
-            >
-              <option value="">Unassigned</option>
-              {roomUsers.map((user, index) => (
-                <option key={index} value={user}>
-                  {user}
-                </option>
-              ))}
             </select>
           </div>
         </div>
@@ -533,66 +498,6 @@ export default function TaskModal({
           </div>
         </div>
 
-        {/* Attachments */}
-        <div>
-          <label className="mb-1 block text-sm text-stone-400">
-            Attachments
-          </label>
-          <div
-            className="cursor-pointer rounded-md border-2 border-dashed border-stone-700 p-4 text-center transition-colors hover:border-stone-500"
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <input
-              ref={fileInputRef}
-              type="file"
-              onChange={handleFileChange}
-              className="hidden"
-              multiple
-            />
-            <p className="text-stone-400">
-              <span className="mb-1 block text-xl">+</span>
-              Click to upload or drag files here
-            </p>
-          </div>
-
-          {formData.attachments && formData.attachments.length > 0 && (
-            <div className="mt-2 grid grid-cols-2 gap-2 md:grid-cols-4">
-              {formData.attachments.map((file) => (
-                <div key={file.id} className="group relative">
-                  {file.type.startsWith('image/') ? (
-                    <div className="aspect-square overflow-hidden rounded-md bg-stone-800">
-                      <img
-                        src={file.url}
-                        alt={file.name}
-                        className="h-full w-full object-cover"
-                      />
-                    </div>
-                  ) : (
-                    <div className="flex aspect-square items-center justify-center rounded-md bg-stone-800">
-                      <span className="text-2xl">📄</span>
-                    </div>
-                  )}
-
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleRemoveAttachment(file.id);
-                    }}
-                    className="absolute top-1 right-1 rounded-full bg-red-800/80 p-1 text-white opacity-0 transition-opacity group-hover:opacity-100"
-                  >
-                    <Icon name="Close" className="h-3 w-3" />
-                  </button>
-
-                  <p className="mt-1 truncate text-xs text-stone-400">
-                    {file.name}
-                  </p>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
         {/* Tags */}
         <div>
           <label className="mb-1 block text-sm text-stone-400">Tags</label>
@@ -647,7 +552,7 @@ export default function TaskModal({
           )}
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleModalClose}
             className="rounded-md bg-stone-700 px-4 py-2 text-white hover:bg-stone-600"
           >
             Cancel

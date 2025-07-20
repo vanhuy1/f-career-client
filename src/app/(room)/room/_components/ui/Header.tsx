@@ -4,19 +4,17 @@ import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import IconButton from './IconButton';
-import TodoModal from '../todo/TodoModal';
 import SceneSelector from './SceneSelector';
 import MusicSelector from './MusicSelector';
 import CalendarModal from '../calendar/CalendarModal';
 import TaskBoardModal from '../tasks/TaskBoardModal';
 import SoundControl from './SoundControl';
-import RoadmapModal from '../learning/RoadmapModal';
 import { Maximize2, Minimize2 } from 'lucide-react';
 
 export default function Header() {
   const [isTaskBoardOpen, setIsTaskBoardOpen] = useState(false);
-  const [isRoadmapOpen, setIsRoadmapOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isPomodoroActive, setIsPomodoroActive] = useState(false);
 
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -44,6 +42,13 @@ export default function Header() {
     }
   };
 
+  const togglePomodoro = () => {
+    setIsPomodoroActive(!isPomodoroActive);
+    // Dispatch event for StudyRoom to handle
+    const event = new CustomEvent('toggle-pomodoro');
+    document.dispatchEvent(event);
+  };
+
   return (
     <div className={cn('flex items-center justify-between px-9 py-4')}>
       <Link
@@ -56,20 +61,13 @@ export default function Header() {
         <SceneSelector />
         <MusicSelector />
         <SoundControl />
-        <TodoModal />
+        <IconButton
+          icon="Clock"
+          label="Pomodoro"
+          onClick={togglePomodoro}
+          isActive={isPomodoroActive}
+        />
         <CalendarModal />
-        <IconButton
-          icon="Board"
-          label="Task Board"
-          onClick={() => setIsTaskBoardOpen(true)}
-          isActive={isTaskBoardOpen}
-        />
-        <IconButton
-          icon="Roadmap"
-          label="Roadmaps"
-          onClick={() => setIsRoadmapOpen(true)}
-          isActive={isRoadmapOpen}
-        />
         <button
           onClick={toggleFullscreen}
           className={cn(
@@ -91,10 +89,6 @@ export default function Header() {
       <TaskBoardModal
         isOpen={isTaskBoardOpen}
         onClose={() => setIsTaskBoardOpen(false)}
-      />
-      <RoadmapModal
-        isOpen={isRoadmapOpen}
-        onClose={() => setIsRoadmapOpen(false)}
       />
     </div>
   );

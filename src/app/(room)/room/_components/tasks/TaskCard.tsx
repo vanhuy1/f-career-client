@@ -219,25 +219,7 @@ export default function TaskCard({
             <span>{task.recurring?.frequency}</span>
           </div>
         )}
-
-        {task.assignee && (
-          <div className="flex items-center gap-1 rounded-full bg-indigo-900/50 px-2 py-0.5 text-indigo-200">
-            <span className="h-3 w-3 flex-shrink-0 rounded-full bg-indigo-500" />
-            <span className="max-w-[80px] truncate">{task.assignee}</span>
-          </div>
-        )}
       </div>
-
-      {/* Attachments indicator */}
-      {task.attachments && task.attachments.length > 0 && (
-        <div className="mb-2 flex items-center gap-1 text-xs text-stone-400">
-          <Icon name="MultiImage" className="h-3.5 w-3.5" />
-          <span>
-            {task.attachments.length} attachment
-            {task.attachments.length !== 1 ? 's' : ''}
-          </span>
-        </div>
-      )}
 
       {/* Tags */}
       {task.tags && task.tags.length > 0 && (
