@@ -37,17 +37,20 @@ export default function SoundControl() {
 
   // Initialize audio elements
   useEffect(() => {
+    const currentAudioRefs: Record<string, HTMLAudioElement | null> = {};
+
     SOUNDS.forEach((sound) => {
       if (typeof window !== 'undefined') {
         const audio = new Audio(sound.file);
         audio.loop = true;
+        currentAudioRefs[sound.id] = audio;
         audioRefs.current[sound.id] = audio;
       }
     });
 
     return () => {
       // Cleanup audio elements
-      Object.values(audioRefs.current).forEach((audio) => {
+      Object.values(currentAudioRefs).forEach((audio) => {
         if (audio) {
           audio.pause();
           audio.src = '';

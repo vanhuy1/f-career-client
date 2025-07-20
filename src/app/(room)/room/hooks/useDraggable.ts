@@ -43,7 +43,7 @@ export function useDraggable(options: DraggableOptions = {}) {
     }
   }, [options.defaultPosition]);
 
-  const handleDrag = (e: DraggableEvent, data: DraggableData) => {
+  const handleDrag = (data: DraggableData) => {
     setPosition({ x: data.x, y: data.y });
   };
 

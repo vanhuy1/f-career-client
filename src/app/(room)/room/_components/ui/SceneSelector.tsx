@@ -8,6 +8,7 @@ import { useAppDispatch } from '@/store/hooks';
 import { setSelectedScene } from '@/services/state/roomSlice';
 import Modal from './Modal';
 import IconButton from './IconButton';
+import Image from 'next/image';
 
 interface Scene {
   id: string;
@@ -58,10 +59,12 @@ export default function SceneSelector() {
                   : 'border-transparent hover:border-white/30',
               )}
             >
-              <img
+              <Image
                 src={scene.image}
                 alt={scene.name}
                 className="aspect-video w-full object-cover"
+                width={1920}
+                height={1080}
               />
               <div
                 className={cn(

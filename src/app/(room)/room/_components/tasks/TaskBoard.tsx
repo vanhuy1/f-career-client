@@ -97,7 +97,7 @@ export default function TaskBoard({
     'all',
   );
   const [filterTag, setFilterTag] = useState<string | 'all'>('all');
-  const [filterAssignee, setFilterAssignee] = useState<string | 'all'>('all');
+  const [_, setFilterAssignee] = useState<string | 'all'>('all');
   const [sortBy, setSortBy] = useState<
     'updatedAt' | 'dueDate' | 'priority' | 'title'
   >('updatedAt');
@@ -112,9 +112,6 @@ export default function TaskBoard({
 
   // Notify parent when task modal is opened or closed
   useEffect(() => {
-    if (filterAssignee) {
-    }
-
     if (isAddingTask || editingTask) {
       onTaskModalOpen?.();
     } else {
@@ -223,7 +220,7 @@ export default function TaskBoard({
     };
 
     initializeTasksFromServer();
-  }, [userId]);
+  }, [userId, setTasks]);
 
   // Sync tasks to server
   const handleSyncToServer = async () => {

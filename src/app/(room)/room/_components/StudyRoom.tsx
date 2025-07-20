@@ -7,43 +7,42 @@ import Header from './ui/Header';
 import Scenes from './ui/Scenes';
 import Music from './ui/Music';
 import Clock from './ui/Clock';
-import PomodoroTimer from './pomodoro/PomodoroTimer';
+import PomodoroTimer from './PomodoroTimer';
 import RoomChat from './chat/RoomChat';
+import RoadmapModal from './roadmap/RoadmapModal';
 import TaskBoardModal from './tasks/TaskBoardModal';
 import { Button } from '@/components/ui/button';
 import { Map, ClipboardList } from 'lucide-react';
 import { useUser } from '@/services/state/userSlice';
 import { taskService } from '@/services/api/room/task-api';
 import { TaskStatus } from './tasks/TaskBoard';
-import { useLocalStorageState } from '../hooks/useLocalStorage';
-
-// Define a type for the task items
-interface TaskItem {
-  id: string | number;
-  title: string;
-  description: string;
-  status: TaskStatus;
-  priority: string;
-  createdAt: string;
-  updatedAt: string;
-  tags: string[];
-  dueDate?: string;
-  reminderTime?: string;
-  checklist?: unknown;
-  recurring?: unknown;
-  estimatedTime?: unknown;
-  progress?: number;
+import { roadmapService } from '@/services/api/roadmap/roadmap-api';
+import { Roadmap } from '@/types/RoadMap';
+interface RoadmapParams {
+  jobId?: string;
+  cvId?: string;
+  jobTitle?: string;
 }
 
-export default function StudyRoom() {
+interface StudyRoomProps {
+  generateRoadmap?: boolean;
+  openRoadmapModal?: boolean;
+  roadmapParams?: RoadmapParams;
+}
+
+export default function StudyRoom({
+  generateRoadmap = false,
+  openRoadmapModal = false,
+  roadmapParams = {},
+}: StudyRoomProps) {
+  const [isRoadmapModalOpen, setIsRoadmapModalOpen] = useState<boolean>(
+    openRoadmapModal || generateRoadmap,
+  );
   const [isTaskBoardOpen, setIsTaskBoardOpen] = useState<boolean>(false);
   const [showPomodoro, setShowPomodoro] = useState<boolean>(false);
   const user = useUser();
-  const userId = Number(user?.data?.id) || 1; // Default to 1 if no user ID
-
-  // We're keeping tasks state even though it's not directly used in rendering
-  // because it's needed for the task initialization logic
-  const [, setTasks] = useLocalStorageState<TaskItem[]>([], 'study-room-tasks');
+  const userId = Number(user?.data?.id) || 1;
+  const [roadmapsInitialized, setRoadmapsInitialized] = useState(false);
 
   // Initialize room state
   useRoomInit();
@@ -74,9 +73,6 @@ export default function StudyRoom() {
               console.error('Error parsing local storage tasks:', e);
             }
           }
-
-          // Fetch tasks from server
-          console.log(`Fetching tasks for user ${userId}...`);
           const serverTasks = await taskService.initTasksFromServer(userId);
 
           if (serverTasks && serverTasks.length > 0) {
@@ -110,7 +106,10 @@ export default function StudyRoom() {
               };
             });
 
-            setTasks(localTasks);
+            localStorage.setItem(
+              'study-room-tasks',
+              JSON.stringify(localTasks),
+            );
             console.log('Loaded tasks from server:', localTasks);
           }
 
@@ -122,7 +121,64 @@ export default function StudyRoom() {
     };
 
     checkAndInitializeTasks();
-  }, [userId, setTasks]);
+  }, [userId]);
+
+  useEffect(() => {
+    const initRoadmaps = async () => {
+      try {
+        const initialized = localStorage.getItem('career-roadmaps-initialized');
+
+        if (initialized === 'true') {
+          setRoadmapsInitialized(true);
+          return;
+        }
+
+        // Fetch roadmaps from backend
+        const response = await roadmapService.findByUserId(userId, {
+          page: 1,
+          limit: 100,
+        });
+        const serverRoadmaps = response.items || [];
+
+        // Get local roadmaps if any
+        const localRoadmapsRaw = localStorage.getItem('career-roadmaps');
+        let localRoadmaps: Roadmap[] = [];
+        if (localRoadmapsRaw) {
+          try {
+            localRoadmaps = JSON.parse(localRoadmapsRaw);
+          } catch (e) {
+            console.error('Failed parsing local roadmaps', e);
+          }
+        }
+
+        // Merge by id – keep local modifications (tasks progress etc.) where applicable
+        const mergedRoadmaps = [...localRoadmaps];
+        serverRoadmaps.forEach((sr: Roadmap) => {
+          if (!mergedRoadmaps.some((lr) => lr.id === sr.id)) {
+            mergedRoadmaps.push(sr);
+          }
+        });
+
+        localStorage.setItem('career-roadmaps', JSON.stringify(mergedRoadmaps));
+        localStorage.setItem('career-roadmaps-initialized', 'true');
+        setRoadmapsInitialized(true);
+      } catch (error) {
+        console.error('Failed to init roadmaps:', error);
+        setRoadmapsInitialized(true);
+      }
+    };
+
+    if (!roadmapsInitialized && userId) {
+      initRoadmaps();
+    }
+  }, [roadmapsInitialized, userId]);
+
+  // Effect to handle URL parameter for opening modal
+  useEffect(() => {
+    if (openRoadmapModal) {
+      setIsRoadmapModalOpen(true);
+    }
+  }, [openRoadmapModal]);
 
   // Listen for Pomodoro toggle events from Header
   useEffect(() => {
@@ -136,6 +192,21 @@ export default function StudyRoom() {
       document.removeEventListener('toggle-pomodoro', handleTogglePomodoro);
     };
   }, [showPomodoro]);
+
+  // Open roadmap modal
+  const openRoadmapModalHandler = () => {
+    setIsRoadmapModalOpen(true);
+  };
+
+  // Close roadmap modal
+  const closeRoadmapModal = () => {
+    setIsRoadmapModalOpen(false);
+  };
+
+  // Toggle Pomodoro timer
+  const togglePomodoro = () => {
+    setShowPomodoro(!showPomodoro);
+  };
 
   // Toggle Task Board
   const toggleTaskBoard = () => {
@@ -164,10 +235,7 @@ export default function StudyRoom() {
           variant="outline"
           size="sm"
           className="flex items-center gap-2 border-green-500/30 bg-stone-900/80 text-green-500 shadow-lg hover:bg-green-500/20"
-          onClick={() => {
-            // Roadmap functionality is commented out for now
-            console.log('Roadmap button clicked');
-          }}
+          onClick={openRoadmapModalHandler}
         >
           <Map className="h-4 w-4" />
           <span>Learning Roadmap</span>
@@ -188,8 +256,17 @@ export default function StudyRoom() {
         </div>
       </div>
 
-      {showPomodoro && <PomodoroTimer />}
+      {showPomodoro && <PomodoroTimer onClose={togglePomodoro} />}
       <RoomChat />
+
+      <RoadmapModal
+        isOpen={isRoadmapModalOpen}
+        onClose={closeRoadmapModal}
+        generateRoadmap={generateRoadmap}
+        jobId={roadmapParams.jobId}
+        cvId={roadmapParams.cvId}
+        jobTitle={roadmapParams.jobTitle}
+      />
 
       <TaskBoardModal
         isOpen={isTaskBoardOpen}
