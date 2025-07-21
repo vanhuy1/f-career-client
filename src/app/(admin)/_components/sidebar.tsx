@@ -65,6 +65,13 @@ const menuItems: MenuItem[] = [
     title: 'Manage Companies',
     url: '/ad/companies',
     icon: Building2,
+    subItems: [
+      {
+        title: 'Company Analytics',
+        url: '/ad/companies/analytics',
+        icon: TrendingUp,
+      },
+    ],
   },
   {
     title: 'Manage Jobs',
@@ -192,7 +199,13 @@ export function AppSidebar() {
                           >
                             <Link href={item.url}>
                               <item.icon className="h-4 w-4" />
-                              <span>All Users</span>
+                              <span>
+                                {item.title === 'Manage Users'
+                                  ? 'All Users'
+                                  : item.title === 'Manage Companies'
+                                    ? 'All Companies'
+                                    : 'All Items'}
+                              </span>
                             </Link>
                           </SidebarMenuButton>
 
