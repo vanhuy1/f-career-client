@@ -32,7 +32,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
         dispatch(setUserStart());
         const userProfile = await userService.getMe();
         dispatch(setUserSuccess(userProfile));
-        if (userProfile.data.roles[0] === ROLES.ADMIN) {
+        if (
+          userProfile.data.roles[0] === ROLES.ADMIN &&
+          pathname &&
+          !pathname.startsWith('/ad')
+        ) {
           router.push(ROUTES.ADMIN.Home.path);
         }
       } catch (error) {

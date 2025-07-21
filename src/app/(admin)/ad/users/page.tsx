@@ -28,6 +28,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -77,6 +87,8 @@ export default function UsersPage() {
   const [error, setError] = useState<string | null>(null);
   const [showPII, setShowPII] = useState(false);
   const [roleFilter, setRoleFilter] = useState<RoleFilter>('all');
+  const [disableConfirmOpen, setDisableConfirmOpen] = useState(false);
+  const [userToDisable, setUserToDisable] = useState<User | null>(null);
   const [pagination, setPagination] = useState({
     count: 0,
     limit: 100,
@@ -161,6 +173,19 @@ export default function UsersPage() {
     }
   };
 
+  const handleDisableConfirm = (user: User) => {
+    setUserToDisable(user);
+    setDisableConfirmOpen(true);
+  };
+
+  const confirmDisableAccount = async () => {
+    if (userToDisable) {
+      await handleStatusChange(userToDisable.id, 'disabled');
+      setDisableConfirmOpen(false);
+      setUserToDisable(null);
+    }
+  };
+
   const handleSendEmail = () => {
     setEmailDialogOpen(false);
   };
@@ -218,7 +243,7 @@ export default function UsersPage() {
               </div>
             </TableCell>
             <TableCell>
-              @{showPII ? user.username : maskName(user.username)}
+              {showPII ? user.username : maskName(user.username)}
             </TableCell>
             <TableCell>
               {showPII ? user.email : maskEmail(user.email)}
@@ -264,7 +289,7 @@ export default function UsersPage() {
                     Enable Account
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    onClick={() => handleStatusChange(user.id, 'disabled')}
+                    onClick={() => handleDisableConfirm(user)}
                     disabled={user.isAccountDisabled}
                   >
                     Disable Account
@@ -419,6 +444,38 @@ export default function UsersPage() {
           </Tabs>
         </CardContent>
       </Card>
+
+      {/* Disable Account Confirmation Dialog */}
+      <AlertDialog
+        open={disableConfirmOpen}
+        onOpenChange={setDisableConfirmOpen}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Disable Account</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to disable the account for{' '}
+              <strong>
+                {userToDisable
+                  ? showPII
+                    ? userToDisable.name
+                    : maskName(userToDisable.name)
+                  : ''}
+              </strong>
+              ? This action will prevent them from accessing their account.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDisableAccount}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Disable Account
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Email Dialog */}
       <Dialog open={emailDialogOpen} onOpenChange={setEmailDialogOpen}>
