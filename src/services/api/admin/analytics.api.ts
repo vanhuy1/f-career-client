@@ -12,6 +12,10 @@ import {
   ApplicationAnalyticsResponse,
   ApplicationAnalyticsParams,
 } from '@/types/admin/ApplicationAnalytics';
+import {
+  CompanyAnalyticsResponse,
+  CompanyAnalyticsParams,
+} from '@/types/admin/ComanyAnalytics';
 import { httpClient } from '@/utils/axios';
 
 class AnalyticsService {
@@ -111,6 +115,33 @@ class AnalyticsService {
         return {
           success: true,
           data: data as ApplicationAnalyticsResponse,
+        };
+      },
+      config: {
+        withCredentials: false,
+      },
+    });
+
+    return response;
+  }
+
+  async getCompanyAnalytics(
+    params: CompanyAnalyticsParams,
+  ): Promise<CompanyAnalyticsResponse> {
+    const baseUrl = this.requestBuilder.buildUrl('companies');
+    const queryParams = new URLSearchParams({
+      startDate: params.startDate,
+      endDate: params.endDate,
+      interval: params.interval,
+    });
+    const url = `${baseUrl}?${queryParams.toString()}`;
+
+    const response = await httpClient.get<CompanyAnalyticsResponse>({
+      url,
+      typeCheck: (data) => {
+        return {
+          success: true,
+          data: data as CompanyAnalyticsResponse,
         };
       },
       config: {
