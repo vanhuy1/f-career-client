@@ -9,9 +9,13 @@ import {
   MessageSquare,
   DollarSign,
   LogOut,
+  ChevronDown,
+  ChevronRight,
+  TrendingUp,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useState } from 'react';
 
 import {
   Sidebar,
@@ -31,7 +35,20 @@ import { clearUser, useUser } from '@/services/state/userSlice';
 import { useAppDispatch } from '@/store/hooks';
 import ROUTES from '@/constants/navigation';
 
-const menuItems = [
+interface SubMenuItem {
+  title: string;
+  url: string;
+  icon?: React.ComponentType<{ className?: string }>;
+}
+
+interface MenuItem {
+  title: string;
+  url: string;
+  icon: React.ComponentType<{ className?: string }>;
+  subItems?: SubMenuItem[];
+}
+
+const menuItems: MenuItem[] = [
   {
     title: 'Dashboard',
     url: '/ad',
@@ -51,13 +68,19 @@ const menuItems = [
     title: 'Manage Users',
     url: '/ad/users',
     icon: Users,
+    subItems: [
+      {
+        title: 'User Analytics',
+        url: '/ad/users/analytics',
+        icon: TrendingUp,
+      },
+    ],
   },
   {
     title: 'Notifications',
     url: '/ad/notifications',
     icon: Bell,
   },
-
   {
     title: 'Messages',
     url: '/ad/messages',
@@ -74,6 +97,7 @@ export function AppSidebar() {
   const pathname = usePathname();
   const user = useUser();
   const dispatch = useAppDispatch();
+  const [expandedItems, setExpandedItems] = useState<string[]>([]);
 
   const handleLogout = () => {
     // Clear localStorage and cookies manually
@@ -84,6 +108,26 @@ export function AppSidebar() {
     dispatch(clearUser());
 
     window.location.href = ROUTES.HOMEPAGE.path;
+  };
+
+  const toggleExpanded = (itemTitle: string) => {
+    setExpandedItems((prev) =>
+      prev.includes(itemTitle)
+        ? prev.filter((item) => item !== itemTitle)
+        : [...prev, itemTitle],
+    );
+  };
+
+  const isItemActive = (item: MenuItem) => {
+    if (pathname === item.url) return true;
+    if (item.subItems) {
+      return item.subItems.some((subItem) => pathname === subItem.url);
+    }
+    return false;
+  };
+
+  const isSubItemActive = (subItem: SubMenuItem) => {
+    return pathname === subItem.url;
   };
 
   return (
@@ -109,16 +153,67 @@ export function AppSidebar() {
             <SidebarMenu>
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={pathname === item.url}
-                    className="w-full justify-start gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-gray-100 data-[active=true]:bg-gray-900 data-[active=true]:text-white"
-                  >
-                    <Link href={item.url}>
-                      <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
+                  {item.subItems ? (
+                    <div>
+                      <SidebarMenuButton
+                        onClick={() => toggleExpanded(item.title)}
+                        isActive={isItemActive(item)}
+                        className="w-full justify-between gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-gray-100 data-[active=true]:bg-gray-900 data-[active=true]:text-white"
+                      >
+                        <div className="flex items-center gap-3">
+                          <item.icon className="h-4 w-4" />
+                          <span>{item.title}</span>
+                        </div>
+                        {expandedItems.includes(item.title) ? (
+                          <ChevronDown className="h-4 w-4" />
+                        ) : (
+                          <ChevronRight className="h-4 w-4" />
+                        )}
+                      </SidebarMenuButton>
+
+                      {expandedItems.includes(item.title) && (
+                        <div className="mt-1 ml-4 space-y-1">
+                          <SidebarMenuButton
+                            asChild
+                            isActive={pathname === item.url}
+                            className="w-full justify-start gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-gray-100 data-[active=true]:bg-gray-900 data-[active=true]:text-white"
+                          >
+                            <Link href={item.url}>
+                              <item.icon className="h-4 w-4" />
+                              <span>All Users</span>
+                            </Link>
+                          </SidebarMenuButton>
+
+                          {item.subItems.map((subItem) => (
+                            <SidebarMenuButton
+                              key={subItem.title}
+                              asChild
+                              isActive={isSubItemActive(subItem)}
+                              className="w-full justify-start gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-gray-100 data-[active=true]:bg-gray-900 data-[active=true]:text-white"
+                            >
+                              <Link href={subItem.url}>
+                                {subItem.icon && (
+                                  <subItem.icon className="h-4 w-4" />
+                                )}
+                                <span>{subItem.title}</span>
+                              </Link>
+                            </SidebarMenuButton>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <SidebarMenuButton
+                      asChild
+                      isActive={pathname === item.url}
+                      className="w-full justify-start gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-gray-100 data-[active=true]:bg-gray-900 data-[active=true]:text-white"
+                    >
+                      <Link href={item.url}>
+                        <item.icon className="h-4 w-4" />
+                        <span>{item.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  )}
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>
