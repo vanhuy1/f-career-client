@@ -12,6 +12,7 @@ import {
   ChevronDown,
   ChevronRight,
   TrendingUp,
+  Briefcase,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -63,6 +64,11 @@ const menuItems: MenuItem[] = [
     title: 'Manage Companies',
     url: '/ad/companies',
     icon: Building2,
+  },
+  {
+    title: 'Manage Jobs',
+    url: '/ad/jobs',
+    icon: Briefcase,
   },
   {
     title: 'Manage Users',

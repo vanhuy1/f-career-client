@@ -4,6 +4,10 @@ import {
   UserAnalyticsResponse,
   UserAnalyticsParams,
 } from '@/types/admin/UserAnalytics';
+import {
+  JobAnalyticsResponse,
+  JobAnalyticsParams,
+} from '@/types/admin/JobAnalytics';
 import { httpClient } from '@/utils/axios';
 
 class AnalyticsService {
@@ -49,6 +53,33 @@ class AnalyticsService {
         return {
           success: true,
           data: data as UserAnalyticsResponse,
+        };
+      },
+      config: {
+        withCredentials: false,
+      },
+    });
+
+    return response;
+  }
+
+  async getJobAnalytics(
+    params: JobAnalyticsParams,
+  ): Promise<JobAnalyticsResponse> {
+    const baseUrl = this.requestBuilder.buildUrl('jobs');
+    const queryParams = new URLSearchParams({
+      startDate: params.startDate,
+      endDate: params.endDate,
+      interval: params.interval,
+    });
+    const url = `${baseUrl}?${queryParams.toString()}`;
+
+    const response = await httpClient.get<JobAnalyticsResponse>({
+      url,
+      typeCheck: (data) => {
+        return {
+          success: true,
+          data: data as JobAnalyticsResponse,
         };
       },
       config: {
