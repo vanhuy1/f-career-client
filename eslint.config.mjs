@@ -26,6 +26,32 @@ const eslintConfig = [
       ],
     },
   },
+  // Relaxed rules for test files
+  {
+    files: [
+      '**/__tests__/**/*',
+      '**/*.test.ts',
+      '**/*.test.tsx',
+      '**/*.spec.ts',
+      '**/*.spec.tsx',
+      '**/test-utils.tsx',
+      '**/jest.setup.js',
+      '**/jest.config.js',
+    ],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-unused-vars': 'off',
+      '@typescript-eslint/ban-ts-comment': 'off',
+      '@typescript-eslint/no-non-null-assertion': 'off',
+      '@typescript-eslint/no-empty-function': 'off',
+      '@typescript-eslint/no-require-imports': 'off',
+      'react-hooks/rules-of-hooks': 'off',
+      'react-hooks/exhaustive-deps': 'off',
+      'no-console': 'off',
+      'prefer-const': 'off',
+      'no-var': 'off',
+    },
+  },
 ];
 
 export default eslintConfig;
