@@ -8,6 +8,10 @@ import {
   JobAnalyticsResponse,
   JobAnalyticsParams,
 } from '@/types/admin/JobAnalytics';
+import {
+  ApplicationAnalyticsResponse,
+  ApplicationAnalyticsParams,
+} from '@/types/admin/ApplicationAnalytics';
 import { httpClient } from '@/utils/axios';
 
 class AnalyticsService {
@@ -80,6 +84,33 @@ class AnalyticsService {
         return {
           success: true,
           data: data as JobAnalyticsResponse,
+        };
+      },
+      config: {
+        withCredentials: false,
+      },
+    });
+
+    return response;
+  }
+
+  async getApplicationAnalytics(
+    params: ApplicationAnalyticsParams,
+  ): Promise<ApplicationAnalyticsResponse> {
+    const baseUrl = this.requestBuilder.buildUrl('applications');
+    const queryParams = new URLSearchParams({
+      startDate: params.startDate,
+      endDate: params.endDate,
+      interval: params.interval,
+    });
+    const url = `${baseUrl}?${queryParams.toString()}`;
+
+    const response = await httpClient.get<ApplicationAnalyticsResponse>({
+      url,
+      typeCheck: (data) => {
+        return {
+          success: true,
+          data: data as ApplicationAnalyticsResponse,
         };
       },
       config: {
