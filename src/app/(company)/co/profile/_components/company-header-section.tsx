@@ -25,11 +25,15 @@ import {
   MapPin,
   Layers,
   Building,
+  ImageIcon,
 } from 'lucide-react';
 import { Company } from '@/types/Company';
 import Image from 'next/image';
 import { toast } from 'react-toastify';
 import { useRouter } from 'next/navigation';
+import FileUploader from '@/components/common/FileUploader';
+import { SupabaseBucket, SupabaseFolder } from '@/enums/supabase';
+import { uploadFile } from '@/lib/storage';
 
 // Thêm hàm helper để lấy ngày hiện tại ở định dạng YYYY-MM-DD
 const getCurrentDate = () => {
@@ -67,7 +71,16 @@ export default function CompanyHeaderSection({
 }: CompanyHeaderSectionProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [websiteError, setWebsiteError] = useState('');
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const router = useRouter();
+
+  const handleLogoSelect = (file: File) => {
+    // Create a local preview URL
+    const objectUrl = URL.createObjectURL(file);
+    setLogoPreview(objectUrl);
+    setLogoFile(file);
+  };
 
   const {
     register,
@@ -97,6 +110,15 @@ export default function CompanyHeaderSection({
     });
   }, [company, reset]);
 
+  // Clean up object URLs when component unmounts
+  useEffect(() => {
+    return () => {
+      if (logoPreview) {
+        URL.revokeObjectURL(logoPreview);
+      }
+    };
+  }, [logoPreview]);
+
   const onSubmit: SubmitHandler<CompanyDetailsInput> = async (data) => {
     try {
       // Validate website URL
@@ -107,6 +129,24 @@ export default function CompanyHeaderSection({
           return;
         }
         data.website = formattedUrl;
+      }
+
+      let logoUrl = company.logoUrl;
+
+      // Upload the logo file to Supabase if we have a new one
+      if (logoFile) {
+        const { publicUrl, error } = await uploadFile({
+          file: logoFile,
+          bucket: SupabaseBucket.USER_SETTINGS,
+          folder: SupabaseFolder.COMPANY_LOGOS,
+        });
+
+        if (error) {
+          toast.error(`Failed to upload logo: ${error.message}`);
+          return;
+        }
+
+        logoUrl = publicUrl;
       }
 
       const newAddresses = company.address
@@ -120,7 +160,17 @@ export default function CompanyHeaderSection({
         employees: parseInt(data.employees, 10),
         address: newAddresses,
         industry: data.industry,
+        logoUrl: logoUrl,
       });
+
+      // Clear the temporary file and preview
+      if (logoFile) {
+        setLogoFile(null);
+        if (logoPreview) {
+          URL.revokeObjectURL(logoPreview);
+          setLogoPreview(null);
+        }
+      }
 
       toast.success('Company information updated successfully');
       setIsModalOpen(false);
@@ -132,6 +182,16 @@ export default function CompanyHeaderSection({
 
   const handlePublicView = () => {
     router.push(`/company/${company.id}`);
+  };
+
+  const handleModalClose = () => {
+    // Clean up logo preview when modal closes
+    if (logoPreview) {
+      URL.revokeObjectURL(logoPreview);
+      setLogoPreview(null);
+    }
+    setLogoFile(null);
+    setIsModalOpen(false);
   };
 
   return (
@@ -232,7 +292,10 @@ export default function CompanyHeaderSection({
       </div>
 
       {/* Profile Settings Modal */}
-      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+      <Dialog
+        open={isModalOpen}
+        onOpenChange={(open) => !open && handleModalClose()}
+      >
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[800px]">
           <DialogHeader className="border-b pb-4">
             <DialogTitle className="text-xl font-semibold text-gray-900">
@@ -245,6 +308,75 @@ export default function CompanyHeaderSection({
           </DialogHeader>
 
           <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-8">
+            {/* Logo Upload Section */}
+            <div className="space-y-6">
+              <div className="flex items-center gap-2">
+                <ImageIcon className="h-5 w-5 text-indigo-500" />
+                <h3 className="text-lg font-medium text-gray-900">
+                  Company Logo
+                </h3>
+              </div>
+              <div className="flex flex-col gap-6 md:flex-row">
+                <div className="flex-1">
+                  <p className="text-sm text-gray-600">
+                    Upload your company logo. This will be displayed on your
+                    profile and job postings.
+                  </p>
+                </div>
+
+                <div className="flex flex-1 items-start gap-6">
+                  {/* Current logo preview */}
+                  <div className="relative">
+                    <div className="flex h-24 w-24 items-center justify-center rounded-lg bg-emerald-100">
+                      {logoPreview || company.logoUrl ? (
+                        <Image
+                          src={logoPreview || company.logoUrl || ''}
+                          alt="Company Logo"
+                          width={96}
+                          height={96}
+                          className="h-full w-full rounded-lg object-cover"
+                        />
+                      ) : (
+                        <Building className="h-12 w-12 text-emerald-600" />
+                      )}
+                    </div>
+                  </div>
+
+                  {/* FileUploader */}
+                  <FileUploader
+                    bucket={SupabaseBucket.USER_SETTINGS}
+                    folder={SupabaseFolder.COMPANY_LOGOS}
+                    onFileSelect={handleLogoSelect}
+                    wrapperClassName="
+                      flex
+                      h-24
+                      w-48
+                      flex-col
+                      items-center
+                      justify-center
+                      rounded-lg
+                      border-2
+                      border-dashed
+                      border-indigo-300
+                      p-4
+                      text-center
+                      hover:border-indigo-400
+                      transition
+                      duration-150
+                      ease-in-out
+                    "
+                    buttonClassName="flex flex-col items-center"
+                  >
+                    <ImageIcon className="h-5 w-5 text-indigo-600" />
+                    <p className="mt-1 text-xs font-medium text-indigo-600">
+                      Click to replace
+                    </p>
+                    <p className="text-xs text-gray-500">PNG, JPG or SVG</p>
+                  </FileUploader>
+                </div>
+              </div>
+            </div>
+
             {/* Basic Information Section */}
             <div className="space-y-6">
               <div className="flex items-center gap-2">
@@ -414,7 +546,7 @@ export default function CompanyHeaderSection({
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => setIsModalOpen(false)}
+                onClick={handleModalClose}
                 className="px-6"
               >
                 Cancel
