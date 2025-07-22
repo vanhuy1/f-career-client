@@ -220,6 +220,16 @@ export default function ApplyDialog({
     onClose();
   };
 
+  const handleSignIn = () => {
+    router.push('/signin');
+    onClose();
+  };
+
+  const handleSignUp = () => {
+    router.push('/signup');
+    onClose();
+  };
+
   const onSubmit: SubmitHandler<ApplicationFormData> = async (data) => {
     setIsSubmitting(true);
     setSubmitMessage(null);
@@ -352,487 +362,528 @@ export default function ApplyDialog({
             </div>
           </div>
 
-          <div className="p-6">
-            <h3 className="mb-4 text-xl font-semibold">
-              Submit your application
-            </h3>
-            <p className="mb-6 text-sm text-gray-600">
-              The following is required and will only be shared with {company}
-            </p>
-
-            {submitMessage && (
-              <div
-                className={`mb-4 rounded-md p-3 ${
-                  submitMessage.type === 'success'
-                    ? 'border border-green-200 bg-green-50 text-green-800'
-                    : 'border border-red-200 bg-red-50 text-red-800'
-                }`}
-              >
-                {submitMessage.text}
+          {!user ? (
+            <div className="p-6 text-center">
+              <div className="mb-6">
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-indigo-100">
+                  <User className="h-8 w-8 text-indigo-600" />
+                </div>
+                <h3 className="mb-2 text-xl font-semibold text-gray-900">
+                  Sign in to apply
+                </h3>
+                <p className="text-gray-600">
+                  You need to sign in to your account to apply for this job.
+                </p>
               </div>
-            )}
 
-            <Form {...form}>
-              <form
-                onSubmit={form.handleSubmit(onSubmit)}
-                className="space-y-6"
-              >
-                <div className="border-b bg-gray-50 p-6">
-                  <Accordion type="single" collapsible className="w-full">
-                    <AccordionItem value="applicant-info">
-                      <AccordionTrigger className="text-lg font-semibold text-gray-900">
-                        Applicant Information
-                      </AccordionTrigger>
-                      <AccordionContent>
-                        <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                          <div className="flex items-center gap-3">
-                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100">
-                              <User className="h-4 w-4 text-blue-600" />
+              <div className="space-y-3">
+                <Button
+                  onClick={handleSignIn}
+                  className="w-full bg-indigo-600 text-white hover:bg-indigo-700"
+                >
+                  Sign In
+                </Button>
+                <Button
+                  onClick={handleSignUp}
+                  variant="outline"
+                  className="w-full border-indigo-200 text-indigo-600 hover:bg-indigo-50"
+                >
+                  Create Account
+                </Button>
+              </div>
+
+              <p className="mt-4 text-sm text-gray-500">
+                Don&apos;t have an account? Create one to start applying for
+                jobs.
+              </p>
+            </div>
+          ) : (
+            <div className="p-6">
+              <h3 className="mb-4 text-xl font-semibold">
+                Submit your application
+              </h3>
+              <p className="mb-6 text-sm text-gray-600">
+                The following is required and will only be shared with {company}
+              </p>
+
+              {submitMessage && (
+                <div
+                  className={`mb-4 rounded-md p-3 ${
+                    submitMessage.type === 'success'
+                      ? 'border border-green-200 bg-green-50 text-green-800'
+                      : 'border border-red-200 bg-red-50 text-red-800'
+                  }`}
+                >
+                  {submitMessage.text}
+                </div>
+              )}
+
+              <Form {...form}>
+                <form
+                  onSubmit={form.handleSubmit(onSubmit)}
+                  className="space-y-6"
+                >
+                  <div className="border-b bg-gray-50 p-6">
+                    <Accordion type="single" collapsible className="w-full">
+                      <AccordionItem value="applicant-info">
+                        <AccordionTrigger className="text-lg font-semibold text-gray-900">
+                          Applicant Information
+                        </AccordionTrigger>
+                        <AccordionContent>
+                          <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                            <div className="flex items-center gap-3">
+                              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100">
+                                <User className="h-4 w-4 text-blue-600" />
+                              </div>
+                              <div>
+                                <p className="text-sm font-medium text-gray-900">
+                                  {applicantInfo.name}
+                                </p>
+                                <p className="text-xs text-gray-500">
+                                  Full Name
+                                </p>
+                              </div>
                             </div>
-                            <div>
-                              <p className="text-sm font-medium text-gray-900">
-                                {applicantInfo.name}
-                              </p>
-                              <p className="text-xs text-gray-500">Full Name</p>
+
+                            <div className="flex items-center gap-3">
+                              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-100">
+                                <Mail className="h-4 w-4 text-green-600" />
+                              </div>
+                              <div>
+                                <p className="text-sm font-medium text-gray-900">
+                                  {applicantInfo.email}
+                                </p>
+                                <p className="text-xs text-gray-500">
+                                  Email Address
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-3">
+                              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-purple-100">
+                                <Phone className="h-4 w-4 text-purple-600" />
+                              </div>
+                              <div>
+                                <p className="text-sm font-medium text-gray-900">
+                                  {applicantInfo.phone}
+                                </p>
+                                <p className="text-xs text-gray-500">
+                                  Phone Number
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-3">
+                              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-orange-100">
+                                <Users className="h-4 w-4 text-orange-600" />
+                              </div>
+                              <div>
+                                <p className="text-sm font-medium text-gray-900">
+                                  {formatGender(applicantInfo.gender)}
+                                </p>
+                                <p className="text-xs text-gray-500">Gender</p>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-3 sm:col-span-2">
+                              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-red-100">
+                                <Calendar className="h-4 w-4 text-red-600" />
+                              </div>
+                              <div>
+                                <p className="text-sm font-medium text-gray-900">
+                                  {formatDate(applicantInfo.dateOfBirth)}
+                                </p>
+                                <p className="text-xs text-gray-500">
+                                  Date of Birth
+                                </p>
+                              </div>
                             </div>
                           </div>
-
-                          <div className="flex items-center gap-3">
-                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-100">
-                              <Mail className="h-4 w-4 text-green-600" />
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium text-gray-900">
-                                {applicantInfo.email}
-                              </p>
-                              <p className="text-xs text-gray-500">
-                                Email Address
-                              </p>
-                            </div>
-                          </div>
-
-                          <div className="flex items-center gap-3">
-                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-purple-100">
-                              <Phone className="h-4 w-4 text-purple-600" />
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium text-gray-900">
-                                {applicantInfo.phone}
-                              </p>
-                              <p className="text-xs text-gray-500">
-                                Phone Number
-                              </p>
-                            </div>
-                          </div>
-
-                          <div className="flex items-center gap-3">
-                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-orange-100">
-                              <Users className="h-4 w-4 text-orange-600" />
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium text-gray-900">
-                                {formatGender(applicantInfo.gender)}
-                              </p>
-                              <p className="text-xs text-gray-500">Gender</p>
-                            </div>
-                          </div>
-
-                          <div className="flex items-center gap-3 sm:col-span-2">
-                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-red-100">
-                              <Calendar className="h-4 w-4 text-red-600" />
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium text-gray-900">
-                                {formatDate(applicantInfo.dateOfBirth)}
-                              </p>
-                              <p className="text-xs text-gray-500">
-                                Date of Birth
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      </AccordionContent>
-                    </AccordionItem>
-                    <AccordionItem value="cv-upload">
-                      <AccordionTrigger className="text-lg font-semibold text-gray-900">
-                        CV/Resume
-                      </AccordionTrigger>
-                      <AccordionContent>
-                        <FormField
-                          control={form.control}
-                          name="cvSource"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>CV Source</FormLabel>
-                              <Tabs
-                                defaultValue="upload"
-                                value={field.value}
-                                onValueChange={field.onChange}
-                                className="w-full space-y-6"
-                              >
-                                <TabsList className="grid w-full grid-cols-2 bg-indigo-50/50 p-1">
-                                  <TabsTrigger
+                        </AccordionContent>
+                      </AccordionItem>
+                      <AccordionItem value="cv-upload">
+                        <AccordionTrigger className="text-lg font-semibold text-gray-900">
+                          CV/Resume
+                        </AccordionTrigger>
+                        <AccordionContent>
+                          <FormField
+                            control={form.control}
+                            name="cvSource"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>CV Source</FormLabel>
+                                <Tabs
+                                  defaultValue="upload"
+                                  value={field.value}
+                                  onValueChange={field.onChange}
+                                  className="w-full space-y-6"
+                                >
+                                  <TabsList className="grid w-full grid-cols-2 bg-indigo-50/50 p-1">
+                                    <TabsTrigger
+                                      value="upload"
+                                      className="data-[state=active]:bg-white data-[state=active]:text-indigo-700 data-[state=active]:shadow-sm"
+                                    >
+                                      <Paperclip className="mr-2 h-4 w-4" />
+                                      Upload New CV
+                                    </TabsTrigger>
+                                    <TabsTrigger
+                                      value="system"
+                                      className="data-[state=active]:bg-white data-[state=active]:text-indigo-700 data-[state=active]:shadow-sm"
+                                    >
+                                      <FileText className="mr-2 h-4 w-4" />
+                                      Use Saved CV
+                                    </TabsTrigger>
+                                  </TabsList>
+                                  <TabsContent
                                     value="upload"
-                                    className="data-[state=active]:bg-white data-[state=active]:text-indigo-700 data-[state=active]:shadow-sm"
+                                    className="mt-4 space-y-4"
                                   >
-                                    <Paperclip className="mr-2 h-4 w-4" />
-                                    Upload New CV
-                                  </TabsTrigger>
-                                  <TabsTrigger
-                                    value="system"
-                                    className="data-[state=active]:bg-white data-[state=active]:text-indigo-700 data-[state=active]:shadow-sm"
-                                  >
-                                    <FileText className="mr-2 h-4 w-4" />
-                                    Use Saved CV
-                                  </TabsTrigger>
-                                </TabsList>
-                                <TabsContent
-                                  value="upload"
-                                  className="mt-4 space-y-4"
-                                >
-                                  <FormField
-                                    control={form.control}
-                                    name="cvId"
-                                    render={() => (
-                                      <FormItem>
-                                        <FormControl>
-                                          <div className="space-y-3">
-                                            {!cvFile ? (
-                                              <div className="group rounded-lg border-2 border-dashed border-indigo-300 bg-white transition-all hover:border-indigo-400 hover:bg-indigo-50/50">
-                                                <FileUploader
-                                                  bucket={
-                                                    SupabaseBucket.CV_UPLOADS
-                                                  }
-                                                  folder={
-                                                    SupabaseFolder.application
-                                                  }
-                                                  onFileSelect={
-                                                    handleCvFileSelect
-                                                  }
-                                                  wrapperClassName="
-                                                    flex
-                                                    h-32
-                                                    flex-col
-                                                    items-center
-                                                    justify-center
-                                                    p-4
-                                                    text-center
-                                                    cursor-pointer
-                                                    hover:bg-indigo-50
-                                                    transition
-                                                    duration-150
-                                                    ease-in-out
-                                                  "
-                                                  buttonClassName="flex flex-col items-center"
-                                                >
-                                                  <div className="rounded-full bg-indigo-100 p-3">
-                                                    <Paperclip className="h-6 w-6 text-indigo-600" />
-                                                  </div>
-                                                  <p className="mt-2 font-medium text-indigo-600">
-                                                    Click to upload or drag and
-                                                    drop
-                                                  </p>
-                                                  <p className="mt-1 text-sm text-gray-500">
-                                                    PDF, DOC, or DOCX (max 5MB)
-                                                  </p>
-                                                </FileUploader>
-                                              </div>
-                                            ) : (
-                                              <div className="flex flex-col space-y-2 rounded-lg border border-indigo-200 bg-indigo-50 p-4">
-                                                <div className="flex items-center justify-between">
-                                                  <div className="flex items-center gap-3">
-                                                    <div className="rounded-md bg-indigo-100 p-2">
-                                                      <FileText className="h-4 w-4 text-indigo-600" />
-                                                    </div>
-                                                    <div className="flex flex-col">
-                                                      <span className="text-sm font-medium text-gray-900">
-                                                        {cvFileName}
-                                                      </span>
-                                                      <span className="text-xs text-gray-500">
-                                                        {formatFileSize(
-                                                          cvFile?.size,
-                                                        )}
-                                                      </span>
-                                                    </div>
-                                                  </div>
-                                                  <Button
-                                                    type="button"
-                                                    variant="ghost"
-                                                    className="h-8 w-8 p-0"
-                                                    onClick={clearCvFile}
+                                    <FormField
+                                      control={form.control}
+                                      name="cvId"
+                                      render={() => (
+                                        <FormItem>
+                                          <FormControl>
+                                            <div className="space-y-3">
+                                              {!cvFile ? (
+                                                <div className="group rounded-lg border-2 border-dashed border-indigo-300 bg-white transition-all hover:border-indigo-400 hover:bg-indigo-50/50">
+                                                  <FileUploader
+                                                    bucket={
+                                                      SupabaseBucket.CV_UPLOADS
+                                                    }
+                                                    folder={
+                                                      SupabaseFolder.application
+                                                    }
+                                                    onFileSelect={
+                                                      handleCvFileSelect
+                                                    }
+                                                    wrapperClassName="
+                                                      flex
+                                                      h-32
+                                                      flex-col
+                                                      items-center
+                                                      justify-center
+                                                      p-4
+                                                      text-center
+                                                      cursor-pointer
+                                                      hover:bg-indigo-50
+                                                      transition
+                                                      duration-150
+                                                      ease-in-out
+                                                    "
+                                                    buttonClassName="flex flex-col items-center"
                                                   >
-                                                    <Trash2 className="h-4 w-4 text-gray-500" />
-                                                    <span className="sr-only">
-                                                      Remove file
-                                                    </span>
-                                                  </Button>
+                                                    <div className="rounded-full bg-indigo-100 p-3">
+                                                      <Paperclip className="h-6 w-6 text-indigo-600" />
+                                                    </div>
+                                                    <p className="mt-2 font-medium text-indigo-600">
+                                                      Click to upload or drag
+                                                      and drop
+                                                    </p>
+                                                    <p className="mt-1 text-sm text-gray-500">
+                                                      PDF, DOC, or DOCX (max
+                                                      5MB)
+                                                    </p>
+                                                  </FileUploader>
                                                 </div>
-                                              </div>
-                                            )}
-
-                                            {cvFile && !isSubmitting && (
-                                              <div className="text-sm text-indigo-600">
-                                                File selected and ready for
-                                                upload
-                                              </div>
-                                            )}
-                                          </div>
-                                        </FormControl>
-                                        <FormMessage />
-                                      </FormItem>
-                                    )}
-                                  />
-                                </TabsContent>
-                                <TabsContent
-                                  value="system"
-                                  className="mt-4 space-y-4"
-                                >
-                                  <FormField
-                                    control={form.control}
-                                    name="existingCvId"
-                                    render={() => (
-                                      <FormItem>
-                                        <FormLabel>
-                                          Select from your saved CVs
-                                        </FormLabel>
-                                        <FormControl>
-                                          <div className="space-y-4">
-                                            {isLoadingCvs ? (
-                                              <div className="flex items-center justify-center rounded-lg border border-dashed border-indigo-300 bg-white py-8">
-                                                <Loader2 className="h-6 w-6 animate-spin text-indigo-600" />
-                                                <span className="ml-3 text-sm text-gray-600">
-                                                  Loading your CVs...
-                                                </span>
-                                              </div>
-                                            ) : userCvs.length === 0 ? (
-                                              <div className="flex flex-col items-center rounded-lg border-2 border-dashed border-indigo-300 bg-white p-8 text-center transition-all hover:border-indigo-400">
-                                                <FileCheck className="h-12 w-12 text-indigo-600" />
-                                                <p className="mt-4 text-lg font-medium text-gray-900">
-                                                  No saved CVs found
-                                                </p>
-                                                <p className="mt-2 text-sm text-gray-500">
-                                                  Create a professional CV using
-                                                  our CV Builder
-                                                </p>
-                                                <Button
-                                                  type="button"
-                                                  onClick={handleCreateCv}
-                                                  className="mt-4 bg-indigo-600 text-white hover:bg-indigo-700"
-                                                >
-                                                  Create New CV
-                                                </Button>
-                                              </div>
-                                            ) : (
-                                              <div className="space-y-4">
-                                                <div className="grid gap-3 p-2">
-                                                  {userCvs.map((cv) => (
-                                                    <Card
-                                                      key={cv.id}
-                                                      className={`group cursor-pointer border py-0 transition-all duration-200 hover:border-indigo-200 hover:shadow-md ${
-                                                        selectedCvId === cv.id
-                                                          ? 'bg-indigo-50/80 ring-2 ring-indigo-500'
-                                                          : 'hover:bg-gray-50/80'
-                                                      }`}
-                                                      onClick={() =>
-                                                        handleCvSelect(
-                                                          cv.id || '',
-                                                        )
-                                                      }
+                                              ) : (
+                                                <div className="flex flex-col space-y-2 rounded-lg border border-indigo-200 bg-indigo-50 p-4">
+                                                  <div className="flex items-center justify-between">
+                                                    <div className="flex items-center gap-3">
+                                                      <div className="rounded-md bg-indigo-100 p-2">
+                                                        <FileText className="h-4 w-4 text-indigo-600" />
+                                                      </div>
+                                                      <div className="flex flex-col">
+                                                        <span className="text-sm font-medium text-gray-900">
+                                                          {cvFileName}
+                                                        </span>
+                                                        <span className="text-xs text-gray-500">
+                                                          {formatFileSize(
+                                                            cvFile?.size,
+                                                          )}
+                                                        </span>
+                                                      </div>
+                                                    </div>
+                                                    <Button
+                                                      type="button"
+                                                      variant="ghost"
+                                                      className="h-8 w-8 p-0"
+                                                      onClick={clearCvFile}
                                                     >
-                                                      <CardContent className="p-4">
-                                                        <div className="flex items-start justify-between">
-                                                          <div className="flex flex-1 items-start gap-3">
-                                                            <div
-                                                              className={`rounded-lg p-2.5 transition-colors ${
-                                                                selectedCvId ===
-                                                                cv.id
-                                                                  ? 'bg-indigo-100'
-                                                                  : 'bg-gray-100 group-hover:bg-indigo-50'
-                                                              }`}
-                                                            >
-                                                              <FileText
-                                                                className={`h-5 w-5 transition-colors ${
-                                                                  selectedCvId ===
-                                                                  cv.id
-                                                                    ? 'text-indigo-600'
-                                                                    : 'text-gray-500 group-hover:text-indigo-500'
-                                                                }`}
-                                                              />
-                                                            </div>
-                                                            <div className="min-w-0 flex-1">
-                                                              <div className="flex items-center gap-2">
-                                                                <h4 className="truncate font-medium text-gray-900">
-                                                                  {cv.title ||
-                                                                    cv.name ||
-                                                                    `CV #${cv.id}`}
-                                                                </h4>
-                                                                {selectedCvId ===
-                                                                  cv.id && (
-                                                                  <Badge
-                                                                    variant="secondary"
-                                                                    className="animate-in fade-in bg-indigo-100 text-indigo-700 duration-200"
-                                                                  >
-                                                                    Selected
-                                                                  </Badge>
-                                                                )}
-                                                              </div>
-                                                              <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-gray-500">
-                                                                <span className="flex items-center gap-1.5 rounded-full bg-gray-100/80 px-2 py-1">
-                                                                  <Clock className="h-3 w-3" />
-                                                                  {formatRelativeTime(
-                                                                    cv.updatedAt ||
-                                                                      cv.createdAt,
-                                                                  )}
-                                                                </span>
-                                                                <span className="flex items-center gap-1.5 rounded-full bg-gray-100/80 px-2 py-1">
-                                                                  <FileText className="h-3 w-3" />
-                                                                  {cv.fileType ||
-                                                                    'PDF'}
-                                                                </span>
-                                                              </div>
-                                                            </div>
-                                                          </div>
-
-                                                          <div className="flex items-center gap-2">
-                                                            {cv.url && (
-                                                              <TooltipProvider>
-                                                                <Tooltip>
-                                                                  <TooltipTrigger
-                                                                    asChild
-                                                                  >
-                                                                    <Button
-                                                                      type="button"
-                                                                      variant="outline"
-                                                                      size="sm"
-                                                                      className="flex h-8 items-center gap-1.5 px-3 transition-colors hover:bg-indigo-50 hover:text-indigo-600"
-                                                                      onClick={(
-                                                                        e,
-                                                                      ) =>
-                                                                        cv.url &&
-                                                                        handlePreviewCv(
-                                                                          cv.url,
-                                                                          e,
-                                                                        )
-                                                                      }
-                                                                    >
-                                                                      <Eye className="h-3.5 w-3.5" />
-                                                                      Preview
-                                                                    </Button>
-                                                                  </TooltipTrigger>
-                                                                  <TooltipContent
-                                                                    side="left"
-                                                                    className="bg-gray-900 text-xs"
-                                                                  >
-                                                                    Open CV in
-                                                                    new tab
-                                                                  </TooltipContent>
-                                                                </Tooltip>
-                                                              </TooltipProvider>
-                                                            )}
-                                                          </div>
-                                                        </div>
-                                                      </CardContent>
-                                                    </Card>
-                                                  ))}
+                                                      <Trash2 className="h-4 w-4 text-gray-500" />
+                                                      <span className="sr-only">
+                                                        Remove file
+                                                      </span>
+                                                    </Button>
+                                                  </div>
                                                 </div>
+                                              )}
 
-                                                <div className="mt-4 flex items-center justify-between border-t pt-4">
-                                                  <p className="text-sm text-gray-600">
-                                                    {userCvs.length} CV
-                                                    {userCvs.length !== 1
-                                                      ? 's'
-                                                      : ''}{' '}
-                                                    available
+                                              {cvFile && !isSubmitting && (
+                                                <div className="text-sm text-indigo-600">
+                                                  File selected and ready for
+                                                  upload
+                                                </div>
+                                              )}
+                                            </div>
+                                          </FormControl>
+                                          <FormMessage />
+                                        </FormItem>
+                                      )}
+                                    />
+                                  </TabsContent>
+                                  <TabsContent
+                                    value="system"
+                                    className="mt-4 space-y-4"
+                                  >
+                                    <FormField
+                                      control={form.control}
+                                      name="existingCvId"
+                                      render={() => (
+                                        <FormItem>
+                                          <FormLabel>
+                                            Select from your saved CVs
+                                          </FormLabel>
+                                          <FormControl>
+                                            <div className="space-y-4">
+                                              {isLoadingCvs ? (
+                                                <div className="flex items-center justify-center rounded-lg border border-dashed border-indigo-300 bg-white py-8">
+                                                  <Loader2 className="h-6 w-6 animate-spin text-indigo-600" />
+                                                  <span className="ml-3 text-sm text-gray-600">
+                                                    Loading your CVs...
+                                                  </span>
+                                                </div>
+                                              ) : userCvs.length === 0 ? (
+                                                <div className="flex flex-col items-center rounded-lg border-2 border-dashed border-indigo-300 bg-white p-8 text-center transition-all hover:border-indigo-400">
+                                                  <FileCheck className="h-12 w-12 text-indigo-600" />
+                                                  <p className="mt-4 text-lg font-medium text-gray-900">
+                                                    No saved CVs found
+                                                  </p>
+                                                  <p className="mt-2 text-sm text-gray-500">
+                                                    Create a professional CV
+                                                    using our CV Builder
                                                   </p>
                                                   <Button
                                                     type="button"
-                                                    variant="outline"
                                                     onClick={handleCreateCv}
-                                                    className="text-sm font-medium hover:bg-indigo-50 hover:text-indigo-600"
+                                                    className="mt-4 bg-indigo-600 text-white hover:bg-indigo-700"
                                                   >
-                                                    <FileText className="mr-1.5 h-4 w-4" />
                                                     Create New CV
                                                   </Button>
                                                 </div>
-                                              </div>
-                                            )}
-                                          </div>
-                                        </FormControl>
-                                        <FormMessage />
-                                      </FormItem>
-                                    )}
-                                  />
-                                </TabsContent>
-                              </Tabs>
-                            </FormItem>
-                          )}
-                        />
-                      </AccordionContent>
-                    </AccordionItem>
-                  </Accordion>
-                </div>
+                                              ) : (
+                                                <div className="space-y-4">
+                                                  <div className="grid gap-3 p-2">
+                                                    {userCvs.map((cv) => (
+                                                      <Card
+                                                        key={cv.id}
+                                                        className={`group cursor-pointer border py-0 transition-all duration-200 hover:border-indigo-200 hover:shadow-md ${
+                                                          selectedCvId === cv.id
+                                                            ? 'bg-indigo-50/80 ring-2 ring-indigo-500'
+                                                            : 'hover:bg-gray-50/80'
+                                                        }`}
+                                                        onClick={() =>
+                                                          handleCvSelect(
+                                                            cv.id || '',
+                                                          )
+                                                        }
+                                                      >
+                                                        <CardContent className="p-4">
+                                                          <div className="flex items-start justify-between">
+                                                            <div className="flex flex-1 items-start gap-3">
+                                                              <div
+                                                                className={`rounded-lg p-2.5 transition-colors ${
+                                                                  selectedCvId ===
+                                                                  cv.id
+                                                                    ? 'bg-indigo-100'
+                                                                    : 'bg-gray-100 group-hover:bg-indigo-50'
+                                                                }`}
+                                                              >
+                                                                <FileText
+                                                                  className={`h-5 w-5 transition-colors ${
+                                                                    selectedCvId ===
+                                                                    cv.id
+                                                                      ? 'text-indigo-600'
+                                                                      : 'text-gray-500 group-hover:text-indigo-500'
+                                                                  }`}
+                                                                />
+                                                              </div>
+                                                              <div className="min-w-0 flex-1">
+                                                                <div className="flex items-center gap-2">
+                                                                  <h4 className="truncate font-medium text-gray-900">
+                                                                    {cv.title ||
+                                                                      cv.name ||
+                                                                      `CV #${cv.id}`}
+                                                                  </h4>
+                                                                  {selectedCvId ===
+                                                                    cv.id && (
+                                                                    <Badge
+                                                                      variant="secondary"
+                                                                      className="animate-in fade-in bg-indigo-100 text-indigo-700 duration-200"
+                                                                    >
+                                                                      Selected
+                                                                    </Badge>
+                                                                  )}
+                                                                </div>
+                                                                <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-gray-500">
+                                                                  <span className="flex items-center gap-1.5 rounded-full bg-gray-100/80 px-2 py-1">
+                                                                    <Clock className="h-3 w-3" />
+                                                                    {formatRelativeTime(
+                                                                      cv.updatedAt ||
+                                                                        cv.createdAt,
+                                                                    )}
+                                                                  </span>
+                                                                  <span className="flex items-center gap-1.5 rounded-full bg-gray-100/80 px-2 py-1">
+                                                                    <FileText className="h-3 w-3" />
+                                                                    {cv.fileType ||
+                                                                      'PDF'}
+                                                                  </span>
+                                                                </div>
+                                                              </div>
+                                                            </div>
 
-                <FormField
-                  control={form.control}
-                  name="coverLetter"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Cover Letter</FormLabel>
-                      <FormDescription>
-                        1. On a scale of 1 to 10, how would you rate your
-                        English proficiency? (1 = Beginner, 10 = Fluent) 2.
-                        Which position level are you applying for? (Fresher,
-                        Junior, Standard, Standard++, Senior, Senior++, or Lead)
-                      </FormDescription>
-                      <FormControl>
-                        <Textarea
-                          placeholder="Add a cover letter or anything else you want to share"
-                          className="min-h-[120px]"
-                          disabled={isSubmitting}
-                          maxLength={maxChars}
-                          {...field}
-                        />
-                      </FormControl>
-                      <div className="flex justify-end">
-                        <div className="text-sm text-gray-500">
-                          {charCount} / {maxChars}
+                                                            <div className="flex items-center gap-2">
+                                                              {cv.url && (
+                                                                <TooltipProvider>
+                                                                  <Tooltip>
+                                                                    <TooltipTrigger
+                                                                      asChild
+                                                                    >
+                                                                      <Button
+                                                                        type="button"
+                                                                        variant="outline"
+                                                                        size="sm"
+                                                                        className="flex h-8 items-center gap-1.5 px-3 transition-colors hover:bg-indigo-50 hover:text-indigo-600"
+                                                                        onClick={(
+                                                                          e,
+                                                                        ) =>
+                                                                          cv.url &&
+                                                                          handlePreviewCv(
+                                                                            cv.url,
+                                                                            e,
+                                                                          )
+                                                                        }
+                                                                      >
+                                                                        <Eye className="h-3.5 w-3.5" />
+                                                                        Preview
+                                                                      </Button>
+                                                                    </TooltipTrigger>
+                                                                    <TooltipContent
+                                                                      side="left"
+                                                                      className="bg-gray-900 text-xs"
+                                                                    >
+                                                                      Open CV in
+                                                                      new tab
+                                                                    </TooltipContent>
+                                                                  </Tooltip>
+                                                                </TooltipProvider>
+                                                              )}
+                                                            </div>
+                                                          </div>
+                                                        </CardContent>
+                                                      </Card>
+                                                    ))}
+                                                  </div>
+
+                                                  <div className="mt-4 flex items-center justify-between border-t pt-4">
+                                                    <p className="text-sm text-gray-600">
+                                                      {userCvs.length} CV
+                                                      {userCvs.length !== 1
+                                                        ? 's'
+                                                        : ''}{' '}
+                                                      available
+                                                    </p>
+                                                    <Button
+                                                      type="button"
+                                                      variant="outline"
+                                                      onClick={handleCreateCv}
+                                                      className="text-sm font-medium hover:bg-indigo-50 hover:text-indigo-600"
+                                                    >
+                                                      <FileText className="mr-1.5 h-4 w-4" />
+                                                      Create New CV
+                                                    </Button>
+                                                  </div>
+                                                </div>
+                                              )}
+                                            </div>
+                                          </FormControl>
+                                          <FormMessage />
+                                        </FormItem>
+                                      )}
+                                    />
+                                  </TabsContent>
+                                </Tabs>
+                              </FormItem>
+                            )}
+                          />
+                        </AccordionContent>
+                      </AccordionItem>
+                    </Accordion>
+                  </div>
+
+                  <FormField
+                    control={form.control}
+                    name="coverLetter"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Cover Letter</FormLabel>
+                        <FormDescription>
+                          1. On a scale of 1 to 10, how would you rate your
+                          English proficiency? (1 = Beginner, 10 = Fluent) 2.
+                          Which position level are you applying for? (Fresher,
+                          Junior, Standard, Standard++, Senior, Senior++, or
+                          Lead)
+                        </FormDescription>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Add a cover letter or anything else you want to share"
+                            className="min-h-[120px]"
+                            disabled={isSubmitting}
+                            maxLength={maxChars}
+                            {...field}
+                          />
+                        </FormControl>
+                        <div className="flex justify-end">
+                          <div className="text-sm text-gray-500">
+                            {charCount} / {maxChars}
+                          </div>
                         </div>
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                <Button
-                  type="submit"
-                  disabled={isSubmitting || !isCvValid()}
-                  className="w-full bg-indigo-600 py-3 text-white hover:bg-indigo-700 disabled:opacity-50"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Submitting Application...
-                    </>
-                  ) : (
-                    'Submit Application'
-                  )}
-                </Button>
+                  <Button
+                    type="submit"
+                    disabled={isSubmitting || !isCvValid()}
+                    className="w-full bg-indigo-600 py-3 text-white hover:bg-indigo-700 disabled:opacity-50"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Submitting Application...
+                      </>
+                    ) : (
+                      'Submit Application'
+                    )}
+                  </Button>
 
-                <div className="text-center text-sm text-gray-600">
-                  <p>
-                    By sending the request you confirm that you accept our{' '}
-                    <a href="#" className="text-indigo-600 hover:underline">
-                      Terms of Service
-                    </a>{' '}
-                    and{' '}
-                    <a href="#" className="text-indigo-600 hover:underline">
-                      Privacy Policy
-                    </a>
-                  </p>
-                </div>
-              </form>
-            </Form>
-          </div>
+                  <div className="text-center text-sm text-gray-600">
+                    <p>
+                      By sending the request you confirm that you accept our{' '}
+                      <a href="#" className="text-indigo-600 hover:underline">
+                        Terms of Service
+                      </a>{' '}
+                      and{' '}
+                      <a href="#" className="text-indigo-600 hover:underline">
+                        Privacy Policy
+                      </a>
+                    </p>
+                  </div>
+                </form>
+              </Form>
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>
