@@ -1,5 +1,9 @@
+'use client';
+
 import { Share2 } from 'lucide-react';
 import ApplyJobButton from '@/app/(public)/_components/apply-job-button';
+import { useUser } from '@/services/state/userSlice';
+import { ROLES } from '@/enums/roles.enum';
 
 interface JobHeaderProps {
   companyName: string;
@@ -16,6 +20,7 @@ export default function JobHeader({
   jobType,
   jobId, // Optional, if needed for ApplyJobButton
 }: JobHeaderProps) {
+  const user = useUser();
   const logoLetter = companyName.charAt(0).toUpperCase();
   return (
     <div className="mb-8 flex items-center justify-between rounded-lg border p-6">
@@ -35,13 +40,15 @@ export default function JobHeader({
         <button className="rounded-full p-2 hover:bg-gray-100">
           <Share2 className="h-5 w-5 text-gray-500" />
         </button>
-        <ApplyJobButton
-          jobTitle={jobTitle}
-          company={companyName}
-          location={location}
-          jobType={jobType}
-          jobId={jobId}
-        />
+        {(user?.data.roles[0] === ROLES.USER || !user) && (
+          <ApplyJobButton
+            jobTitle={jobTitle}
+            company={companyName}
+            location={location}
+            jobType={jobType}
+            jobId={jobId}
+          />
+        )}
       </div>
     </div>
   );
