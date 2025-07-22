@@ -30,6 +30,7 @@ const eslintConfig = [
   {
     files: [
       '**/__tests__/**/*',
+      '**/test-utils/**/*',
       '**/*.test.ts',
       '**/*.test.tsx',
       '**/*.spec.ts',
