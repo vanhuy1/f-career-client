@@ -10,6 +10,7 @@ import { applicantDetailReducer } from '@/services/state/applicantDetailSlice';
 import categoryReducer from '@/services/state/categorySlice';
 import roomReducer from '@/services/state/roomSlice';
 import tasksReducer from '@/services/state/taskSlice';
+import couponReducer from '@/services/state/couponSlice';
 
 export const makeStore = () => {
   return configureStore({
@@ -25,6 +26,7 @@ export const makeStore = () => {
       category: categoryReducer,
       room: roomReducer,
       tasks: tasksReducer,
+      coupons: couponReducer,
     },
   });
 };
