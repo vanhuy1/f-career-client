@@ -2,7 +2,8 @@
 
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
-import { X } from 'lucide-react';
+import { X, MoreHorizontal, Calendar } from 'lucide-react';
+
 import {
   Select,
   SelectContent,
@@ -39,6 +40,7 @@ import {
 import { companyService } from '@/services/api/company/company-api';
 
 import { employmentType } from '@/enums/employmentType';
+import { toast } from 'react-toastify';
 
 const RequiredIndicator = () => <span className="ml-1 text-red-500">*</span>;
 
@@ -113,11 +115,14 @@ export default function Step1({
     setTypeOfEmployment(type);
   };
 
+  const maxSkillsPreview = 6;
+
   const filteredSkills = availableSkills.filter((skill) =>
     skill.name.toLowerCase().includes(skillSearch.toLowerCase()),
   );
 
-  const displayedSkills = filteredSkills.slice(0, 6);
+  const displayedSkills = filteredSkills.slice(0, maxSkillsPreview);
+  const hasMoreSkills = filteredSkills.length > maxSkillsPreview;
 
   return (
     <div className="w-full">
@@ -359,27 +364,49 @@ export default function Step1({
             </p>
           </div>
           <div className="w-full md:col-span-2 md:w-[70%]">
-            <Input
-              type="date"
-              value={deadline ? deadline.split('T')[0] : ''}
-              onChange={(e) => {
-                // Set time to 00:00:00
-                const selectedDate = new Date(e.target.value);
-                selectedDate.setUTCHours(0, 0, 0, 0);
-                setDeadline(selectedDate.toISOString());
-              }}
-              min={(() => {
-                // Set minimum date to 7 days from now
-                const minDate = new Date();
-                minDate.setDate(minDate.getDate() + 7);
-                return minDate.toISOString().split('T')[0];
-              })()}
-              className="w-full"
-            />
-            <p className="mt-1 text-xs text-gray-500">
-              Applications will close at 00:00 (midnight) on the selected date.
-              Minimum deadline is 7 days from today.
-            </p>
+            <div className="relative">
+              <div className="relative">
+                <Input
+                  type="date"
+                  value={deadline ? deadline.split('T')[0] : ''}
+                  onChange={(e) => {
+                    const selectedDate = new Date(e.target.value);
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+
+                    // Nếu chọn ngày trong quá khứ
+                    if (selectedDate < today) {
+                      toast.error('Please select a future date');
+                      return;
+                    }
+
+                    // Set time to 00:00:00
+                    selectedDate.setUTCHours(0, 0, 0, 0);
+                    setDeadline(selectedDate.toISOString());
+                  }}
+                  min={(() => {
+                    // Set minimum date to 7 days from now
+                    const minDate = new Date();
+                    minDate.setDate(minDate.getDate() + 7);
+                    return minDate.toISOString().split('T')[0];
+                  })()}
+                  className={`w-full ${!deadline ? 'border-red-500' : ''}`}
+                  required
+                />
+                <Calendar className="absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 transform text-gray-500" />
+              </div>
+            </div>
+            <div className="mt-1 text-xs">
+              {!deadline && (
+                <p className="text-red-500">
+                  Please select an application deadline
+                </p>
+              )}
+              <p className="text-gray-500">
+                Applications will close at 00:00 (midnight) on the selected
+                date. Minimum deadline is 7 days from today.
+              </p>
+            </div>
           </div>
         </div>
 
@@ -518,6 +545,16 @@ export default function Step1({
                       {skill.name}
                     </Button>
                   ))}
+
+                  {hasMoreSkills && (
+                    <Button
+                      variant="ghost"
+                      className="col-span-full justify-center border-dashed bg-gray-50 text-gray-500 hover:border-solid hover:bg-gray-100"
+                      title="Chỉ hiển thị 6, tìm kiếm để thấy thêm"
+                    >
+                      + more… <MoreHorizontal className="ml-1 h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
                 {filteredSkills.length === 0 && (
                   <p className="mt-4 text-center text-sm text-gray-500">

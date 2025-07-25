@@ -18,6 +18,8 @@ import {
   Flame,
   TrendingUp,
   Users,
+  Ticket,
+  Loader2,
 } from 'lucide-react';
 import type { StepProps, PackageInfo, PackageType } from '@/types/Job';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -28,6 +30,9 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
 import { Input } from '@/components/ui/input';
+import { couponService } from '@/services/api/coupons/coupon-api';
+import type { Coupon } from '@/services/api/coupons/coupon-api';
+import { toast } from 'react-toastify';
 
 interface DisplayPackage {
   id: PackageType;
@@ -552,6 +557,12 @@ export default function Step3({
   const [maxDuration, setMaxDuration] = useState<number>(30);
   const [internalTotalPrice, setInternalTotalPrice] = useState<number>(0);
 
+  // Add new states for coupon
+  const [couponCode, setCouponCode] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
+  const [isCheckingCoupon, setIsCheckingCoupon] = useState(false);
+  const [originalPrice, setOriginalPrice] = useState<number>(0);
+
   // Calculate max duration based on job deadline
   useEffect(() => {
     if (deadline) {
@@ -569,17 +580,29 @@ export default function Step3({
     }
   }, [deadline, selectedDuration]);
 
-  // Calculate total price based on package and duration
+  // Update price calculation with coupon
   useEffect(() => {
     const pkg = displayPackages.find((p) => p.id === selectedPackage);
     if (pkg) {
-      const price = Number((pkg.pricePerDay * selectedDuration).toFixed(2));
-      setInternalTotalPrice(price);
-      if (setTotalPrice) {
-        setTotalPrice(price);
+      const basePrice = Number((pkg.pricePerDay * selectedDuration).toFixed(2));
+      setOriginalPrice(basePrice);
+
+      // Calculate discounted price if coupon is applied
+      if (appliedCoupon) {
+        const discount = (basePrice * appliedCoupon.discountPercentage) / 100;
+        const finalPrice = basePrice - discount;
+        setInternalTotalPrice(Number(finalPrice.toFixed(2)));
+        if (setTotalPrice) {
+          setTotalPrice(Number(finalPrice.toFixed(2)));
+        }
+      } else {
+        setInternalTotalPrice(basePrice);
+        if (setTotalPrice) {
+          setTotalPrice(basePrice);
+        }
       }
     }
-  }, [selectedPackage, selectedDuration, setTotalPrice]);
+  }, [selectedPackage, selectedDuration, appliedCoupon, setTotalPrice]);
 
   // Check if there's an active package subscription
   useEffect(() => {
@@ -626,6 +649,56 @@ export default function Step3({
       };
       setPackageInfo(updatedPackageInfo);
     }
+  };
+
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) {
+      toast.error('Please enter a coupon code');
+      return;
+    }
+
+    setIsCheckingCoupon(true);
+    try {
+      // Tìm coupon theo code
+      const coupons = await couponService.findAll();
+      const coupon = coupons.find(
+        (c) => c.code.toLowerCase() === couponCode.toLowerCase(),
+      );
+
+      if (!coupon) {
+        toast.error('Coupon not found');
+        return;
+      }
+
+      // Check active status
+      if (!coupon.isActive) {
+        toast.error('This coupon is no longer active');
+        return;
+      }
+
+      // Check expiration
+      if (new Date(coupon.validUntil) < new Date()) {
+        toast.error('This coupon has expired');
+        return;
+      }
+
+      // Apply coupon
+      setAppliedCoupon(coupon);
+      setCouponCode(''); // Clear input
+      toast.success(
+        `Coupon applied! You got ${coupon.discountPercentage}% OFF`,
+      );
+    } catch (error) {
+      console.error('Error applying coupon:', error);
+      toast.error('Failed to apply coupon');
+    } finally {
+      setIsCheckingCoupon(false);
+    }
+  };
+
+  const removeCoupon = () => {
+    setAppliedCoupon(null);
+    toast.success('Coupon removed');
   };
 
   return (
@@ -829,21 +902,98 @@ export default function Step3({
               </p>
             </div>
 
+            {/* Coupon Section */}
+            <div className="mb-6 border-t border-gray-200 pt-6">
+              <div className="mb-4 flex items-center gap-3">
+                <div className="rounded-full bg-green-100 p-2 text-green-600">
+                  <Ticket className="h-6 w-6" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900">
+                    Discount Coupon
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    Enter a valid coupon code to get discount
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex gap-2">
+                <Input
+                  value={couponCode}
+                  onChange={(e) => setCouponCode(e.target.value)}
+                  placeholder="Enter coupon code"
+                  className="h-12"
+                  disabled={!!appliedCoupon || isCheckingCoupon}
+                />
+                <Button
+                  onClick={handleApplyCoupon}
+                  disabled={isCheckingCoupon || !!appliedCoupon}
+                  className="h-12 min-w-[100px]"
+                >
+                  {isCheckingCoupon ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    'Apply'
+                  )}
+                </Button>
+              </div>
+
+              {appliedCoupon && (
+                <div className="mt-4 rounded-lg border border-green-200 bg-green-50 p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="h-5 w-5 text-green-600" />
+                      <span className="font-medium text-green-800">
+                        Coupon {appliedCoupon.code} applied
+                      </span>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={removeCoupon}
+                      className="h-8 text-gray-600 hover:text-red-600"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <p className="mt-1 text-sm text-green-700">
+                    You got {appliedCoupon.discountPercentage}% discount!
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Price Display Section */}
             <div className="rounded-xl border-2 border-gray-100 bg-white p-6 shadow-md">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-lg font-bold text-gray-900">
                     Total Investment
                   </p>
-                  <p className="text-sm text-gray-600">
-                    {selectedDuration} days × $
-                    {displayPackages
-                      .find((p) => p.id === selectedPackage)
-                      ?.pricePerDay.toFixed(2)}
-                    /day
-                  </p>
+                  <div className="space-y-1">
+                    <p className="text-sm text-gray-600">
+                      {selectedDuration} days × $
+                      {displayPackages
+                        .find((p) => p.id === selectedPackage)
+                        ?.pricePerDay.toFixed(2)}
+                      /day
+                    </p>
+                    {appliedCoupon && (
+                      <p className="text-sm text-green-600">
+                        Discount: -{appliedCoupon.discountPercentage}%
+                      </p>
+                    )}
+                  </div>
                 </div>
                 <div className="text-right">
+                  {appliedCoupon && (
+                    <div className="mb-1">
+                      <span className="text-sm text-gray-500 line-through">
+                        ${originalPrice.toFixed(2)}
+                      </span>
+                    </div>
+                  )}
                   <div className="text-3xl font-bold text-green-600">
                     ${internalTotalPrice.toFixed(2)}
                   </div>

@@ -14,6 +14,7 @@ import {
   TrendingUp,
   Briefcase,
   FileText,
+  TicketPercent,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -94,6 +95,11 @@ const menuItems: MenuItem[] = [
         icon: TrendingUp,
       },
     ],
+  },
+  {
+    title: 'Manage Coupons',
+    url: '/ad/coupons',
+    icon: TicketPercent,
   },
   {
     title: 'Notifications',

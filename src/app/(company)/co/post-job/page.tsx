@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { ArrowLeft, Pencil } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -59,6 +59,25 @@ const calculateExpirationDate = (
   return expirationDate.toISOString();
 };
 
+// Thêm interface để type cho form data
+interface JobFormData {
+  title: string;
+  description: string;
+  categoryId: string;
+  skillIds: string[];
+  benefits: Benefit[];
+  location: string;
+  salaryRange: number[];
+  experienceYears: number;
+  isVip: boolean;
+  packageInfo: PackageInfo;
+  deadline: string;
+  typeOfEmployment: EmploymentType;
+  status: JobStatus;
+  priorityPosition: number;
+  vip_expiration: string;
+}
+
 export default function JobPostingForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -70,11 +89,10 @@ export default function JobPostingForm() {
   const [salaryRange, setSalaryRange] = useState([5000, 22000]);
   const [benefits, setBenefits] = useState<Benefit[]>([]);
   const [positions, setPositions] = useState<Position[]>([]);
-  const [isYearlyBilling, setIsYearlyBilling] = useState(false);
+  // const [isYearlyBilling, setIsYearlyBilling] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [totalPrice, setTotalPrice] = useState<number>(0);
 
-  console.log(isYearlyBilling);
   // Package information state
   const [packageInfo, setPackageInfo] = useState<PackageInfo>({
     type: 'basic',
@@ -100,136 +118,107 @@ export default function JobPostingForm() {
   const [vipExpiration, setVipExpiration] = useState<string>('');
   const user = useUser();
 
-  const handleCreateJob = useCallback(async () => {
-    try {
-      const jobData = {
-        title: jobTitle,
-        description: jobDescription,
-        categoryId: categoryId || '1',
-        companyId: user?.data?.companyId || '1',
-        skillIds: selectedSkillIds,
-        benefit: benefits.map((benefit) => benefit.description),
-        location: location,
-        salaryMin: salaryRange[0],
-        salaryMax: salaryRange[1],
-        experienceYears: experienceYears,
-        isVip: isVip,
-        packageInfo: packageInfo,
-        deadline: deadline,
-        typeOfEmployment: typeOfEmployment,
-        status: jobStatus,
-        priorityPosition: priorityPosition,
-        vip_expiration: vipExpiration,
-      };
+  const STORAGE_KEY = 'JOB_FORM_DATA';
 
-      await jobService.create(jobData);
-
-      if (user?.data?.companyId) {
-        localStorage.setItem(
-          `company_${user.data.companyId}_package`,
-          JSON.stringify(packageInfo),
-        );
-      }
-
-      router.push('/job');
-    } catch (error) {
-      console.error('Error creating job:', error);
-      toast.error('Failed to create job. Please try again.');
-    }
-  }, [
-    jobTitle,
-    jobDescription,
-    categoryId,
-    user?.data?.companyId,
-    selectedSkillIds,
-    benefits,
-    location,
-    salaryRange,
-    experienceYears,
-    isVip,
-    packageInfo,
-    deadline,
-    typeOfEmployment,
-    jobStatus,
-    priorityPosition,
-    vipExpiration,
-    router,
-  ]);
-
-  // Check for payment completion
-  useEffect(() => {
-    const orderCode = searchParams?.get('orderCode');
-    const checkPayment = async () => {
-      if (!orderCode) return;
-
-      try {
-        const paymentStatus = await payosService.getPaymentStatus(orderCode);
-        if (paymentStatus.status === 'COMPLETED') {
-          // Nếu thanh toán thành công, tiến hành tạo job
-          await handleCreateJob();
-          toast.success('Payment successful and job posted!');
-        } else {
-          toast.error('Payment was not completed. Please try again.');
-        }
-      } catch (error) {
-        console.error('Error checking payment:', error);
-        toast.error('Failed to verify payment status');
-      }
+  // Di chuyển các hàm xử lý localStorage vào đây
+  const saveFormDataToStorage = () => {
+    const formData: JobFormData = {
+      title: jobTitle,
+      description: jobDescription,
+      categoryId: categoryId,
+      skillIds: selectedSkillIds,
+      benefits: benefits,
+      location: location,
+      salaryRange: salaryRange,
+      experienceYears: experienceYears,
+      isVip: isVip,
+      packageInfo: packageInfo,
+      deadline: deadline,
+      typeOfEmployment: typeOfEmployment,
+      status: jobStatus,
+      priorityPosition: priorityPosition,
+      vip_expiration: vipExpiration,
     };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(formData));
+  };
 
-    checkPayment();
-  }, [searchParams, handleCreateJob]);
+  const restoreFormDataFromStorage = () => {
+    const savedData = localStorage.getItem(STORAGE_KEY);
+    if (savedData) {
+      const formData: JobFormData = JSON.parse(savedData);
+      setJobTitle(formData.title);
+      setJobDescription(formData.description);
+      setCategoryId(formData.categoryId);
+      setSelectedSkillIds(formData.skillIds);
+      setBenefits(formData.benefits);
+      setLocation(formData.location);
+      setSalaryRange(formData.salaryRange);
+      setExperienceYears(formData.experienceYears);
+      setIsVip(formData.isVip);
+      setPackageInfo(formData.packageInfo);
+      setDeadline(formData.deadline);
+      setTypeOfEmployment(formData.typeOfEmployment);
+      setPriorityPosition(formData.priorityPosition);
+      setVipExpiration(formData.vip_expiration);
+      return formData;
+    }
+    return null;
+  };
+
+  const clearFormDataFromStorage = () => {
+    localStorage.removeItem(STORAGE_KEY);
+  };
 
   // Check if company has active packages from previous purchases
-  useEffect(() => {
-    const checkExistingPackages = async () => {
-      if (user?.data?.companyId) {
-        try {
-          // This is a placeholder - you would need to implement this API endpoint
-          // const companyPackages = await packageService.getActivePackagesByCompanyId(user.data.companyId);
+  // useEffect(() => {
+  //   const checkExistingPackages = async () => {
+  //     if (user?.data?.companyId) {
+  //       try {
+  //         // This is a placeholder - you would need to implement this API endpoint
+  //         // const companyPackages = await packageService.getActivePackagesByCompanyId(user.data.companyId);
 
-          // For now, let's simulate checking for existing packages
-          const mockActivePackage = localStorage.getItem(
-            `company_${user.data.companyId}_package`,
-          );
+  //         // For now, let's simulate checking for existing packages
+  //         const mockActivePackage = localStorage.getItem(
+  //           `company_${user.data.companyId}_package`,
+  //         );
 
-          if (mockActivePackage) {
-            const parsedPackage = JSON.parse(mockActivePackage);
-            // Check if package is still active
-            if (new Date(parsedPackage.expiresAt) > new Date()) {
-              setPackageInfo(parsedPackage);
-              setIsVip(parsedPackage.type === 'vip');
-              toast.info(
-                `You have an active ${parsedPackage.type} package until ${new Date(parsedPackage.expiresAt).toLocaleDateString()}`,
-              );
-            }
-          }
-        } catch (error) {
-          console.error('Error fetching company packages:', error);
-        }
-      }
-    };
+  //         if (mockActivePackage) {
+  //           const parsedPackage = JSON.parse(mockActivePackage);
+  //           // Check if package is still active
+  //           if (new Date(parsedPackage.expiresAt) > new Date()) {
+  //             setPackageInfo(parsedPackage);
+  //             setIsVip(parsedPackage.type === 'vip');
+  //             toast.info(
+  //               `You have an active ${parsedPackage.type} package until ${new Date(parsedPackage.expiresAt).toLocaleDateString()}`,
+  //             );
+  //           }
+  //         }
+  //       } catch (error) {
+  //         console.error('Error fetching company packages:', error);
+  //       }
+  //     }
+  //   };
 
-    checkExistingPackages();
-  }, [user?.data?.companyId]);
+  //   checkExistingPackages();
+  // }, [user?.data?.companyId]);
 
   // Handler for package selection with yearly billing option
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const handlePackageUpdate = (type: PackageType, isYearly: boolean) => {
-    setIsYearlyBilling(isYearly);
-    setIsVip(type === 'vip');
 
-    const newPackageInfo = {
-      type,
-      purchasedAt: new Date().toISOString(),
-      expiresAt: calculateExpirationDate(type, isYearly),
-      isActive: true,
-      transactionId: `TR-${Date.now()}`, // In a real app, this would come from payment processor
-      autoRenew: isYearly, // Auto-renew for yearly subscriptions
-    };
+  // const handlePackageUpdate = (type: PackageType, isYearly: boolean) => {
+  //   setIsYearlyBilling(isYearly);
+  //   setIsVip(type === 'vip');
 
-    setPackageInfo(newPackageInfo);
-  };
+  //   const newPackageInfo = {
+  //     type,
+  //     purchasedAt: new Date().toISOString(),
+  //     expiresAt: calculateExpirationDate(type, isYearly),
+  //     isActive: true,
+  //     transactionId: `TR-${Date.now()}`, // In a real app, this would come from payment processor
+  //     autoRenew: isYearly, // Auto-renew for yearly subscriptions
+  //   };
+
+  //   setPackageInfo(newPackageInfo);
+  // };
 
   useEffect(() => {
     const fetchSkills = async () => {
@@ -296,18 +285,179 @@ export default function JobPostingForm() {
     }
   };
 
+  const handleCreateJob = async (orderCode?: string | null) => {
+    try {
+      // Validation cho premium/vip packages
+      if (packageInfo.type !== 'basic') {
+        if (!orderCode) {
+          toast.error('Cannot create premium/vip job without payment');
+          return;
+        }
+
+        // Double check payment status
+        const paymentStatus = await payosService.getPaymentStatus(orderCode);
+        if (paymentStatus.status !== 'COMPLETED') {
+          toast.error('Payment required for premium/vip jobs');
+          return;
+        }
+      }
+
+      // Khôi phục data từ localStorage nếu có
+      const savedData = restoreFormDataFromStorage();
+
+      // Validate required fields
+      const errors: string[] = [];
+
+      if (!savedData?.title && !jobTitle) errors.push('Job title is required');
+      if (!savedData?.description && !jobDescription)
+        errors.push('Job description is required');
+      if (!savedData?.location && !location)
+        errors.push('Location is required');
+      if (!savedData?.deadline && !deadline)
+        errors.push('Application deadline is required');
+      if (!savedData?.categoryId && !categoryId)
+        errors.push('Job category is required');
+
+      // Validate description không chỉ chứa khoảng trắng hoặc HTML tags rỗng
+      const cleanDescription = (savedData?.description || jobDescription || '')
+        .replace(/<[^>]*>/g, '')
+        .trim();
+      if (!cleanDescription) {
+        errors.push('Job description cannot be empty');
+      }
+
+      if (errors.length > 0) {
+        // Hiển thị tất cả các lỗi
+        toast.error(
+          <div>
+            <p className="mb-2 font-medium">
+              Please fill in all required fields:
+            </p>
+            <ul className="list-disc pl-4">
+              {errors.map((error, index) => (
+                <li key={index}>{error}</li>
+              ))}
+            </ul>
+          </div>,
+        );
+        return;
+      }
+
+      const jobData = {
+        title: savedData?.title || jobTitle,
+        description: savedData?.description || jobDescription,
+        categoryId: savedData?.categoryId || categoryId || '1',
+        companyId: user?.data?.companyId || '1',
+        skillIds: savedData?.skillIds || selectedSkillIds,
+        benefit: (savedData?.benefits || benefits).map(
+          (benefit) => benefit.description,
+        ),
+        location: savedData?.location || location,
+        salaryMin: (savedData?.salaryRange || salaryRange)[0],
+        salaryMax: (savedData?.salaryRange || salaryRange)[1],
+        experienceYears: savedData?.experienceYears || experienceYears,
+        isVip: savedData?.isVip || isVip,
+        packageInfo: savedData?.packageInfo || packageInfo,
+        deadline: savedData?.deadline || deadline,
+        typeOfEmployment: savedData?.typeOfEmployment || typeOfEmployment,
+        status: jobStatus,
+        priorityPosition: savedData?.priorityPosition || priorityPosition,
+        vip_expiration: savedData?.vip_expiration || vipExpiration,
+      };
+
+      await jobService.create(jobData);
+
+      if (user?.data?.companyId) {
+        localStorage.setItem(
+          `company_${user.data.companyId}_package`,
+          JSON.stringify(packageInfo),
+        );
+      }
+
+      // Xoá form data sau khi tạo job thành công
+      clearFormDataFromStorage();
+
+      toast.success('Job posted successfully!');
+      router.push('/job');
+    } catch (error) {
+      console.error('Error creating job:', error);
+
+      // Kiểm tra error có phải là AxiosError không
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as {
+          response?: {
+            data?: {
+              details?: {
+                message?: string[];
+              };
+            };
+          };
+        };
+
+        if (axiosError.response?.data?.details?.message) {
+          const backendErrors = axiosError.response.data.details.message;
+          toast.error(
+            <div>
+              <p className="mb-2 font-medium">Failed to create job:</p>
+              <ul className="list-disc pl-4">
+                {backendErrors.map((err: string, index: number) => (
+                  <li key={index}>{err}</li>
+                ))}
+              </ul>
+            </div>,
+          );
+        } else {
+          toast.error('Failed to create job. Please try again.');
+        }
+      } else {
+        toast.error('Failed to create job. Please try again.');
+      }
+    }
+  };
+
+  // Check for payment completion
+  useEffect(() => {
+    const orderCode = searchParams?.get('orderCode');
+    const status = searchParams?.get('status'); // PayOS trả về status=PAID
+    const cancel = searchParams?.get('cancel'); // PayOS trả về cancel=false khi thành công
+
+    const checkPayment = async () => {
+      if (!orderCode) return;
+
+      try {
+        await payosService.getPaymentStatus(orderCode);
+
+        // Kiểm tra: status từ PayOS là PAID và cancel=false
+        if (status === 'PAID' && cancel === 'false') {
+          // Chỉ tạo job khi thanh toán thành công
+          await handleCreateJob(orderCode);
+          toast.success('Payment successful and job posted!');
+        } else {
+          toast.error('Payment was not completed. Please try again.');
+        }
+      } catch (error) {
+        console.error('Error checking payment:', error);
+        toast.error('Failed to verify payment status');
+      }
+    };
+
+    checkPayment();
+  }, [searchParams, handleCreateJob]);
+
   const handleSubmit = async () => {
     if (packageInfo.type === 'basic') {
-      // Nếu là gói basic, tạo job luôn không cần thanh toán
       await handleCreateJob();
       return;
     }
 
+    // Lưu form data trước khi redirect sang PayOS
+    saveFormDataToStorage();
+
     setIsProcessingPayment(true);
     try {
       const orderCode = Date.now();
-      const returnUrl = `${window.location.origin}/job`;
-      const cancelUrl = `${window.location.origin}/co/post-job`;
+      const returnUrl = `${window.location.origin}/co/post-job`;
+      const cancelUrl = `${window.location.origin}/co/post-job?status=cancelled`;
 
       const response = await payosService.createPaymentLink({
         amount: Math.round(totalPrice * 24000),
@@ -317,14 +467,13 @@ export default function JobPostingForm() {
         cancelUrl,
       });
 
-      // Chuyển hướng đến trang thanh toán PayOS
+      // Redirect tới trang thanh toán
       window.location.href = response.checkoutUrl;
     } catch (error) {
       console.error('Payment error:', error);
       toast.error('Failed to process payment. Please try again.');
     } finally {
       setIsProcessingPayment(false);
-      await handleCreateJob();
     }
   };
 

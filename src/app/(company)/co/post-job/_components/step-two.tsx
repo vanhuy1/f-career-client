@@ -203,11 +203,39 @@ export default function Step2({
             </p>
           </div>
           <div className="w-full md:col-span-2">
-            <RichTextEditor
-              content={jobDescription}
-              onChange={setJobDescription}
-              placeholder="Describe the role in detail"
-            />
+            <div
+              className={`rounded-md ${!jobDescription ? 'border-2 border-red-500' : ''}`}
+            >
+              <RichTextEditor
+                content={jobDescription}
+                onChange={(value) => {
+                  // Kiểm tra nếu content chỉ chứa khoảng trắng hoặc HTML tags rỗng
+                  const cleanContent = value.replace(/<[^>]*>/g, '').trim();
+                  if (!cleanContent) {
+                    // Nếu rỗng, vẫn set giá trị nhưng sẽ hiển thị error
+                    setJobDescription(value);
+                  } else {
+                    setJobDescription(value);
+                  }
+                }}
+                placeholder="Describe the role in detail"
+              />
+            </div>
+            {!jobDescription && (
+              <p className="mt-2 text-sm text-red-500">
+                Please provide a detailed job description
+              </p>
+            )}
+            <div className="mt-2 text-xs text-gray-500">
+              <p>Tips for a great job description:</p>
+              <ul className="ml-4 list-disc">
+                <li>Start with a brief, engaging overview of the role</li>
+                <li>List key responsibilities and day-to-day activities</li>
+                <li>Include required qualifications and skills</li>
+                <li>Mention growth opportunities and team culture</li>
+                <li>Keep it clear, concise, and well-structured</li>
+              </ul>
+            </div>
           </div>
         </div>
 
