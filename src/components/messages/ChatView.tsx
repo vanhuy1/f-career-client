@@ -1,38 +1,21 @@
 'use client';
 
 import React from 'react';
-import { MoreHorizontal, Star, Pin } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
-import { Conversation } from './mock-data';
+import { FrontendConversation, formatTimestamp } from './mock-data';
 
 interface ChatViewProps {
-  conversation: Conversation | null;
+  conversation: FrontendConversation | null;
+  currentUserId: string;
 }
 
-const ChatView: React.FC<ChatViewProps> = ({ conversation }) => {
+const ChatView: React.FC<ChatViewProps> = ({ conversation, currentUserId }) => {
   const getInitials = (name: string) => {
     return name
       .split(' ')
       .map((n) => n[0])
       .join('')
       .toUpperCase();
-  };
-
-  const formatMessageTime = (timestamp: Date): string => {
-    const now = new Date();
-    const diff = now.getTime() - timestamp.getTime();
-    const minutes = Math.floor(diff / (1000 * 60));
-
-    if (minutes < 60) {
-      return `${minutes} mins ago`;
-    } else {
-      return timestamp.toLocaleTimeString('en-US', {
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true,
-      });
-    }
   };
 
   if (!conversation) {
@@ -65,6 +48,17 @@ const ChatView: React.FC<ChatViewProps> = ({ conversation }) => {
     );
   }
 
+  // Use company name and logo if available, otherwise use contact name and avatar
+  const isCompany = !!conversation.contact.company;
+  const displayName = isCompany
+    ? conversation.contact.companyName || conversation.contact.name
+    : conversation.contact.name;
+  const displayAvatar = isCompany
+    ? (typeof conversation.contact.company === 'object' &&
+        conversation.contact.company?.logoUrl) ||
+      conversation.contact.avatar
+    : conversation.contact.avatar;
+
   return (
     <div className="flex flex-1 flex-col bg-white">
       {/* Header */}
@@ -72,25 +66,22 @@ const ChatView: React.FC<ChatViewProps> = ({ conversation }) => {
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <Avatar className="h-12 w-12">
-              <AvatarImage src={conversation.contact.avatar} />
+              <AvatarImage src={displayAvatar} />
               <AvatarFallback className="bg-blue-100 text-blue-700">
-                {getInitials(conversation.contact.name)}
+                {getInitials(displayName)}
               </AvatarFallback>
             </Avatar>
             <div>
               <h2 className="text-lg font-semibold text-gray-900">
-                {conversation.contact.name}
+                {displayName}
               </h2>
               <p className="text-sm text-gray-600">
-                {conversation.contact.title} at{' '}
-                <span className="text-blue-600">
-                  {conversation.contact.company}
-                </span>
+                {conversation.contact.title}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center space-x-2">
+          {/* <div className="flex items-center space-x-2">
             <Button variant="ghost" size="sm">
               <Pin className="h-4 w-4" />
             </Button>
@@ -100,7 +91,7 @@ const ChatView: React.FC<ChatViewProps> = ({ conversation }) => {
             <Button variant="ghost" size="sm">
               <MoreHorizontal className="h-4 w-4" />
             </Button>
-          </div>
+          </div> */}
         </div>
       </div>
 
@@ -109,26 +100,9 @@ const ChatView: React.FC<ChatViewProps> = ({ conversation }) => {
         <div className="px-6 py-4">
           {/* Conversation start notice */}
           <div className="mb-6 text-center">
-            <div className="mb-3 inline-flex h-16 w-16 items-center justify-center rounded-full bg-gray-100">
-              <Avatar className="h-12 w-12">
-                <AvatarImage src={conversation.contact.avatar} />
-                <AvatarFallback className="bg-blue-100 text-blue-700">
-                  {getInitials(conversation.contact.name)}
-                </AvatarFallback>
-              </Avatar>
-            </div>
-            <h3 className="mb-1 text-lg font-semibold text-gray-900">
-              {conversation.contact.name}
-            </h3>
-            <p className="mb-2 text-sm text-gray-600">
-              {conversation.contact.title} at{' '}
-              <span className="text-blue-600">
-                {conversation.contact.company}
-              </span>
-            </p>
             <p className="text-sm text-gray-500">
               This is the very beginning of your direct message with{' '}
-              <span className="font-medium">{conversation.contact.name}</span>
+              <span className="font-medium">{displayName}</span>
             </p>
           </div>
 
@@ -147,23 +121,23 @@ const ChatView: React.FC<ChatViewProps> = ({ conversation }) => {
               <div key={message.id} className="flex flex-col">
                 <div
                   className={`flex ${
-                    message.senderId === 'current-user'
+                    message.senderId === currentUserId
                       ? 'justify-end'
                       : 'justify-start'
                   }`}
                 >
-                  {message.senderId !== 'current-user' && (
+                  {message.senderId !== currentUserId && (
                     <Avatar className="mr-3 h-8 w-8">
-                      <AvatarImage src={conversation.contact.avatar} />
+                      <AvatarImage src={displayAvatar} />
                       <AvatarFallback className="bg-blue-100 text-xs text-blue-700">
-                        {getInitials(conversation.contact.name)}
+                        {getInitials(displayName)}
                       </AvatarFallback>
                     </Avatar>
                   )}
 
                   <div
                     className={`max-w-xs rounded-lg px-4 py-3 lg:max-w-md ${
-                      message.senderId === 'current-user'
+                      message.senderId === currentUserId
                         ? 'bg-blue-500 text-white'
                         : 'bg-gray-100 text-gray-900'
                     }`}
@@ -171,7 +145,7 @@ const ChatView: React.FC<ChatViewProps> = ({ conversation }) => {
                     <p className="text-sm">{message.content}</p>
                   </div>
 
-                  {message.senderId === 'current-user' && (
+                  {message.senderId === currentUserId && (
                     <Avatar className="ml-3 h-8 w-8">
                       <AvatarFallback className="bg-gray-600 text-xs text-white">
                         You
@@ -182,12 +156,12 @@ const ChatView: React.FC<ChatViewProps> = ({ conversation }) => {
 
                 <div
                   className={`mt-1 text-xs text-gray-500 ${
-                    message.senderId === 'current-user'
+                    message.senderId === currentUserId
                       ? 'mr-11 text-right'
                       : 'ml-11 text-left'
                   }`}
                 >
-                  {formatMessageTime(message.timestamp)}
+                  {message.createdAt && formatTimestamp(message.createdAt)}
                 </div>
               </div>
             ))}

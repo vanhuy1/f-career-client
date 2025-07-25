@@ -5,14 +5,15 @@ import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Conversation, formatTimestamp } from './mock-data';
+import { FrontendConversation, formatTimestamp } from './mock-data';
 
 interface ConversationListProps {
-  conversations: Conversation[];
+  conversations: FrontendConversation[];
   selectedConversationId: string | null;
   onSelectConversation: (conversationId: string) => void;
   searchTerm: string;
   onSearchChange: (search: string) => void;
+  onlineUsers: { [key: string]: boolean };
 }
 
 const ConversationList: React.FC<ConversationListProps> = ({
@@ -21,6 +22,7 @@ const ConversationList: React.FC<ConversationListProps> = ({
   onSelectConversation,
   searchTerm,
   onSearchChange,
+  onlineUsers,
 }) => {
   const getInitials = (name: string) => {
     return name
@@ -47,58 +49,69 @@ const ConversationList: React.FC<ConversationListProps> = ({
 
       {/* Conversation List */}
       <div className="flex-1 overflow-y-auto">
-        {conversations.map((conversation) => (
-          <div
-            key={conversation.id}
-            onClick={() => onSelectConversation(conversation.id)}
-            className={`cursor-pointer border-b border-gray-100 p-4 transition-colors hover:bg-gray-50 ${
-              selectedConversationId === conversation.id
-                ? 'border-l-4 border-l-blue-500 bg-blue-50'
-                : ''
-            }`}
-          >
-            <div className="flex items-start space-x-3">
-              <div className="relative">
-                <Avatar className="h-10 w-10">
-                  <AvatarImage src={conversation.contact.avatar} />
-                  <AvatarFallback className="bg-blue-100 text-blue-700">
-                    {getInitials(conversation.contact.name)}
-                  </AvatarFallback>
-                </Avatar>
-                {conversation.contact.isOnline && (
-                  <div className="absolute -top-1 -right-1 h-3 w-3 rounded-full border-2 border-white bg-green-500"></div>
-                )}
-              </div>
+        {conversations.map((conversation) => {
+          // Use company name and logo if available, otherwise use contact name and avatar
+          const isCompany = !!conversation.contact.company;
+          const displayName = isCompany
+            ? conversation.contact.companyName || conversation.contact.name
+            : conversation.contact.name;
+          const displayAvatar = isCompany
+            ? (typeof conversation.contact.company === 'object' &&
+                conversation.contact.company?.logoUrl) ||
+              conversation.contact.avatar
+            : conversation.contact.avatar;
 
-              <div className="min-w-0 flex-1">
-                <div className="mb-1 flex items-center justify-between">
-                  <h3 className="truncate font-semibold text-gray-900">
-                    {conversation.contact.name}
-                  </h3>
-                  <span className="text-xs text-gray-500">
-                    {formatTimestamp(conversation.timestamp)}
-                  </span>
+          return (
+            <div
+              key={conversation.id}
+              onClick={() => onSelectConversation(conversation.id)}
+              className={`cursor-pointer border-b border-gray-100 p-4 transition-colors hover:bg-gray-50 ${
+                selectedConversationId === conversation.id
+                  ? 'border-l-4 border-l-blue-500 bg-blue-50'
+                  : ''
+              }`}
+            >
+              <div className="flex items-start space-x-3">
+                <div className="relative">
+                  <Avatar className="h-10 w-10">
+                    <AvatarImage src={displayAvatar} />
+                    <AvatarFallback className="bg-blue-100 text-blue-700">
+                      {getInitials(displayName)}
+                    </AvatarFallback>
+                  </Avatar>
+                  {onlineUsers[conversation.contact.id] && (
+                    <div className="absolute -top-1 -right-1 h-3 w-3 rounded-full border-2 border-white bg-green-500"></div>
+                  )}
                 </div>
 
-                <p className="mb-1 truncate text-sm text-gray-600">
-                  {conversation.lastMessage}
-                </p>
+                <div className="min-w-0 flex-1">
+                  <div className="mb-1 flex items-center justify-between">
+                    <h3 className="truncate font-semibold text-gray-900">
+                      {displayName}
+                    </h3>
+                  </div>
 
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-400">
-                    {conversation.contact.title} at{' '}
-                    {conversation.contact.company}
-                  </span>
-                  {conversation.unreadCount > 0 && (
-                    <Badge className="flex h-5 min-w-[20px] items-center justify-center bg-blue-500 px-2 py-1 text-xs text-white hover:bg-blue-600">
-                      {conversation.unreadCount}
-                    </Badge>
-                  )}
+                  <p className="mb-1 truncate text-sm text-gray-600">
+                    {conversation.lastMessage}
+                  </p>
+
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-gray-400">
+                      {conversation.timestamp &&
+                        formatTimestamp(conversation.timestamp)}
+                    </span>
+                    {conversation.unreadCount &&
+                      conversation.unreadCount > 0 && (
+                        <Badge className="flex h-5 min-w-[20px] items-center justify-center bg-blue-500 px-2 py-1 text-xs text-white hover:bg-blue-600">
+                          {conversation.unreadCount}
+                        </Badge>
+                      )}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

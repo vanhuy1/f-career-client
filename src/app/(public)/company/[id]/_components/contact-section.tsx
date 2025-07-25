@@ -1,18 +1,67 @@
 'use client';
 
-import { Mail, Phone, MapPin, Globe, ContactIcon } from 'lucide-react';
+import {
+  Mail,
+  Phone,
+  MapPin,
+  Globe,
+  ContactIcon,
+  MessageSquare,
+} from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { Company } from '@/types/Company';
+import { Button } from '@/components/ui/button';
+import { useState } from 'react';
+import { messengerService } from '@/services/api/messenger';
+import { useUser } from '@/services/state/userSlice';
+import { toast } from 'react-hot-toast';
+import { ROLES } from '@/enums/roles.enum';
 
 interface ContactSectionProps {
   company: Company;
 }
 
 export default function ContactSection({ company }: ContactSectionProps) {
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
+
   const contactInfo = {
     email: company?.email || null,
     phone: company?.phone?.toString() || null,
     address: company?.address?.[0] || null,
     website: company?.website || null,
+  };
+
+  const user = useUser();
+  // Check if user has the USER role
+  const isCandidate = user?.data.roles[0] === ROLES.USER;
+
+  const handleChatWithCompany = async () => {
+    setIsLoading(true);
+    try {
+      // Check if user exists and has data property
+      if (!user?.data?.id) {
+        toast.error('Please log in to chat with this company');
+        router.push('/login');
+        return;
+      }
+
+      if (!company.id) {
+        toast.error('Company information is incomplete');
+        return;
+      }
+
+      const conversation = await messengerService.startConversation(
+        user.data.id,
+        company.id,
+      );
+      router.push(`/ca/message?conversationId=${conversation.id}`);
+    } catch (error) {
+      console.error('Error starting conversation:', error);
+      toast.error('Failed to start conversation. Please try again later');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   if (
@@ -126,6 +175,20 @@ export default function ContactSection({ company }: ContactSectionProps) {
                 {contactInfo.website}
               </a>
             </div>
+          </div>
+        )}
+
+        {/* Chat with Company Button - Only show for candidates (ROLE.USER) */}
+        {isCandidate && (
+          <div className="mt-6">
+            <Button
+              onClick={handleChatWithCompany}
+              disabled={isLoading}
+              className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 text-white transition-all duration-300 hover:from-emerald-600 hover:to-teal-700"
+            >
+              <MessageSquare className="mr-2 h-4 w-4" />
+              {isLoading ? 'Starting Chat...' : 'Chat with Company'}
+            </Button>
           </div>
         )}
       </div>

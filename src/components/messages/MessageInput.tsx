@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Paperclip, Smile, Send } from 'lucide-react';
+import { Smile, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 
@@ -33,14 +33,14 @@ const MessageInput: React.FC<MessageInputProps> = ({
   return (
     <div className="border-t border-gray-200 bg-white px-6 py-4">
       <div className="flex items-end space-x-3">
-        <Button
+        {/* <Button
           variant="ghost"
           size="sm"
           className="text-gray-500 hover:text-gray-700"
           disabled={disabled}
         >
           <Paperclip className="h-4 w-4" />
-        </Button>
+        </Button> */}
 
         <div className="relative flex-1">
           <Textarea

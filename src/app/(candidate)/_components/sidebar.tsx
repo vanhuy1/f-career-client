@@ -52,7 +52,7 @@ export default function Sidebar() {
             href={ROUTES.CA.HOME.MESSAGE.path}
             icon={<MessageSquare />}
             label="Messages"
-            badge={1}
+            // badge={1}
             active={pathname === ROUTES.CA.HOME.MESSAGE.path}
           />
           <NavItem
