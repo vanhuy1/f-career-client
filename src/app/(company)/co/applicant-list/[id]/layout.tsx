@@ -9,6 +9,7 @@ import {
   Phone,
   MapPin,
   Calendar,
+  MessageSquare,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -16,7 +17,7 @@ import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useParams } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { applicationService } from '@/services/api/applications/application-api';
 import {
   setApplicantDetailStart,
@@ -30,6 +31,9 @@ import { useDispatch } from 'react-redux';
 import { LoadingState } from '@/store/store.model';
 import LoadingScreen from '@/pages/LoadingScreen';
 import { ApplicationStatus } from '@/enums/applicationStatus';
+import { messengerService } from '@/services/api/messenger';
+import { useRouter } from 'next/navigation';
+import { toast } from 'react-toastify';
 
 export default function ApplicantLayout({
   children,
@@ -41,6 +45,8 @@ export default function ApplicantLayout({
   const applicantId = params?.id as string;
   const applicant = useApplicantDetail();
   const loadingState = useApplicantDetailLoadingState();
+  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
   const dispatch = useDispatch();
 
   // Hiring progress configuration
@@ -85,6 +91,22 @@ export default function ApplicantLayout({
       return 'bg-green-500';
     }
     return 'bg-blue-500';
+  };
+
+  const handleChatWithCandidate = async () => {
+    setIsLoading(true);
+    try {
+      const conversation = await messengerService.startConversation(
+        String(applicant?.candidate?.id),
+        String(applicant?.job?.company?.id),
+      );
+      router.push(`/co/messages?conversationId=${conversation.id}`);
+    } catch (error) {
+      console.error('Error starting conversation:', error);
+      toast.error('Failed to start conversation. Please try again later');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -363,6 +385,16 @@ export default function ApplicantLayout({
                   </p>
                 </div>
               </div>
+            </div>
+            <div className="mt-6">
+              <Button
+                onClick={handleChatWithCandidate}
+                disabled={isLoading}
+                className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 text-white transition-all duration-300 hover:from-emerald-600 hover:to-teal-700"
+              >
+                <MessageSquare className="mr-2 h-4 w-4" />
+                {isLoading ? 'Starting Chat...' : 'Chat with Candidate'}
+              </Button>
             </div>
           </div>
         </div>
