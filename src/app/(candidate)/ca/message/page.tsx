@@ -1,7 +1,12 @@
-import MessagesPage from '@/pages/MessagesPage';
+'use client';
 
-const MessagePage = () => {
-  return <MessagesPage />;
-};
+import dynamic from 'next/dynamic';
 
-export default MessagePage;
+// Import the component dynamically with SSR disabled
+const MessagesPageComponent = dynamic(() => import('@/pages/MessagesPage'), {
+  ssr: false,
+});
+
+export default function CandidateMessagesPage() {
+  return <MessagesPageComponent />;
+}
