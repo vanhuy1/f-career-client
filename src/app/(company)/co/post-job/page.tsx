@@ -347,7 +347,7 @@ export default function JobPostingForm() {
         title: savedData?.title || jobTitle,
         description: savedData?.description || jobDescription,
         categoryId: savedData?.categoryId || categoryId || '1',
-        companyId: user?.data?.companyId || '1',
+        companyId: user?.data?.companyId as string,
         skillIds: savedData?.skillIds || selectedSkillIds,
         benefit: (savedData?.benefits || benefits).map(
           (benefit) => benefit.description,

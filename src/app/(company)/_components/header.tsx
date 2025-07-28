@@ -33,7 +33,9 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle, isSidebarOpen }) => {
     try {
       setIsLoading(true);
       setError(null);
-      const data = await companyService.findOne(user?.data?.companyId);
+      const data = await companyService.findOne(
+        user?.data?.companyId as string,
+      );
       setCompany(data);
     } catch (err) {
       const errorMessage =

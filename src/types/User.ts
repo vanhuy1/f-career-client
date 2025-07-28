@@ -20,7 +20,7 @@ export interface UserProfile {
     isAccountDisabled: boolean;
     createdAt: string | Date;
     updatedAt: string | Date;
-    companyId: string;
+    companyId: string | number;
     phone: string;
     gender: string;
     dob: string;
