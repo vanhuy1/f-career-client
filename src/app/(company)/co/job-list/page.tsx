@@ -32,7 +32,7 @@ export default function JobListingDashboard() {
 
       try {
         setIsLoading(true);
-        const data = await companyService.findOne(companyId);
+        const data = await companyService.findOne(companyId as string);
         setCompany(data);
       } catch (error) {
         const errorMessage =
@@ -56,7 +56,7 @@ export default function JobListingDashboard() {
         setIsLoading(true);
         // Pass currentPage and itemsPerPage - the function now handles offset calculation internally
         const response = await jobService.getJobsByCompanyId(
-          companyId,
+          companyId as string,
           currentPage,
           itemsPerPage,
         );
@@ -136,7 +136,7 @@ export default function JobListingDashboard() {
 
         // Refresh job list
         const response = await jobService.getJobsByCompanyId(
-          companyId!,
+          companyId as string,
           currentPage,
           itemsPerPage,
         );

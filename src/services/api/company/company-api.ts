@@ -6,6 +6,12 @@ import {
   CreateCompanyReq,
   UpdateCompanyReq,
 } from '@/types/Company';
+import {
+  CreateScheduleEventRequest,
+  ScheduleEventResponse,
+  ScheduleEventsListResponse,
+  GetScheduleEventsQuery,
+} from '@/types/Schedule';
 import { httpClient } from '@/utils/axios';
 import { RequestBuilder } from '@/utils/axios/request-builder';
 
@@ -92,6 +98,63 @@ class CompanyService {
       typeCheck: (data) => ({
         success: true,
         data: data as { message: string },
+      }),
+    });
+    return response;
+  }
+
+  /**
+   * Create a new schedule event for a company
+   */
+  async createEvent(
+    companyId: number,
+    data: CreateScheduleEventRequest,
+  ): Promise<ScheduleEventResponse> {
+    const url = this.requestBuilder.buildUrl(`${companyId}/events`);
+    const response = await httpClient.post<
+      ScheduleEventResponse,
+      CreateScheduleEventRequest
+    >({
+      url,
+      body: data,
+      typeCheck: (data) => {
+        return {
+          success: true,
+          data: data as ScheduleEventResponse,
+        };
+      },
+      config: {
+        withCredentials: false,
+      },
+    });
+    return response;
+  }
+
+  /**
+   * Get schedule events for a company
+   */
+  async getEvents(
+    companyId: number,
+    query?: GetScheduleEventsQuery,
+  ): Promise<ScheduleEventsListResponse> {
+    const queryParams = new URLSearchParams();
+
+    if (query?.type) queryParams.append('type', query.type);
+    if (query?.status) queryParams.append('status', query.status);
+    if (query?.page) queryParams.append('page', query.page.toString());
+    if (query?.limit) queryParams.append('limit', query.limit.toString());
+    if (query?.startDate) queryParams.append('startDate', query.startDate);
+    if (query?.endDate) queryParams.append('endDate', query.endDate);
+
+    const url = this.requestBuilder.buildUrl(
+      `${companyId}/events${queryParams.toString() ? `?${queryParams.toString()}` : ''}`,
+    );
+
+    const response = await httpClient.get<ScheduleEventsListResponse>({
+      url,
+      typeCheck: (data) => ({
+        success: true,
+        data: data as ScheduleEventsListResponse,
       }),
     });
     return response;

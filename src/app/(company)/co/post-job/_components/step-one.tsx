@@ -77,7 +77,7 @@ export default function Step1({
   const dispatch = useAppDispatch();
   const user = useUser();
   const companyId = user?.data?.companyId;
-  const company = useCompanyDetailById(companyId || '');
+  const company = useCompanyDetailById(companyId as string);
   const companyLoadingState = useCompanyDetailLoadingState();
   const isCompanyLoading = companyLoadingState === LoadingState.loading;
   const companyLocations = company?.address || [];
@@ -89,7 +89,7 @@ export default function Step1({
 
       try {
         dispatch(setCompanyDetailStart());
-        const data = await companyService.findOne(companyId);
+        const data = await companyService.findOne(companyId as string);
         dispatch(setCompanyDetailSuccess(data));
       } catch (error) {
         const errorMessage =

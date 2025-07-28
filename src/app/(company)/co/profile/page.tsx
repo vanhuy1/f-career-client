@@ -31,7 +31,7 @@ const CompanyProfilePage = () => {
     setError(null);
 
     try {
-      const data = await companyService.findOne(user.data.companyId);
+      const data = await companyService.findOne(user.data.companyId as string);
       setCompany(data);
     } catch (err) {
       const errorMessage =
