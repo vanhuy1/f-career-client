@@ -7,6 +7,8 @@ import dynamic from 'next/dynamic';
 import ConversationList from '@/components/messages/ConversationList';
 import ChatView from '@/components/messages/ChatView';
 import MessageInput from '@/components/messages/MessageInput';
+import VideoCallModal from '@/components/messages/VideoCallModal';
+import IncomingCallNotification from '@/components/messages/IncomingCallNotification';
 import {
   Conversation,
   FrontendConversation,
@@ -15,6 +17,7 @@ import {
 } from '@/components/messages/mock-data';
 import { messengerService } from '@/services/api/messenger';
 import { useUser } from '@/services/state/userSlice';
+import SimplePeer from 'simple-peer';
 
 const MessagesPage = () => {
   const searchParams = useSearchParams();
@@ -35,6 +38,17 @@ const MessagesPage = () => {
   const [onlineUsers, setOnlineUsers] = useState<{ [key: string]: boolean }>(
     {},
   );
+
+  // Video call state
+  const [isVideoCallOpen, setIsVideoCallOpen] = useState(false);
+  const [isIncomingCall, setIsIncomingCall] = useState(false);
+  const [showIncomingCallNotification, setShowIncomingCallNotification] =
+    useState(false);
+  const [incomingCallData, setIncomingCallData] = useState<{
+    from: string;
+    signal: SimplePeer.SignalData;
+    conversationId: string;
+  } | null>(null);
 
   // Fetch conversations on mount
   useEffect(() => {
@@ -92,6 +106,57 @@ const MessagesPage = () => {
 
     fetchConversations();
   }, [currentUserId, searchParams]);
+
+  useEffect(() => {
+    if (!currentUserId) return;
+
+    const socketUrl =
+      process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+
+    // Tạo kết nối socket global riêng
+    const globalSocket = io(`${socketUrl}/messenger`, {
+      query: { userId: currentUserId },
+      withCredentials: true,
+    });
+
+    console.log('Creating global socket for incoming calls');
+
+    // Lắng nghe incoming calls từ TẤT CẢ conversations
+    globalSocket.on(
+      'video-call-offer',
+      ({ from, signal, conversationId: callConversationId }) => {
+        console.log('Received incoming call:', { from, callConversationId });
+
+        // Tìm conversation với người gọi
+        const conversation = conversations.find(
+          (conv) => conv.id === callConversationId,
+        );
+
+        if (conversation) {
+          // Lưu thông tin cuộc gọi đến
+          setIncomingCallData({
+            from,
+            signal,
+            conversationId: callConversationId,
+          });
+          setShowIncomingCallNotification(true);
+
+          // Tự động chọn conversation nếu chưa chọn
+          if (
+            !selectedConversation ||
+            selectedConversation.id !== callConversationId
+          ) {
+            setSelectedConversation(conversation);
+          }
+        }
+      },
+    );
+
+    return () => {
+      console.log('Disconnecting global socket');
+      globalSocket.disconnect();
+    };
+  }, [currentUserId, conversations, selectedConversation]);
 
   // Debounced fetch messages function
   const fetchMessages = useCallback(
@@ -244,6 +309,21 @@ const MessagesPage = () => {
       }));
     });
 
+    // Handle incoming video call
+    socket.on(
+      'video-call-offer',
+      ({ from, signal, conversationId: callConversationId }) => {
+        if (callConversationId === selectedConversation?.id) {
+          setIncomingCallData({
+            from,
+            signal,
+            conversationId: callConversationId,
+          });
+          setShowIncomingCallNotification(true);
+        }
+      },
+    );
+
     // Handle errors
     socket.on('error', (error) => {
       console.error('Socket error:', error);
@@ -263,6 +343,7 @@ const MessagesPage = () => {
       socket.off('newMessage');
       socket.off('userStatus');
       socket.off('error');
+      socket.off('video-call-offer');
       socket.emit('leaveConversation', selectedConversation.id);
       socket.disconnect();
       socketRef.current = null;
@@ -290,6 +371,44 @@ const MessagesPage = () => {
     }
   };
 
+  const handleStartVideoCall = () => {
+    if (selectedConversation) {
+      setIsIncomingCall(false);
+      setIsVideoCallOpen(true);
+    }
+  };
+
+  const handleStartAudioCall = () => {
+    // For now, audio calls use the same modal but with video disabled initially
+    if (selectedConversation) {
+      setIsIncomingCall(false);
+      setIsVideoCallOpen(true);
+    }
+  };
+
+  const handleCloseVideoCall = () => {
+    setIsVideoCallOpen(false);
+    setIsIncomingCall(false);
+  };
+
+  const handleAcceptIncomingCall = () => {
+    setShowIncomingCallNotification(false);
+    setIsIncomingCall(true);
+    setIsVideoCallOpen(true);
+  };
+
+  const handleDeclineIncomingCall = () => {
+    if (socketRef.current && incomingCallData) {
+      socketRef.current.emit('video-call-decline', {
+        conversationId: incomingCallData.conversationId,
+        to: incomingCallData.from,
+        from: currentUserId,
+      });
+    }
+    setShowIncomingCallNotification(false);
+    setIncomingCallData(null);
+  };
+
   return (
     <div className="flex h-screen">
       <ConversationList
@@ -304,11 +423,41 @@ const MessagesPage = () => {
         <ChatView
           conversation={selectedConversation}
           currentUserId={currentUserId}
+          onStartVideoCall={handleStartVideoCall}
+          onStartAudioCall={handleStartAudioCall}
         />
         {selectedConversation && (
           <MessageInput onSendMessage={handleSendMessage} />
         )}
       </div>
+
+      {/* Incoming Call Notification */}
+      {selectedConversation && (
+        <IncomingCallNotification
+          isVisible={showIncomingCallNotification}
+          callerName={selectedConversation.contact.name}
+          callerAvatar={selectedConversation.contact.avatar}
+          onAccept={handleAcceptIncomingCall}
+          onDecline={handleDeclineIncomingCall}
+          isVideoCall={true}
+        />
+      )}
+
+      {/* Video Call Modal */}
+      {selectedConversation && (
+        <VideoCallModal
+          isOpen={isVideoCallOpen}
+          onClose={handleCloseVideoCall}
+          socket={socketRef.current}
+          currentUserId={currentUserId}
+          contactId={selectedConversation.contact.id.toString()}
+          contactName={selectedConversation.contact.name}
+          contactAvatar={selectedConversation.contact.avatar}
+          conversationId={selectedConversation.id}
+          isIncoming={isIncomingCall}
+          incomingCallData={incomingCallData}
+        />
+      )}
     </div>
   );
 };

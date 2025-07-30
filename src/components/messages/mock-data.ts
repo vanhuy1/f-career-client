@@ -60,8 +60,6 @@ export function formatTimestamp(timestamp: Date | string | undefined): string {
       return '';
     }
   }
-
-  console.log('Parsed date:', date);
   // Kiểm tra xem date có hợp lệ không
   if (isNaN(date.getTime())) {
     console.error('Invalid date:', date);
@@ -72,12 +70,6 @@ export function formatTimestamp(timestamp: Date | string | undefined): string {
   // Chuyển đổi từ UTC sang Asia/Ho_Chi_Minh
   const zonedDate = toZonedTime(date, timeZone);
   const now = toZonedTime(new Date(), timeZone); // Thời gian hiện tại ở VN
-
-  // Debug giá trị
-  console.log('Input timestamp:', timestamp);
-  console.log('Parsed date:', date);
-  console.log('Zoned date:', zonedDate);
-  console.log('Current time (zoned):', now);
 
   // Tính khoảng cách thời gian
   const minutes = differenceInMinutes(now, zonedDate);

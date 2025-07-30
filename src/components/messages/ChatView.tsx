@@ -2,14 +2,23 @@
 
 import React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import { Video, Phone } from 'lucide-react';
 import { FrontendConversation, formatTimestamp } from './mock-data';
 
 interface ChatViewProps {
   conversation: FrontendConversation | null;
   currentUserId: string;
+  onStartVideoCall?: () => void;
+  onStartAudioCall?: () => void;
 }
 
-const ChatView: React.FC<ChatViewProps> = ({ conversation, currentUserId }) => {
+const ChatView: React.FC<ChatViewProps> = ({
+  conversation,
+  currentUserId,
+  onStartVideoCall,
+  onStartAudioCall,
+}) => {
   const getInitials = (name: string) => {
     return name
       .split(' ')
@@ -81,17 +90,24 @@ const ChatView: React.FC<ChatViewProps> = ({ conversation, currentUserId }) => {
             </div>
           </div>
 
-          {/* <div className="flex items-center space-x-2">
-            <Button variant="ghost" size="sm">
-              <Pin className="h-4 w-4" />
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onStartAudioCall}
+              className="text-gray-600 hover:text-blue-600"
+            >
+              <Phone className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="sm">
-              <Star className="h-4 w-4" />
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onStartVideoCall}
+              className="text-gray-600 hover:text-blue-600"
+            >
+              <Video className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="sm">
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </div> */}
+          </div>
         </div>
       </div>
 
