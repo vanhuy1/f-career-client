@@ -8,6 +8,7 @@ export const signInRequestSchema = z.object({
     .min(1, 'Password is required')
     .min(6, 'Password must be at least 6 characters'),
 });
+
 export const signUpRequestSchema = z.object({
   email: z.string().min(1, 'Email is required').email('Invalid email address'),
   password: z
@@ -28,17 +29,27 @@ export const signUpRequestSchema = z.object({
     .min(1, 'At least one role is required'),
 });
 
-export type SignUpRequest = z.infer<typeof signUpRequestSchema>;
-export type SignInRequest = z.infer<typeof signInRequestSchema>;
-
 export const companyInfoSchema = z.object({
   company_name: z.string().min(2, { message: 'Company name is required' }),
-  company_website: z.string().url({ message: 'Please enter a valid URL' }),
+  company_website: z.string().optional(),
   taxCode: z.string().min(1, { message: 'Tax code is required' }),
-  business_license_url: z.string().optional(),
   company_email: z
     .string()
     .email({ message: 'Please enter a valid email address' }),
 });
 
+// Schema kết hợp cho đăng ký company
+export const companyRegistrationSchema = signUpRequestSchema.extend({
+  companyName: z.string().min(2, { message: 'Company name is required' }),
+  companyWebsite: z.string().optional(),
+  taxCode: z.string().min(1, { message: 'Tax code is required' }),
+  business_license_url: z.string().optional(),
+});
+
+// Types
+export type SignUpRequest = z.infer<typeof signUpRequestSchema>;
+export type SignInRequest = z.infer<typeof signInRequestSchema>;
 export type CompanyInfoFormValues = z.infer<typeof companyInfoSchema>;
+export type CompanyRegistrationRequest = z.infer<
+  typeof companyRegistrationSchema
+>;

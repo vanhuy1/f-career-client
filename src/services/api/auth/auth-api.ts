@@ -1,8 +1,23 @@
-import { SignInRequest, SignUpRequest } from '@/schemas/Auth';
+import {
+  CompanyRegistrationRequest,
+  SignInRequest,
+  SignUpRequest,
+} from '@/schemas/Auth';
 import { AuthResponse } from '@/types/Auth';
 import { User } from '@/types/User';
 import { httpClient } from '@/utils/axios';
 import { RequestBuilder } from '@/utils/axios/request-builder';
+
+interface TaxCodeReportPayload {
+  taxCode: string;
+  companyName: string;
+  userEmail: string;
+  contactPhone: string;
+  additionalInfo: string;
+  reportType: string;
+  timestamp: string;
+}
+
 class AuthService {
   private requestBuilder: RequestBuilder;
 
@@ -67,9 +82,14 @@ class AuthService {
     return response;
   }
 
-  async registerCompany(data: SignUpRequest): Promise<{ message: string }> {
+  async registerCompany(
+    data: CompanyRegistrationRequest,
+  ): Promise<{ message: string }> {
     const url = this.requestBuilder.buildUrl('register-company');
-    const response = await httpClient.post<{ message: string }, SignUpRequest>({
+    const response = await httpClient.post<
+      { message: string },
+      CompanyRegistrationRequest
+    >({
       url,
       body: data,
       typeCheck: (data) => ({
@@ -106,6 +126,25 @@ class AuthService {
       typeCheck: (data) => ({
         success: true,
         data: data as { message: string; success: boolean },
+      }),
+    });
+    return response;
+  }
+
+  // Trong authService class
+  async sendTaxCodeReport(
+    data: TaxCodeReportPayload,
+  ): Promise<{ message: string }> {
+    const url = this.requestBuilder.buildUrl('report/tax-code-issue');
+    const response = await httpClient.post<
+      { message: string },
+      TaxCodeReportPayload
+    >({
+      url,
+      body: data,
+      typeCheck: (data) => ({
+        success: true,
+        data: data as { message: string },
       }),
     });
     return response;

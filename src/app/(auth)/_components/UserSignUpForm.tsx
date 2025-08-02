@@ -169,7 +169,7 @@ export const UserSignUpForm = ({ isCompany = false }: UserSignUpFormProps) => {
                 className="flex items-center gap-2 text-sm font-medium text-gray-700"
               >
                 <Mail className="h-4 w-4" />
-                {isCompany ? 'Company HR Email' : 'Email Address'}
+                {isCompany ? 'Company Email' : 'Email Address'}
               </Label>
               <Input
                 id="email"
