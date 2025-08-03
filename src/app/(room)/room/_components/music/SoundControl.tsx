@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
-import Icon from './Icon';
-import IconButton from './IconButton';
+import Icon from '../ui/Icon';
+import IconButton from '../ui/IconButton';
 import { useLocalStorageState } from '../../hooks/useLocalStorage';
 
 interface Sound {

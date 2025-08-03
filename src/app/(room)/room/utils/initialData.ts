@@ -2,7 +2,7 @@ export const initialScenes = [
   {
     id: '1',
     name: 'Default',
-    image: '/background/scene1.gif',
+    image: '/background/scene4.gif',
   },
   {
     id: '2',
@@ -17,7 +17,7 @@ export const initialScenes = [
   {
     id: '4',
     name: 'Scene 4',
-    image: '/background/scene4.gif',
+    image: '/background/scene1.gif',
   },
   {
     id: '5',
