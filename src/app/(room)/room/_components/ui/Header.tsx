@@ -4,11 +4,11 @@ import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import IconButton from './IconButton';
-import SceneSelector from './SceneSelector';
-import MusicSelector from './MusicSelector';
+import SceneSelector from '../scenes/SceneSelector';
+import MusicSelector from '../music/MusicSelector';
 import CalendarModal from '../calendar/CalendarModal';
 import TaskBoardModal from '../tasks/TaskBoardModal';
-import SoundControl from './SoundControl';
+import SoundControl from '../music/SoundControl';
 import { Maximize2, Minimize2 } from 'lucide-react';
 
 export default function Header() {

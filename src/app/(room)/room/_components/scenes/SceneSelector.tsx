@@ -6,8 +6,8 @@ import { useSelector } from 'react-redux';
 import { RootState } from '@/store/store';
 import { useAppDispatch } from '@/store/hooks';
 import { setSelectedScene } from '@/services/state/roomSlice';
-import Modal from './Modal';
-import IconButton from './IconButton';
+import Modal from '../ui/Modal';
+import IconButton from '../ui/IconButton';
 import Image from 'next/image';
 
 interface Scene {

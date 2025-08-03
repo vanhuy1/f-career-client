@@ -3,7 +3,7 @@
 import { cn } from '@/lib/utils';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store/store';
-import Icon from './Icon';
+import Icon from '../ui/Icon';
 import { useAppDispatch } from '@/store/hooks';
 import { setIsPlaying, setVolume } from '@/services/state/roomSlice';
 import { Volume2, VolumeX } from 'lucide-react';

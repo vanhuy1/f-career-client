@@ -37,6 +37,7 @@ interface MindMapNodeData {
   isSkillNode?: boolean;
   progress: number;
   skillId?: string;
+  order?: number;
 }
 
 const nodeTypes = {
@@ -48,25 +49,40 @@ export default function MindMapVisualization({
   onClose,
   onToggleTask,
 }: MindMapVisualizationProps) {
-  // Since RoadmapSkill no longer has a skills array, we treat all tasks as part of a single group
-  const hasTasks = skill.tasks && skill.tasks.length > 0;
+  // Extended type for combined roadmap view
+  interface ExtendedRoadmapSkill extends RoadmapSkill {
+    skills?: RoadmapSkill[];
+    estimatedDuration?: number;
+    difficulty?: 'beginner' | 'intermediate' | 'advanced';
+    dependencies?: string[];
+  }
 
-  // Create a single skill object for the main skill
-  const orderedSkills: RoadmapSkill[] = hasTasks
-    ? [
-        {
-          id: skill.id,
-          title: skill.title,
-          description: skill.description,
-          progress: skill.progress,
-          tasks: skill.tasks,
-          test: skill.test,
-        },
-      ]
-    : [];
+  const extendedSkill = skill as ExtendedRoadmapSkill;
 
-  // Generate nodes for visualization - single node for the skill
+  // Check if this is a combined roadmap (has skills array)
+  const isRoadmapView =
+    'skills' in extendedSkill && Array.isArray(extendedSkill.skills);
+
+  // Create ordered skills array with proper typing
+  const orderedSkills: RoadmapSkill[] =
+    isRoadmapView && extendedSkill.skills
+      ? extendedSkill.skills
+      : skill.tasks && skill.tasks.length > 0
+        ? [
+            {
+              id: skill.id,
+              title: skill.title,
+              description: skill.description || '',
+              progress: skill.progress || 0,
+              tasks: skill.tasks,
+              test: skill.test,
+            },
+          ]
+        : [];
+
+  // Generate nodes for visualization
   const initialNodes: Node[] = [
+    // Main center node
     {
       id: 'center',
       type: 'custom',
@@ -86,6 +102,7 @@ export default function MindMapVisualization({
         isMainNode: true,
       },
     },
+    // Skill nodes positioned vertically
     ...orderedSkills.map((skillItem, index) => ({
       id: `skill-${index}`,
       type: 'custom',
@@ -110,21 +127,37 @@ export default function MindMapVisualization({
     })),
   ];
 
-  // Generate edges (only one edge if there's a skill node)
-  const initialEdges: Edge[] = hasTasks
-    ? [
-        {
-          id: 'edge-center-skill-0',
-          source: 'center',
-          target: 'skill-0',
-          animated: true,
-          style: { stroke: '#22c55e', strokeWidth: 2 },
-        },
-      ]
-    : [];
+  // Generate edges - create sequential connections
+  const initialEdges: Edge[] = [];
+
+  // Connect center node to first skill
+  if (orderedSkills.length > 0) {
+    initialEdges.push({
+      id: 'edge-center-skill-0',
+      source: 'center',
+      target: 'skill-0',
+      animated: true,
+      style: { stroke: '#22c55e', strokeWidth: 2 },
+    });
+  }
+
+  // Connect each skill to the next skill in sequence
+  for (let i = 0; i < orderedSkills.length - 1; i++) {
+    initialEdges.push({
+      id: `edge-skill-${i}-${i + 1}`,
+      source: `skill-${i}`,
+      target: `skill-${i + 1}`,
+      animated: true,
+      style: {
+        stroke: orderedSkills[i].progress === 100 ? '#22c55e' : '#6b7280',
+        strokeWidth: 2,
+        strokeDasharray: orderedSkills[i].progress === 100 ? '0' : '5,5',
+      },
+    });
+  }
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-  const [edges, _, onEdgesChange] = useEdgesState(initialEdges);
+  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const [skillDetails, setSkillDetails] = useState<RoadmapSkill | null>(null);
 
   const onNodeClick: NodeMouseHandler = (_, node) => {
@@ -195,6 +228,27 @@ export default function MindMapVisualization({
           };
         }
         return node;
+      }),
+    );
+
+    // Update edges color based on progress
+    setEdges(
+      edges.map((edge) => {
+        const sourceNodeIndex = parseInt(edge.source.replace('skill-', ''));
+        if (!isNaN(sourceNodeIndex) && orderedSkills[sourceNodeIndex]) {
+          const sourceNode = nodes.find((n) => n.id === edge.source);
+          if (sourceNode && sourceNode.data.progress === 100) {
+            return {
+              ...edge,
+              style: {
+                ...edge.style,
+                stroke: '#22c55e',
+                strokeDasharray: '0',
+              },
+            };
+          }
+        }
+        return edge;
       }),
     );
   };
@@ -269,11 +323,26 @@ export default function MindMapVisualization({
                     </span>
                   </div>
                   <div className="text-xs text-stone-300">
-                    <span className="font-medium">Tasks: </span>
-                    <span>
-                      {skill.tasks.filter((t) => t.completed).length}/
-                      {skill.tasks.length} completed
-                    </span>
+                    {isRoadmapView ? (
+                      <>
+                        <span className="font-medium">Skills: </span>
+                        <span>
+                          {
+                            orderedSkills.filter((s) => s.progress === 100)
+                              .length
+                          }
+                          /{orderedSkills.length} completed
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="font-medium">Tasks: </span>
+                        <span>
+                          {skill.tasks.filter((t) => t.completed).length}/
+                          {skill.tasks.length} completed
+                        </span>
+                      </>
+                    )}
                   </div>
                 </div>
               </ReactFlow>

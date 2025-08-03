@@ -11,9 +11,9 @@ import {
   setMusicTracks,
   setVolume,
 } from '@/services/state/roomSlice';
-import Modal from './Modal';
-import Icon from './Icon';
-import IconButton from './IconButton';
+import Modal from '../ui/Modal';
+import Icon from '../ui/Icon';
+import IconButton from '../ui/IconButton';
 import { Volume2, VolumeX } from 'lucide-react';
 
 interface YouTubePlayer {

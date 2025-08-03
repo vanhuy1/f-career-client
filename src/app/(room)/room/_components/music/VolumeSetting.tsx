@@ -6,7 +6,7 @@ import { useAppDispatch } from '@/store/hooks';
 import { useSelector } from 'react-redux';
 import { setVolume } from '@/services/state/roomSlice';
 import { RootState } from '@/store/store';
-import Icon from './Icon';
+import Icon from '../ui/Icon';
 
 interface VolumePropTypes {
   isActive: boolean;

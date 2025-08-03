@@ -179,6 +179,19 @@ class RoadmapService {
               ],
             },
           },
+          {
+            id: 'skill-2',
+            title: 'Frontend Development',
+            description: 'Master modern frontend frameworks',
+            progress: 0,
+            tasks: [
+              {
+                id: 'task-2',
+                title: 'Learn React basics',
+                completed: false,
+              },
+            ],
+          },
         ],
         userId: 1,
         cvId: data.cvId,
