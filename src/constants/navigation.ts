@@ -54,6 +54,11 @@ const ROUTES = {
         name: 'Application List',
       },
 
+      SCHEDULE: {
+        path: '/ca/schedule',
+        name: 'Schedule',
+      },
+
       BROWSECOMPANY: {
         path: '/ca/browse-company',
         name: 'Browse Company',

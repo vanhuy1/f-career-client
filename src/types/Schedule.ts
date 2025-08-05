@@ -151,3 +151,24 @@ export interface ScheduleEventFormData {
   participantUserId: number;
   participantRole: ParticipantRole;
 }
+
+// Candidate Schedule
+
+// Candidate Schedule Request - for getting candidate's events
+export interface GetCandidateScheduleRequest {
+  type?: EventType;
+  status?: EventStatus;
+  page?: number;
+  limit?: number;
+  startDate?: string; // ISO 8601 date string
+  endDate?: string; // ISO 8601 date string
+}
+
+// Candidate Schedule Response - matches the API response structure
+export interface CandidateScheduleResponse {
+  data: ScheduleEventResponse[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
