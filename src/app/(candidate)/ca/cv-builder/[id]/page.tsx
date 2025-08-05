@@ -1,12 +1,13 @@
 'use client';
 
 import Head from 'next/head';
-import CV from '../components/CV';
-import CV2 from '../components/CV2';
-import CV3 from '../components/CV3';
-import PageButtons from '../components/PageButtons';
-import CvOptimizer from '../components/CvOptimizer';
 import { useState, useRef, useEffect } from 'react';
+import CV from '../components/templates/CV';
+import CV2 from '../components/templates/CV2';
+import CV3 from '../components/templates/CV3';
+import PageButtons from '../components/PageButtons';
+import PreviewModal from '../components/PreviewModal';
+import CvOptimizer from '../components/optimizer/CvOptimizer';
 import { useDispatch } from 'react-redux';
 import { useParams } from 'next/navigation';
 import { AppDispatch } from '@/store/store';
@@ -19,7 +20,6 @@ import {
   setCvDetailSuccess,
   setCvDetailFailure,
 } from '@/services/state/cvSlice';
-import { useReactToPrint } from 'react-to-print';
 import {
   FILE_NOT_SELECTED,
   FILE_READ_ERROR,
@@ -29,12 +29,73 @@ import type { Cv, Experience, Education, Certification } from '@/types/Cv';
 import Settings from '../components/Settings';
 import LoadingScreen from '@/pages/LoadingScreen';
 import { LoadingState } from '@/store/store.model';
-import SaveCvDialog from '../components/SaveCvDialog';
 import { uploadFile } from '@/lib/storage';
 import { SupabaseBucket, SupabaseFolder } from '@/enums/supabase';
 import { toast } from 'react-toastify';
 import { supabase } from '@/lib/supabaseClient';
 import { jsPDF } from 'jspdf';
+
+// Helper function to upload avatar image
+const uploadAvatarImage = async (
+  file: File,
+  cvId: string,
+): Promise<string | null> => {
+  try {
+    // Create unique file name
+    const fileExt = file.name.split('.').pop();
+    const fileName = `avatar-${cvId}-${Date.now()}.${fileExt}`;
+
+    // Upload image to Supabase Storage using the same uploadFile function
+    const { publicUrl, error } = await uploadFile({
+      file: new File([file], fileName, { type: file.type }),
+      bucket: SupabaseBucket.CV_UPLOADS,
+      folder: SupabaseFolder.CV_PROFILE,
+    });
+
+    if (error || !publicUrl) {
+      throw new Error(
+        `Failed to upload image: ${error?.message || 'Unknown error'}`,
+      );
+    }
+
+    return publicUrl;
+  } catch (error) {
+    console.error('Error uploading avatar:', error);
+    throw error;
+  }
+};
+
+// Helper function to cleanup old avatar files
+const cleanupOldAvatarFiles = async (cvId: string) => {
+  try {
+    if (!cvId) return;
+
+    const { data: files, error: listError } = await supabase.storage
+      .from(SupabaseBucket.CV_UPLOADS)
+      .list(SupabaseFolder.CV_PROFILE);
+
+    if (listError) {
+      console.warn('Failed to list avatar files for cleanup:', listError);
+      return;
+    }
+
+    const filesToDelete = files
+      ?.filter((file) => file.name.includes(`avatar-${cvId}`))
+      .map((file) => `${SupabaseFolder.CV_PROFILE}/${file.name}`);
+
+    if (filesToDelete && filesToDelete.length > 0) {
+      const { error: deleteError } = await supabase.storage
+        .from(SupabaseBucket.CV_UPLOADS)
+        .remove(filesToDelete);
+
+      if (deleteError) {
+        console.warn('Failed to delete old avatar files:', deleteError);
+      }
+    }
+  } catch (error) {
+    console.warn('Error during avatar file cleanup:', error);
+  }
+};
 
 // Helper function to create a fallback PDF if html2canvas fails
 const createFallbackPdf = async (cv: Cv): Promise<Blob> => {
@@ -256,7 +317,7 @@ const createFallbackPdf = async (cv: Cv): Promise<Blob> => {
       pdf.setTextColor(accentColor);
       pdf.text(`${edu.institution}`, margin, yPos);
 
-      const years = `${edu.startYear} - ${edu.endYear}`;
+      const years = `${edu.startYear} - ${edu.endYear || 'Present'}`;
       const yearsWidth = pdf.getTextWidth(years);
       pdf.setFontSize(9);
       pdf.setTextColor(secondaryColor);
@@ -292,7 +353,7 @@ const createFallbackPdf = async (cv: Cv): Promise<Blob> => {
       yPos = margin;
     }
 
-    addSectionHeader('Certifications');
+    addSectionHeader('Certifications / awards');
 
     cv.certifications.forEach((cert) => {
       pdf.setFontSize(11);
@@ -473,11 +534,11 @@ type TagKey = 'skills' | 'languages';
 export default function CvBuilderPage() {
   // Initialize hooks
   const [showSettings, setShowSettings] = useState(false);
-  const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [template, setTemplate] = useState(1);
   const [scale, setScale] = useState(1);
   const [localCv, setLocalCv] = useState<Cv | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
+  const [tempImageFile, setTempImageFile] = useState<File | null>(null);
   const dispatch = useDispatch<AppDispatch>();
   const params = useParams();
   const cvId = params?.id as string;
@@ -530,78 +591,50 @@ export default function CvBuilderPage() {
     console.log('CV State:', { cv, localCv, template, cvId });
   }, [cv, localCv, template, cvId]);
 
-  // Event handlers
-  const handlePrint = useReactToPrint({
-    pageStyle: `
-      @page {
-        size: 210mm 297mm;
-        margin: 0;
-      }
-      @media print {
-        html, body {
-          height: 100%;
-          width: 100%;
-          margin: 0 !important;
-          padding: 0 !important;
-          overflow: visible !important;
-          -webkit-print-color-adjust: exact !important;
-          print-color-adjust: exact !important;
-        }
-        .no-print {
-          display: none !important;
-        }
-      }
-      #cv {
-        margin: 0;
-        padding: 20px;
-        width: 210mm;
-        height: auto !important;
-        min-height: initial !important;
-        page-break-after: auto;
-        background: white;
-        box-shadow: none;
-        transform: none !important;
-        overflow: visible !important;
-      }
-      #cv.template-2 > div {
-        display: flex !important;
-        flex-direction: row !important;
-      }
-      #cv section {
-        page-break-inside: auto;
-      }
-      #cv .experience-block,
-      #cv .project-block,
-      #cv .education-block,
-      #cv .skill-block {
-        break-inside: avoid;
-        page-break-inside: avoid;
-      }
-      #cv * {
-        -webkit-print-color-adjust: exact !important;
-        print-color-adjust: exact !important;
-        color-adjust: exact !important;
-      }
-    `,
-    contentRef: cvRef,
-  });
-
-  // Function to handle both save to system and download
-  const handleSave = async (saveType: 'system' | 'download') => {
+  // Handle save or download
+  const handleSaveOrDownload = async (saveType: 'system' | 'download') => {
     if (!localCv || !cvId || !cvRef.current) {
       toast.error('CV data is not available. Please try again.');
       return;
     }
 
-    // Show processing toast
-    setIsSaving(true);
-    const processingToast = toast.info('Processing your CV...', {
-      autoClose: false,
-      closeButton: false,
-      draggable: false,
-    });
+    const processingToast = toast.info(
+      saveType === 'download' ? 'Creating PDF file...' : 'Processing CV...',
+      {
+        autoClose: false,
+        closeButton: false,
+        draggable: false,
+      },
+    );
 
     try {
+      const updatedCv = { ...localCv };
+
+      // Upload avatar image if available and saving to system
+      if (tempImageFile && saveType === 'system') {
+        toast.update(processingToast, {
+          render: 'Uploading profile image...',
+          type: 'info',
+        });
+
+        try {
+          // Cleanup old avatar
+          await cleanupOldAvatarFiles(cvId);
+
+          // Upload new avatar
+          const avatarUrl = await uploadAvatarImage(tempImageFile, cvId);
+          if (avatarUrl) {
+            updatedCv.image = avatarUrl;
+          }
+        } catch (avatarError) {
+          console.error('Failed to upload avatar:', avatarError);
+          // Continue with CV save even if avatar upload fails
+          toast.warn(
+            'Failed to upload profile image, continuing with CV save...',
+          );
+        }
+      }
+
       // Save original scale to restore later
       const originalScale = scale;
 
@@ -641,8 +674,8 @@ export default function CvBuilderPage() {
           height: cvRef.current.offsetHeight,
           backgroundColor: 'white',
           skipAutoScale: true,
-          pixelRatio: 1, // Lower resolution for smaller file size
-          quality: 0.7, // Lower quality for smaller file size
+          pixelRatio: 5,
+          quality: 1,
           style: {
             transform: 'scale(1)',
             transformOrigin: 'top left',
@@ -738,7 +771,6 @@ export default function CvBuilderPage() {
           // Update toast
           toast.dismiss(processingToast);
           toast.success('CV downloaded successfully');
-          setIsSaving(false);
           return;
         }
 
@@ -758,11 +790,11 @@ export default function CvBuilderPage() {
           // If still too large after compression, create a simple text-only version
           if (finalPdfBlob.size > MAX_FILE_SIZE) {
             toast.update(processingToast, {
-              render: 'Creating simplified version of your CV...',
+              render: 'Creating simplified version of CV...',
               type: 'info',
             });
 
-            finalPdfBlob = await createFallbackPdf(localCv);
+            finalPdfBlob = await createFallbackPdf(updatedCv);
           }
         }
 
@@ -775,7 +807,7 @@ export default function CvBuilderPage() {
           type: 'application/pdf',
         });
 
-        // Upload the file to Supabase
+        // Upload the PDF file to Supabase
         const { publicUrl, error } = await uploadFile({
           file: pdfFile,
           bucket: SupabaseBucket.CV_UPLOADS,
@@ -784,7 +816,7 @@ export default function CvBuilderPage() {
 
         if (error || !publicUrl) {
           throw new Error(
-            `Failed to upload CV: ${error?.message || 'Unknown error'}`,
+            `Failed to save CV: ${error?.message || 'Unknown error'}`,
           );
         }
 
@@ -792,13 +824,16 @@ export default function CvBuilderPage() {
         await dispatch(
           updateCvById({
             cvId,
-            cv: { ...localCv, url: publicUrl, templateId: template },
+            cv: { ...updatedCv, url: publicUrl, templateId: template },
           }),
         ).unwrap();
 
+        // Clear temp image file after successful save
+        setTempImageFile(null);
+
         // Success
         toast.dismiss(processingToast);
-        toast.success('CV saved successfully to system');
+        toast.success('CV saved to system successfully');
       } catch (error) {
         console.error('Error generating PDF:', error);
 
@@ -810,7 +845,7 @@ export default function CvBuilderPage() {
           });
 
           // Create a simple text-based PDF as fallback
-          const pdfBlob = await createFallbackPdf(localCv);
+          const pdfBlob = await createFallbackPdf(updatedCv);
 
           // If downloading, create a link
           if (saveType === 'download') {
@@ -836,7 +871,7 @@ export default function CvBuilderPage() {
             type: 'application/pdf',
           });
 
-          // Upload the file to Supabase
+          // Upload the PDF file to Supabase
           const { publicUrl, error } = await uploadFile({
             file: pdfFile,
             bucket: SupabaseBucket.CV_UPLOADS,
@@ -845,7 +880,7 @@ export default function CvBuilderPage() {
 
           if (error || !publicUrl) {
             throw new Error(
-              `Failed to upload CV: ${error?.message || 'Unknown error'}`,
+              `Failed to save CV: ${error?.message || 'Unknown error'}`,
             );
           }
 
@@ -853,12 +888,12 @@ export default function CvBuilderPage() {
           await dispatch(
             updateCvById({
               cvId,
-              cv: { ...localCv, url: publicUrl, templateId: template },
+              cv: { ...updatedCv, url: publicUrl, templateId: template },
             }),
           ).unwrap();
 
           toast.dismiss(processingToast);
-          toast.success('CV saved successfully (simplified version)');
+          toast.success('CV saved to system successfully (simplified version)');
         } catch (error) {
           toast.dismiss(processingToast);
           console.error('Failed to save PDF:', error);
@@ -872,7 +907,6 @@ export default function CvBuilderPage() {
 
         // Restore original scale
         setScale(originalScale);
-        setIsSaving(false);
       }
     } catch (error) {
       toast.dismiss(processingToast);
@@ -884,6 +918,33 @@ export default function CvBuilderPage() {
       );
       throw error; // Re-throw so the dialog can handle it
     }
+  };
+
+  // Handle direct save to system from preview modal
+  const handlePreviewSave = async () => {
+    setShowPreviewModal(false);
+    await handleSaveOrDownload('system');
+  };
+
+  // Handle direct download from preview modal
+  const handlePreviewDownload = async () => {
+    setShowPreviewModal(false);
+    await handleSaveOrDownload('download');
+  };
+
+  // Handle direct save to system
+  const handleDirectSave = async () => {
+    await handleSaveOrDownload('system');
+  };
+
+  // Handle direct download
+  const handleDirectDownload = async () => {
+    await handleSaveOrDownload('download');
+  };
+
+  // Handle preview
+  const handlePreview = () => {
+    setShowPreviewModal(true);
   };
 
   // Simple save for template updates - just updates the database
@@ -916,9 +977,15 @@ export default function CvBuilderPage() {
       return;
     }
 
+    // Save file temporarily for upload later
+    setTempImageFile(file);
+
+    // Create preview for display
     const reader = new FileReader();
     reader.onload = (event) => {
       if (event.target?.result && localCv) {
+        // Update localCv with preview URL for display only
+        // This is temporary and will not be saved to database
         setLocalCv({ ...localCv, image: event.target.result as string });
       }
     };
@@ -1057,6 +1124,7 @@ export default function CvBuilderPage() {
     if (cv) {
       setLocalCv(cv);
       setTemplate(cv.templateId || 1);
+      setTempImageFile(null); // Clear temp image file
     }
   };
 
@@ -1088,6 +1156,7 @@ export default function CvBuilderPage() {
       displayFacebook: false,
     };
     setLocalCv(sampleCv);
+    setTempImageFile(null); // Clear temp image file
   };
 
   const handleScaleUp = () => {
@@ -1096,6 +1165,44 @@ export default function CvBuilderPage() {
 
   const handleScaleDown = () => {
     setScale((prev) => Math.max(prev - 0.1, 0.5));
+  };
+
+  // Render CV component based on template
+  const renderCvComponent = () => {
+    if (!localCv) return null;
+
+    const cvProps = {
+      cv: localCv,
+      cvId,
+      onUpdateCv: handleUpdateCv,
+      onUploadImage: handleImageUpload,
+      onAddTag: handleAddTag,
+      onRemoveTag: handleRemoveTag,
+      onAddExperience: handleAddExperience,
+      onAddEducation: handleAddEducation,
+      onAddCertification: handleAddCertification,
+      onUpdateCertification: handleUpdateCertification,
+      onDeleteCertification: handleDeleteCertification,
+      onUpdateEducation: handleUpdateEducation,
+      onDeleteEducation: handleDeleteEducation,
+      onUpdateExperience: handleUpdateExperience,
+      onDeleteExperience: handleDeleteExperience,
+    };
+
+    switch (template) {
+      case 1:
+        return <CV {...cvProps} />;
+      case 2:
+        return <CV2 {...cvProps} />;
+      case 3:
+        return <CV3 {...cvProps} />;
+      default:
+        return (
+          <div className="text-center text-red-600">
+            Invalid template selected
+          </div>
+        );
+    }
   };
 
   if (isLoading || !localCv) {
@@ -1167,77 +1274,19 @@ export default function CvBuilderPage() {
                   height: 'fit-content',
                 }}
               >
-                {template === 1 ? (
-                  <CV
-                    cv={localCv}
-                    cvId={cvId}
-                    onUpdateCv={handleUpdateCv}
-                    onUploadImage={handleImageUpload}
-                    onAddTag={handleAddTag}
-                    onRemoveTag={handleRemoveTag}
-                    onAddExperience={handleAddExperience}
-                    onAddEducation={handleAddEducation}
-                    onAddCertification={handleAddCertification}
-                    onUpdateCertification={handleUpdateCertification}
-                    onDeleteCertification={handleDeleteCertification}
-                    onUpdateEducation={handleUpdateEducation}
-                    onDeleteEducation={handleDeleteEducation}
-                    onUpdateExperience={handleUpdateExperience}
-                    onDeleteExperience={handleDeleteExperience}
-                  />
-                ) : template === 2 ? (
-                  <CV2
-                    cv={localCv}
-                    cvId={cvId}
-                    onUpdateCv={handleUpdateCv}
-                    onUploadImage={handleImageUpload}
-                    onAddTag={handleAddTag}
-                    onRemoveTag={handleRemoveTag}
-                    onAddExperience={handleAddExperience}
-                    onAddEducation={handleAddEducation}
-                    onAddCertification={handleAddCertification}
-                    onUpdateCertification={handleUpdateCertification}
-                    onDeleteCertification={handleDeleteCertification}
-                    onUpdateEducation={handleUpdateEducation}
-                    onDeleteEducation={handleDeleteEducation}
-                    onUpdateExperience={handleUpdateExperience}
-                    onDeleteExperience={handleDeleteExperience}
-                  />
-                ) : template === 3 ? (
-                  <CV3
-                    cv={localCv}
-                    cvId={cvId}
-                    onUpdateCv={handleUpdateCv}
-                    onUploadImage={handleImageUpload}
-                    onAddTag={handleAddTag}
-                    onRemoveTag={handleRemoveTag}
-                    onAddExperience={handleAddExperience}
-                    onAddEducation={handleAddEducation}
-                    onAddCertification={handleAddCertification}
-                    onUpdateCertification={handleUpdateCertification}
-                    onDeleteCertification={handleDeleteCertification}
-                    onUpdateEducation={handleUpdateEducation}
-                    onDeleteEducation={handleDeleteEducation}
-                    onUpdateExperience={handleUpdateExperience}
-                    onDeleteExperience={handleDeleteExperience}
-                  />
-                ) : (
-                  <div className="text-center text-red-600">
-                    Invalid template selected
-                  </div>
-                )}
+                {renderCvComponent()}
               </section>
             </div>
           </div>
           <PageButtons
-            onPrint={handlePrint}
-            onSave={handleUpdateTemplate}
-            onSaveToSystem={() => setShowSaveDialog(true)}
+            onSave={handleDirectSave}
+            onDownload={handleDirectDownload}
             onReset={handleResetCv}
             onSampleData={handleSetSampleData}
             onScaleUp={handleScaleUp}
             onScaleDown={handleScaleDown}
             onShowSettings={() => setShowSettings(true)}
+            onPreview={handlePreview}
           />
         </main>
         <div
@@ -1268,14 +1317,17 @@ export default function CvBuilderPage() {
           />
         </div>
       </div>
-      <SaveCvDialog
-        open={showSaveDialog}
-        onOpenChange={setShowSaveDialog}
-        onSave={handleSave}
-        onCancel={() => setShowSaveDialog(false)}
-        isSaving={isSaving}
-        cv={localCv}
-      />
+
+      {/* Preview Modal */}
+      <PreviewModal
+        isOpen={showPreviewModal}
+        onClose={() => setShowPreviewModal(false)}
+        onSave={handlePreviewSave}
+        onDownload={handlePreviewDownload}
+        title="CV Preview"
+      >
+        {renderCvComponent()}
+      </PreviewModal>
     </div>
   );
 }

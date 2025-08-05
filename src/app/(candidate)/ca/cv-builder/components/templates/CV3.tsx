@@ -19,7 +19,7 @@ import {
   Phone,
 } from 'lucide-react';
 import type { Experience, Education, Cv, Certification } from '@/types/Cv';
-import EditDialogs from './shared/EditDialogs';
+import EditDialogs from '../editor/EditDialogs';
 
 type TagKey = 'skills' | 'languages';
 
@@ -120,7 +120,7 @@ const CV3 = ({
               </Button>
             </div>
             <div className="flex space-x-6">
-              {cv.displayMail && cv.email && (
+              {cv.email && (
                 <a
                   href={`mailto:${cv.email}`}
                   className="group/link flex items-center text-slate-600 transition-all duration-300 hover:translate-y-[-1px] hover:text-slate-900"
@@ -241,7 +241,7 @@ const CV3 = ({
                 </div>
               </div>
 
-              <div>
+              <div className="skill-block">
                 <h3 className="mb-3 text-sm font-semibold tracking-wider text-slate-700 uppercase">
                   Languages
                 </h3>

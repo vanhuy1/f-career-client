@@ -10,4 +10,5 @@ export enum SupabaseFolder {
   application = 'cv-uploads',
   COMPANY_LOGOS = 'company-logos',
   COMPANY_BUSINESS_LICENSES = 'company-business-licenses',
+  CV_PROFILE = 'cv-profile',
 }
