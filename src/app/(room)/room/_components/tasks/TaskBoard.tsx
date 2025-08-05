@@ -249,12 +249,11 @@ export default function TaskBoard({
         userId: userIdToUse,
       }));
 
-      const syncedTasks = await taskService.syncTasksToServer(serverTasks);
-      console.log('Tasks synced successfully:', syncedTasks);
-      toast.success(`${tasks.length} tasks have been synced to the server.`);
+      await taskService.syncTasksToServer(serverTasks);
+      toast.success(`${tasks.length} tasks have been save to the server.`);
     } catch (error) {
-      console.error('Failed to sync tasks to server:', error);
-      toast.error('There was a problem syncing your tasks. Please try again.');
+      console.error('Failed to save tasks to server:', error);
+      toast.error('There was a problem save your tasks. Please try again.');
     } finally {
       setIsSyncing(false);
     }
@@ -454,7 +453,7 @@ export default function TaskBoard({
             disabled={isSyncing || !isInitialized}
           >
             <RefreshCw className={cn('h-4 w-4', isSyncing && 'animate-spin')} />
-            <span>{isSyncing ? 'Syncing...' : 'Sync to Server'}</span>
+            <span>{isSyncing ? 'save...' : 'Save'}</span>
           </button>
 
           <div className="relative" ref={filterMenuRef}>

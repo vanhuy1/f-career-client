@@ -18,7 +18,7 @@ import {
   MapPin,
 } from 'lucide-react';
 import type { Experience, Education, Cv, Certification } from '@/types/Cv';
-import EditDialogs from './shared/EditDialogs';
+import EditDialogs from '../editor/EditDialogs';
 
 type TagKey = 'skills' | 'languages';
 
@@ -206,7 +206,7 @@ const CV2 = ({
                 </div>
               </div>
 
-              <div>
+              <div className="skill-block">
                 <h3 className="mb-3 text-sm font-semibold tracking-wider text-blue-200 uppercase">
                   Languages
                 </h3>

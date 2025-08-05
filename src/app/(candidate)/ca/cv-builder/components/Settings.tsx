@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Sparkles, X } from 'lucide-react';
 import { useState } from 'react';
-import EditDialogs from './shared/EditDialogs';
+import EditDialogs from './editor/EditDialogs';
 import type { Cv, Experience, Education, Certification } from '@/types/Cv';
 
 type TagKey = 'skills' | 'languages';
@@ -58,7 +58,7 @@ const Settings = ({
   const handleSelectTemplate = (num: number) => {
     setPendingTemplate(num);
     onSetTemplate(num);
-    onUpdateCv('templateId', num); // Sync localCv.templateId
+    onUpdateCv('templateId', num);
   };
 
   const handleSave = () => {

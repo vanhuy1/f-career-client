@@ -19,7 +19,7 @@ import {
   Edit,
 } from 'lucide-react';
 import type { Experience, Education, Certification, Cv } from '@/types/Cv';
-import EditDialogs from './shared/EditDialogs';
+import EditDialogs from '../editor/EditDialogs';
 
 type TagKey = 'skills' | 'languages';
 
@@ -73,7 +73,7 @@ const CV = ({
         <section id="header" className="group relative">
           <div className="flex items-start justify-between">
             <div className="flex items-center">
-              {cv.displayImage && cv.image ? (
+              {cv.image ? (
                 <div className="mr-4 flex">
                   <Image
                     src={cv.image}
@@ -116,18 +116,16 @@ const CV = ({
           <div className="group relative mt-4">
             <div className="flex flex-wrap items-center justify-between">
               <div className="flex flex-wrap items-center">
-                {cv.displayMail && cv.email && (
-                  <a
-                    href={`mailto:${cv.email}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className={items}
-                  >
-                    <Mail className={itemsSVG} />
-                    <span className="text-xs">{cv.email}</span>
-                  </a>
-                )}
-                {cv.displayGithub && cv.github && (
+                <a
+                  href={`mailto:${cv.email}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className={items}
+                >
+                  <Mail className={itemsSVG} />
+                  <span className="text-xs">{cv.email}</span>
+                </a>
+                {cv.github && (
                   <a
                     href={websiteLinkCreator(cv.github)}
                     target="_blank"
@@ -140,7 +138,7 @@ const CV = ({
                     </span>
                   </a>
                 )}
-                {cv.displayLinkedIn && cv.linkedin && (
+                {cv.linkedin && (
                   <a
                     href={websiteLinkCreator(cv.linkedin)}
                     target="_blank"
@@ -193,7 +191,7 @@ const CV = ({
         </section>
 
         {/* SKILLS SECTION */}
-        <section id="skills" className="group relative mt-6">
+        <section id="skills" className="group skill-block relative mt-6">
           <div className="flex items-center justify-between">
             <h2 className={titles}>Skills</h2>
             <Button
@@ -254,13 +252,12 @@ const CV = ({
           </div>
           <div className="mt-2 space-y-4">
             {cv.experience.map((experience, index) => (
-              <Card key={index}>
+              <Card key={index} className="experience-block">
                 <CardContent className="p-4">
                   <div className="space-y-4">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="mb-2 flex items-center gap-2">
-                          {/* <Building2 className="h-4 w-4 text-blue-600" /> */}
                           <h3 className="text-lg font-semibold text-gray-900">
                             {experience.company}
                           </h3>
@@ -340,7 +337,7 @@ const CV = ({
           </div>
           <div className="mt-2 space-y-4">
             {cv.education.map((education, index) => (
-              <Card key={index}>
+              <Card key={index} className="education-block">
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between">
                     <div>
@@ -386,7 +383,7 @@ const CV = ({
           </div>
           <div className="mt-2 space-y-4">
             {cv.certifications.map((certification, index) => (
-              <Card key={index}>
+              <Card key={index} className="certification-block">
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between">
                     <div>
