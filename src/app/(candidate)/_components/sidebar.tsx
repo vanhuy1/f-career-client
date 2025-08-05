@@ -10,6 +10,7 @@ import {
   HelpCircle,
   LogOut,
   FileUser,
+  Calendar,
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -60,6 +61,12 @@ export default function Sidebar() {
             icon={<FileText />}
             label="My Applications"
             active={pathname === ROUTES.CA.HOME.APPLICATIONLIST.path}
+          />
+          <NavItem
+            href={ROUTES.CA.HOME.SCHEDULE.path}
+            icon={<Calendar />}
+            label="Schedule"
+            active={pathname === ROUTES.CA.HOME.SCHEDULE.path}
           />
           {/* <NavItem
             href={ROUTES.CA.HOME.FINDJOB.path}

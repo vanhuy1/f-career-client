@@ -1,4 +1,8 @@
 import { ProfileData } from '@/types/CandidateSettings';
+import {
+  CandidateScheduleResponse,
+  GetCandidateScheduleRequest,
+} from '@/types/Schedule';
 import { UpdatePasswordRequest, UserProfile } from '@/types/User';
 import { httpClient } from '@/utils/axios';
 import { RequestBuilder } from '@/utils/axios/request-builder';
@@ -53,6 +57,34 @@ class UserService {
         body: data,
       },
     );
+    return response;
+  }
+
+  async getScheduleInCandidateSite(
+    data: GetCandidateScheduleRequest,
+  ): Promise<CandidateScheduleResponse> {
+    const queryParams = new URLSearchParams();
+
+    if (data?.type) queryParams.append('type', data.type);
+    if (data?.status) queryParams.append('status', data.status);
+    if (data?.page) queryParams.append('page', data.page.toString());
+    if (data?.limit) queryParams.append('limit', data.limit.toString());
+    if (data?.startDate) queryParams.append('startDate', data.startDate);
+    if (data?.endDate) queryParams.append('endDate', data.endDate);
+
+    const url = this.requestBuilder.buildUrl(
+      `me/events${queryParams.toString() ? `?${queryParams.toString()}` : ''}`,
+    );
+
+    const response = await httpClient.get<CandidateScheduleResponse>({
+      url,
+      typeCheck: (data) => {
+        return {
+          success: true,
+          data: data as CandidateScheduleResponse,
+        };
+      },
+    });
     return response;
   }
 }
