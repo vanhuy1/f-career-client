@@ -4,9 +4,6 @@ import {
   Building2,
   Users,
   BarChart3,
-  Settings,
-  Bell,
-  MessageSquare,
   DollarSign,
   LogOut,
   ChevronDown,
@@ -75,16 +72,6 @@ const menuItems: MenuItem[] = [
     ],
   },
   {
-    title: 'Manage Jobs',
-    url: '/ad/jobs',
-    icon: Briefcase,
-  },
-  {
-    title: 'Manage Applications',
-    url: '/ad/applications',
-    icon: FileText,
-  },
-  {
     title: 'Manage Users',
     url: '/ad/users',
     icon: Users,
@@ -97,25 +84,35 @@ const menuItems: MenuItem[] = [
     ],
   },
   {
+    title: 'Jobs Analytics',
+    url: '/ad/jobs',
+    icon: Briefcase,
+  },
+  {
+    title: 'Applications Analytics',
+    url: '/ad/applications',
+    icon: FileText,
+  },
+  {
     title: 'Manage Coupons',
     url: '/ad/coupons',
     icon: TicketPercent,
   },
-  {
-    title: 'Notifications',
-    url: '/ad/notifications',
-    icon: Bell,
-  },
-  {
-    title: 'Messages',
-    url: '/ad/messages',
-    icon: MessageSquare,
-  },
-  {
-    title: 'Settings',
-    url: '/ad/settings',
-    icon: Settings,
-  },
+  // {
+  //   title: 'Notifications',
+  //   url: '/ad/notifications',
+  //   icon: Bell,
+  // },
+  // {
+  //   title: 'Messages',
+  //   url: '/ad/messages',
+  //   icon: MessageSquare,
+  // },
+  // {
+  //   title: 'Settings',
+  //   url: '/ad/settings',
+  //   icon: Settings,
+  // },
 ];
 
 export function AppSidebar() {
