@@ -34,7 +34,6 @@ export interface Experience {
   id: string;
   role: string;
   company: string;
-  logo: string;
   employmentType: string;
   startDate: string;
   endDate: string | null;
@@ -69,10 +68,7 @@ export interface UpdateExperienceDto {
   location: string;
   description: string;
   startDate: string;
-
-  logo?: string;
   endDate: string | null;
-
   currentlyWorking?: boolean;
 }
 
@@ -83,7 +79,6 @@ export interface CreateExperienceDto {
   location: string;
   description: string;
   startDate: string; // In "MMM yyyy" format
-  logo?: string; // Optional in the form
   endDate: string | null; // null when currently working
 }
 
@@ -97,7 +92,6 @@ export interface UpdateEducationDto {
   startYear: number;
   endYear: number | null;
   currentlyStudying: boolean;
-  logo: string;
   description: string;
 }
 
@@ -108,7 +102,6 @@ export interface CreateEducationDto {
   startYear: number;
   endYear: number | null;
   currentlyStudying: boolean;
-  logo: string;
   description: string;
 }
 

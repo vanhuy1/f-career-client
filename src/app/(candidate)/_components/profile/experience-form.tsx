@@ -10,7 +10,6 @@ import { Button } from '@/components/ui/button';
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -75,7 +74,6 @@ export function ExperienceForm({
       ? {
           role: experience.role,
           company: experience.company,
-          logo: experience.logo || '',
           employmentType: experience.employmentType,
           location: experience.location,
           description: experience.description,
@@ -86,7 +84,6 @@ export function ExperienceForm({
       : {
           role: '',
           company: '',
-          logo: '',
           employmentType: '',
           location: '',
           description: '',
@@ -128,7 +125,6 @@ export function ExperienceForm({
       const experienceData = {
         role: values.role,
         company: values.company,
-        logo: values.logo || '',
         employmentType: values.employmentType,
         startDate: formattedStartDate,
         endDate: formattedEndDate,
@@ -216,25 +212,6 @@ export function ExperienceForm({
               )}
             />
           </div>
-          <FormField
-            control={form.control}
-            name="logo"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Company Logo URL</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="https://example.com/logo.png"
-                    {...field}
-                  />
-                </FormControl>
-                <FormDescription>
-                  Enter a URL for the company logo (optional)
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
 
           <FormField
             control={form.control}

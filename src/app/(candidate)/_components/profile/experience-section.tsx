@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import Image from 'next/image';
 import { Edit2, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -152,15 +151,7 @@ export function ExperienceSection({
               </Button>
             )}
             <div className="flex gap-4">
-              <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded-full border bg-white">
-                <Image
-                  src={experience.logo || '/placeholder.svg'}
-                  alt={experience.company}
-                  width={32}
-                  height={32}
-                  className="h-full w-full rounded-full object-cover"
-                />
-              </div>
+              {/* Removed logo/avatar section */}
               <div>
                 <h3 className="text-lg font-semibold">{experience.role}</h3>
                 <div className="mb-2 text-gray-500">
