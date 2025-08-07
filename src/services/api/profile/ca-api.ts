@@ -3,6 +3,7 @@ import {
   updateAboutSectionRequestDto,
   updateProfileHeaderRequestDto,
   updateProfileResponseDto,
+  updateProfileSkillsRequestDto,
 } from '@/types/CandidateProfile';
 import { httpClient } from '@/utils/axios';
 import { RequestBuilder } from '@/utils/axios/request-builder';
@@ -54,6 +55,27 @@ class CandidateProfileService {
         withCredentials: false,
       },
     });
+    return response;
+  }
+
+  async updateProfileSkills(
+    skills: updateProfileSkillsRequestDto,
+  ): Promise<updateProfileResponseDto> {
+    const url = this.requestBuilder.buildUrl();
+    const response = await httpClient.patch<
+      updateProfileResponseDto,
+      updateProfileSkillsRequestDto
+    >({
+      url,
+      body: skills,
+      typeCheck: (data) => {
+        return {
+          success: true,
+          data: data as updateProfileResponseDto,
+        };
+      },
+    });
+
     return response;
   }
 

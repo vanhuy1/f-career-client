@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Edit2, Plus, X } from 'lucide-react';
+import { Edit2, Plus, X, Save, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,9 +14,12 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { SkillSearchInput } from '@/components/skill-input-form';
+import { candidateProfileService } from '@/services/api/profile/ca-api';
+import { updateProfileSkillsRequestDto, Skill } from '@/types/CandidateProfile';
+import { toast } from 'react-toastify';
 
 interface SkillsSectionProps {
-  skills: string[];
+  skills: Skill[];
   readOnly?: boolean;
 }
 
@@ -24,17 +27,18 @@ export function SkillsSection({
   skills: initialSkills,
   readOnly = false,
 }: SkillsSectionProps) {
-  const [skills, setSkills] = useState<string[]>(initialSkills);
+  const [skills, setSkills] = useState<Skill[]>(initialSkills);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [newSkill, setNewSkill] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
   const handleAddSkill = () => {
     if (newSkill.trim()) {
       // Check if skill already exists
       const trimmedSkill = newSkill.trim();
-      if (!skills.includes(trimmedSkill)) {
-        setSkills([...skills, trimmedSkill]);
+      if (!skills.some((skill) => skill.name === trimmedSkill)) {
+        setSkills([...skills, { name: trimmedSkill }]);
       }
       setNewSkill('');
       setIsAddDialogOpen(false);
@@ -42,7 +46,7 @@ export function SkillsSection({
   };
 
   const handleRemoveSkill = (skillToRemove: string) => {
-    setSkills(skills.filter((skill) => skill !== skillToRemove));
+    setSkills(skills.filter((skill) => skill.name !== skillToRemove));
   };
 
   const toggleEditMode = () => {
@@ -52,6 +56,34 @@ export function SkillsSection({
   const handleDialogClose = () => {
     setIsAddDialogOpen(false);
     setNewSkill('');
+  };
+
+  const handleSaveSkills = async () => {
+    if (!isEditMode) return;
+
+    setIsSaving(true);
+    try {
+      // Convert skills array to the DTO format
+      const skillsDto: updateProfileSkillsRequestDto = {
+        skills: skills,
+      };
+
+      await candidateProfileService.updateProfileSkills(skillsDto);
+
+      toast.success('Skills updated successfully');
+
+      setIsEditMode(false);
+    } catch (error) {
+      console.error('Error updating skills:', error);
+      toast.error('Failed to save your skills. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setSkills(initialSkills);
+    setIsEditMode(false);
   };
 
   return (
@@ -66,17 +98,46 @@ export function SkillsSection({
                 size="icon"
                 className="h-8 w-8"
                 onClick={() => setIsAddDialogOpen(true)}
+                disabled={isSaving}
               >
                 <Plus className="h-4 w-4" />
               </Button>
-              <Button
-                variant={isEditMode ? 'default' : 'outline'}
-                size="icon"
-                className="h-8 w-8"
-                onClick={toggleEditMode}
-              >
-                <Edit2 className="h-4 w-4" />
-              </Button>
+              {!isEditMode ? (
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={toggleEditMode}
+                  disabled={isSaving}
+                >
+                  <Edit2 className="h-4 w-4" />
+                </Button>
+              ) : (
+                <div className="flex gap-1">
+                  <Button
+                    variant="default"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={handleSaveSkills}
+                    disabled={isSaving}
+                  >
+                    {isSaving ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Save className="h-4 w-4" />
+                    )}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={handleCancelEdit}
+                    disabled={isSaving}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </CardHeader>
@@ -85,17 +146,18 @@ export function SkillsSection({
             {skills.length > 0 ? (
               skills.map((skill) => (
                 <Badge
-                  key={skill}
+                  key={skill.name}
                   variant="secondary"
                   className={`px-4 py-2 text-sm font-normal ${isEditMode && !readOnly ? 'pr-2' : ''}`}
                 >
-                  {skill}
+                  {skill.name}
                   {isEditMode && !readOnly && (
                     <Button
                       variant="ghost"
                       size="icon"
                       className="text-muted-foreground hover:text-foreground -mr-1 ml-1 h-5 w-5"
-                      onClick={() => handleRemoveSkill(skill)}
+                      onClick={() => handleRemoveSkill(skill.name)}
+                      disabled={isSaving}
                     >
                       <X className="h-3 w-3" />
                     </Button>
