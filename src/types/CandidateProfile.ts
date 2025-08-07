@@ -1,3 +1,7 @@
+export interface Skill {
+  name: string;
+}
+
 export interface CandidateProfile {
   id: string;
   name: string;
@@ -22,7 +26,7 @@ export interface CandidateProfile {
   };
   experiences: Experience[];
   education: Education[];
-  skills: string[];
+  skills: Skill[];
   portfolios: Portfolio[];
 }
 
@@ -150,4 +154,10 @@ export interface updateProfileHeaderRequestDto {
   company: string | null;
   location: string | null;
   isOpenToOpportunities: boolean;
+}
+
+export interface updateProfileSkillsRequestDto {
+  skills: {
+    name: string;
+  }[];
 }
