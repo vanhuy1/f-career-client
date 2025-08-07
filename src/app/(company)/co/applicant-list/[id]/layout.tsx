@@ -49,48 +49,83 @@ export default function ApplicantLayout({
   const router = useRouter();
   const dispatch = useDispatch();
 
-  // Hiring progress configuration
-  const stages = [
-    { key: ApplicationStatus.APPLIED, label: 'Applied' },
-    { key: ApplicationStatus.INTERVIEW, label: 'Interview' },
-    { key: ApplicationStatus.HIRED, label: 'Hired' },
-    { key: ApplicationStatus.REJECTED, label: 'Rejected' },
+  // Hiring progress configuration - aligned with ApplicationStatus enum
+  interface HiringStage {
+    key: ApplicationStatus;
+    label: string;
+    order: number;
+  }
+
+  const hiringStages: HiringStage[] = [
+    { key: ApplicationStatus.APPLIED, label: 'Applied', order: 0 },
+    { key: ApplicationStatus.IN_REVIEW, label: 'In Review', order: 1 },
+    { key: ApplicationStatus.SHORTED_LIST, label: 'Shortlisted', order: 2 },
+    { key: ApplicationStatus.INTERVIEW, label: 'Interview', order: 3 },
+    { key: ApplicationStatus.HIRED, label: 'Hired', order: 4 },
   ];
 
+  const rejectedStage: HiringStage = {
+    key: ApplicationStatus.REJECTED,
+    label: 'Rejected',
+    order: -1,
+  };
+
   const getCurrentStageIndex = () => {
-    switch (applicant?.status) {
-      case ApplicationStatus.APPLIED:
-        return 0;
-      case ApplicationStatus.INTERVIEW:
-        return 1;
-      case ApplicationStatus.HIRED:
-        return 2;
-      case ApplicationStatus.REJECTED:
-        return 2; // Show as completed for rejected status
-      default:
-        return 0;
-    }
+    if (!applicant?.status) return 0;
+
+    const stage = hiringStages.find((s) => s.key === applicant.status);
+    return stage ? stage.order : 0;
   };
 
   const getProgressPercentage = () => {
-    const currentIndex = getCurrentStageIndex();
-    const totalStages = 3; // Applied, Interview, Hired (excluding rejected as separate path)
+    if (!applicant?.status) return 0;
 
-    if (applicant?.status === ApplicationStatus.REJECTED) {
+    if (applicant.status === ApplicationStatus.REJECTED) {
       return 100; // Show as complete but with different color
     }
 
+    const currentIndex = getCurrentStageIndex();
+    const totalStages = hiringStages.length;
     return Math.round(((currentIndex + 1) / totalStages) * 100);
   };
 
   const getProgressColor = () => {
-    if (applicant?.status === ApplicationStatus.REJECTED) {
-      return 'bg-red-500';
+    if (!applicant?.status) return 'bg-gray-500';
+
+    switch (applicant.status) {
+      case ApplicationStatus.REJECTED:
+        return 'bg-red-500';
+      case ApplicationStatus.HIRED:
+        return 'bg-green-500';
+      case ApplicationStatus.INTERVIEW:
+        return 'bg-purple-500';
+      case ApplicationStatus.SHORTED_LIST:
+        return 'bg-yellow-500';
+      case ApplicationStatus.IN_REVIEW:
+        return 'bg-blue-500';
+      case ApplicationStatus.APPLIED:
+        return 'bg-gray-500';
+      default:
+        return 'bg-blue-500';
     }
-    if (applicant?.status === ApplicationStatus.HIRED) {
-      return 'bg-green-500';
+  };
+
+  type StageStatus = 'pending' | 'active' | 'completed' | 'rejected';
+
+  const getStageStatus = (stageKey: ApplicationStatus): StageStatus => {
+    if (!applicant?.status) return 'pending';
+
+    const currentOrder = getCurrentStageIndex();
+    const stageOrder =
+      hiringStages.find((s) => s.key === stageKey)?.order ?? -1;
+
+    if (applicant.status === ApplicationStatus.REJECTED) {
+      return stageKey === ApplicationStatus.REJECTED ? 'rejected' : 'pending';
     }
-    return 'bg-blue-500';
+
+    if (stageOrder < currentOrder) return 'completed';
+    if (stageOrder === currentOrder) return 'active';
+    return 'pending';
   };
 
   const handleChatWithCandidate = async () => {
@@ -260,8 +295,11 @@ export default function ApplicantLayout({
                         : 'bg-blue-600 text-white hover:bg-blue-700'
                   }
                 >
-                  {stages.find((stage) => stage.key === applicant?.status)
-                    ?.label || 'Pending'}
+                  {applicant?.status === ApplicationStatus.REJECTED
+                    ? rejectedStage.label
+                    : hiringStages.find(
+                        (stage) => stage.key === applicant?.status,
+                      )?.label || 'Pending'}
                 </Badge>
               </div>
               <div className="space-y-2">
@@ -270,14 +308,10 @@ export default function ApplicantLayout({
                   className={`h-3 bg-gray-100 [&>div]:${getProgressColor()}`}
                 />
                 <div className="flex justify-between text-xs text-gray-500">
-                  {stages.slice(0, 3).map((stage, index) => {
-                    const currentIndex = getCurrentStageIndex();
-                    const isActive =
-                      index === currentIndex &&
-                      applicant?.status !== ApplicationStatus.REJECTED;
-                    const isCompleted =
-                      index < currentIndex ||
-                      applicant?.status === ApplicationStatus.HIRED;
+                  {hiringStages.slice(0, 3).map((stage) => {
+                    const stageStatus = getStageStatus(stage.key);
+                    const isActive = stageStatus === 'active';
+                    const isCompleted = stageStatus === 'completed';
 
                     return (
                       <span

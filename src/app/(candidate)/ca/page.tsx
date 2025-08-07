@@ -115,8 +115,8 @@ export default function Dashboard() {
     return {
       totalApplications: applications.length,
       interviewed: statusCounts[ApplicationStatus.INTERVIEW] || 0,
-      inReview: statusCounts[ApplicationStatus.APPLIED] || 0,
-      shortlisted: statusCounts[ApplicationStatus.HIRED] || 0,
+      inReview: statusCounts[ApplicationStatus.IN_REVIEW] || 0,
+      shortlisted: statusCounts[ApplicationStatus.SHORTED_LIST] || 0,
       declined: statusCounts[ApplicationStatus.REJECTED] || 0,
     };
   }, [applications]);
@@ -149,10 +149,10 @@ export default function Dashboard() {
         ((statusCounts[ApplicationStatus.INTERVIEW] || 0) / total) * 100,
       ),
       inReview: Math.round(
-        ((statusCounts[ApplicationStatus.APPLIED] || 0) / total) * 100,
+        ((statusCounts[ApplicationStatus.IN_REVIEW] || 0) / total) * 100,
       ),
       shortlisted: Math.round(
-        ((statusCounts[ApplicationStatus.HIRED] || 0) / total) * 100,
+        ((statusCounts[ApplicationStatus.SHORTED_LIST] || 0) / total) * 100,
       ),
     };
   }, [applications]);

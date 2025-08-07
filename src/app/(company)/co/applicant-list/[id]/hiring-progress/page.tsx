@@ -24,6 +24,8 @@ import { useAppDispatch } from '@/store/hooks';
 
 const stageMapping = {
   [ApplicationStatus.APPLIED]: 'APPLIED',
+  [ApplicationStatus.IN_REVIEW]: 'IN_REVIEW',
+  [ApplicationStatus.SHORTED_LIST]: 'SHORTED_LIST',
   [ApplicationStatus.INTERVIEW]: 'INTERVIEW',
   [ApplicationStatus.HIRED]: 'HIRED',
   [ApplicationStatus.REJECTED]: 'REJECTED',
@@ -64,6 +66,8 @@ export default function HiringManagementPage() {
 
   const stages = [
     { key: ApplicationStatus.APPLIED, label: 'APPLIED' },
+    { key: ApplicationStatus.IN_REVIEW, label: 'IN_REVIEW' },
+    { key: ApplicationStatus.SHORTED_LIST, label: 'SHORTED_LIST' },
     { key: ApplicationStatus.INTERVIEW, label: 'INTERVIEW' },
     { key: ApplicationStatus.HIRED, label: 'HIRED' },
     { key: ApplicationStatus.REJECTED, label: 'REJECTED' },
@@ -73,31 +77,105 @@ export default function HiringManagementPage() {
     switch (applicant?.status) {
       case ApplicationStatus.APPLIED:
         return 0;
-      case ApplicationStatus.INTERVIEW:
+      case ApplicationStatus.IN_REVIEW:
         return 1;
-      case ApplicationStatus.HIRED:
+      case ApplicationStatus.SHORTED_LIST:
         return 2;
-      case ApplicationStatus.REJECTED:
+      case ApplicationStatus.INTERVIEW:
         return 3;
+      case ApplicationStatus.HIRED:
+        return 4;
+      case ApplicationStatus.REJECTED:
+        return 5;
       default:
         return 0;
     }
   };
 
-  const getStageColor = (index: number) => {
+  // const getStageColor = (index: number) => {
+  //   const currentIndex = getCurrentStageIndex();
+  //   if (index <= currentIndex) {
+  //     if (applicant?.status === ApplicationStatus.REJECTED) {
+  //       return 'bg-red-500 text-white';
+  //     } else if (applicant?.status === ApplicationStatus.HIRED) {
+  //       return 'bg-green-500 text-white';
+  //     } else {
+  //       return index === currentIndex
+  //         ? 'bg-blue-500 text-white'
+  //         : 'bg-blue-100 text-blue-600';
+  //     }
+  //   }
+  //   return 'bg-gray-100 text-gray-500';
+  // };
+
+  const getStageStyle = (index: number) => {
     const currentIndex = getCurrentStageIndex();
-    if (index <= currentIndex) {
-      if (applicant?.status === ApplicationStatus.REJECTED) {
-        return 'bg-red-500 text-white';
-      } else if (applicant?.status === ApplicationStatus.HIRED) {
-        return 'bg-green-500 text-white';
-      } else {
-        return index === currentIndex
-          ? 'bg-blue-500 text-white'
-          : 'bg-blue-100 text-blue-600';
-      }
+    const isCurrent = index === currentIndex;
+    const isCompleted = index < currentIndex;
+    // const isFuture = index > currentIndex;
+
+    if (
+      applicant?.status === ApplicationStatus.REJECTED &&
+      index === currentIndex
+    ) {
+      return {
+        backgroundColor: '#EF4444',
+        color: '#FFFFFF',
+        clipPath:
+          index === 0
+            ? 'polygon(0 0, 95% 0, 100% 50%, 95% 100%, 0 100%)'
+            : index === stages.length - 1
+              ? 'polygon(5% 0, 100% 0, 100% 100%, 5% 100%, 0 50%)'
+              : 'polygon(5% 0, 95% 0, 100% 50%, 95% 100%, 5% 100%, 0 50%)',
+      };
+    } else if (
+      applicant?.status === ApplicationStatus.HIRED &&
+      index === currentIndex
+    ) {
+      return {
+        backgroundColor: '#10B981',
+        color: '#FFFFFF',
+        clipPath:
+          index === 0
+            ? 'polygon(0 0, 95% 0, 100% 50%, 95% 100%, 0 100%)'
+            : index === stages.length - 1
+              ? 'polygon(5% 0, 100% 0, 100% 100%, 5% 100%, 0 50%)'
+              : 'polygon(5% 0, 95% 0, 100% 50%, 95% 100%, 5% 100%, 0 50%)',
+      };
+    } else if (isCurrent) {
+      return {
+        backgroundColor: '#509EE3',
+        color: '#FFFFFF',
+        clipPath:
+          index === 0
+            ? 'polygon(0 0, 95% 0, 100% 50%, 95% 100%, 0 100%)'
+            : index === stages.length - 1
+              ? 'polygon(5% 0, 100% 0, 100% 100%, 5% 100%, 0 50%)'
+              : 'polygon(5% 0, 95% 0, 100% 50%, 95% 100%, 5% 100%, 0 50%)',
+      };
+    } else if (isCompleted) {
+      return {
+        backgroundColor: '#EBEBF5',
+        color: '#4A90E2',
+        clipPath:
+          index === 0
+            ? 'polygon(0 0, 95% 0, 100% 50%, 95% 100%, 0 100%)'
+            : index === stages.length - 1
+              ? 'polygon(5% 0, 100% 0, 100% 100%, 5% 100%, 0 50%)'
+              : 'polygon(5% 0, 95% 0, 100% 50%, 95% 100%, 5% 100%, 0 50%)',
+      };
+    } else {
+      return {
+        backgroundColor: '#FFFFFF',
+        color: '#888888',
+        clipPath:
+          index === 0
+            ? 'polygon(0 0, 95% 0, 100% 50%, 95% 100%, 0 100%)'
+            : index === stages.length - 1
+              ? 'polygon(5% 0, 100% 0, 100% 100%, 5% 100%, 0 50%)'
+              : 'polygon(5% 0, 95% 0, 100% 50%, 95% 100%, 5% 100%, 0 50%)',
+      };
     }
-    return 'bg-gray-100 text-gray-500';
   };
 
   const handleAddNote = () => {
@@ -136,9 +214,10 @@ export default function HiringManagementPage() {
         <CardContent className="p-6">
           <div className="mb-8 flex items-center justify-between">
             {stages.map((stage, index) => (
-              <div key={index} className="flex flex-1 flex-col items-center">
+              <div key={index} className="flex flex-1">
                 <div
-                  className={`flex h-12 w-full items-center justify-center rounded-lg text-sm font-medium ${getStageColor(index)}`}
+                  className="flex h-12 w-full items-center justify-center text-sm font-medium"
+                  style={getStageStyle(index)}
                 >
                   {stage.label}
                 </div>

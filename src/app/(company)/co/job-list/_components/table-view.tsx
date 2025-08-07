@@ -27,6 +27,16 @@ const statusConfig: Record<
     color: 'bg-orange-500',
     bgColor: 'bg-orange-50',
   },
+  [ApplicationStatus.IN_REVIEW]: {
+    label: 'In Review',
+    color: 'bg-blue-500',
+    bgColor: 'bg-blue-50',
+  },
+  [ApplicationStatus.SHORTED_LIST]: {
+    label: 'Shortlisted',
+    color: 'bg-purple-500',
+    bgColor: 'bg-purple-50',
+  },
   [ApplicationStatus.INTERVIEW]: {
     label: 'Interview',
     color: 'bg-blue-500',

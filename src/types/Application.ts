@@ -67,4 +67,10 @@ export interface ContactPerson {
   phone?: string;
 }
 
-export type ApplicationStatus = 'APPLIED' | 'INTERVIEW' | 'HIRED' | 'REJECTED';
+export type ApplicationStatus =
+  | 'APPLIED'
+  | 'IN_REVIEW'
+  | 'SHORTED_LIST'
+  | 'INTERVIEW'
+  | 'HIRED'
+  | 'REJECTED';
