@@ -9,6 +9,10 @@ export default function StatusBadge({ status }: StatusBadgeProps) {
     switch (status) {
       case 'APPLIED':
         return 'bg-yellow-50 text-yellow-700 border-yellow-200';
+      case 'IN_REVIEW':
+        return 'bg-blue-50 text-blue-700 border-blue-200';
+      case 'SHORTED_LIST':
+        return 'bg-purple-50 text-purple-700 border-purple-200';
       case 'INTERVIEW':
         return 'bg-orange-50 text-orange-700 border-orange-200';
       case 'HIRED':
@@ -24,6 +28,10 @@ export default function StatusBadge({ status }: StatusBadgeProps) {
     switch (status) {
       case 'APPLIED':
         return 'Applied';
+      case 'IN_REVIEW':
+        return 'In Review';
+      case 'SHORTED_LIST':
+        return 'Shortlisted';
       case 'INTERVIEW':
         return 'Interviewing';
       case 'HIRED':

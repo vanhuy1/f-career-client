@@ -14,6 +14,8 @@ interface CandidateCardProps {
 
 const statusColors: Record<ApplicationStatus, string> = {
   [ApplicationStatus.APPLIED]: '#f97316',
+  [ApplicationStatus.IN_REVIEW]: '#3b82f6',
+  [ApplicationStatus.SHORTED_LIST]: '#8b5cf6',
   [ApplicationStatus.INTERVIEW]: '#3b82f6',
   [ApplicationStatus.HIRED]: '#10b981',
   [ApplicationStatus.REJECTED]: '#ef4444',

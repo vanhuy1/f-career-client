@@ -207,7 +207,11 @@ export default function ApplicantTable() {
               >
                 {status === 'INTERVIEW'
                   ? 'Interviewing'
-                  : status.charAt(0) + status.slice(1).toLowerCase()}
+                  : status === 'IN_REVIEW'
+                    ? 'In Review'
+                    : status === 'SHORTED_LIST'
+                      ? 'Shortlisted'
+                      : status.charAt(0) + status.slice(1).toLowerCase()}
               </h3>
               <StatusBadge status={status} />
             </div>
@@ -220,6 +224,8 @@ export default function ApplicantTable() {
               className={`text-sm ${status === statusFilter ? 'text-blue-600' : 'text-gray-500'}`}
             >
               {status === 'APPLIED' && 'Applications awaiting review'}
+              {status === 'IN_REVIEW' && 'Applications under review'}
+              {status === 'SHORTED_LIST' && 'Selected for next round'}
               {status === 'INTERVIEW' && 'Ongoing interviews'}
               {status === 'HIRED' && 'Successful applications'}
               {status === 'REJECTED' && 'Unsuccessful applications'}

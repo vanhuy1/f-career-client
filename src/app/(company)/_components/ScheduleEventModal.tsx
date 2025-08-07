@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'react-toastify';
-import { Calendar, Clock, MapPin, Users, Plus, Loader2 } from 'lucide-react';
+import { Calendar, Clock, MapPin, Plus, Loader2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -312,13 +312,14 @@ export default function ScheduleEventModal({
                 name="participantUserId"
                 render={({ field }) => (
                   <FormItem className="md:col-span-2">
-                    <FormLabel className="flex items-center gap-2">
+                    {/* <FormLabel className="flex items-center gap-2">
                       <Users className="h-4 w-4" />
                       Participant User ID
-                    </FormLabel>
+                    </FormLabel> */}
                     <FormControl>
                       <Input
                         type="number"
+                        hidden={true}
                         placeholder="Enter user ID (e.g., 6)"
                         {...field}
                         onChange={(e) =>
@@ -326,10 +327,10 @@ export default function ScheduleEventModal({
                         }
                       />
                     </FormControl>
-                    <FormDescription>
+                    {/* <FormDescription>
                       Enter the user ID of the participant. In a full
                       implementation, this would be a searchable dropdown.
-                    </FormDescription>
+                    </FormDescription> */}
                     <FormMessage />
                   </FormItem>
                 )}

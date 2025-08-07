@@ -18,6 +18,16 @@ const statusConfig: Record<
     color: 'bg-orange-500',
     bgColor: 'bg-orange-50',
   },
+  [ApplicationStatus.IN_REVIEW]: {
+    label: 'In Review',
+    color: 'bg-blue-500',
+    bgColor: 'bg-blue-50',
+  },
+  [ApplicationStatus.SHORTED_LIST]: {
+    label: 'Shortlisted',
+    color: 'bg-purple-500',
+    bgColor: 'bg-purple-50',
+  },
   [ApplicationStatus.INTERVIEW]: {
     label: 'Interview',
     color: 'bg-blue-500',
@@ -53,12 +63,12 @@ export function PipelineView({
   );
 
   return (
-    <div className="grid grid-cols-4 gap-6">
+    <div className="flex gap-6 overflow-x-auto pb-4">
       {Object.entries(statusConfig).map(([status, config]) => {
         const statusApplicants = applicantsByStatus[status] || [];
 
         return (
-          <div key={status} className="space-y-4">
+          <div key={status} className="w-80 flex-shrink-0 space-y-4">
             <div className={`${config.bgColor} rounded-lg p-4`}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">

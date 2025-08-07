@@ -133,6 +133,10 @@ export default function ApplicationAnalyticsPage() {
     switch (status.toLowerCase()) {
       case 'applied':
         return 'bg-blue-100 text-blue-800';
+      case 'in_review':
+        return 'bg-blue-100 text-blue-800';
+      case 'shorted_list':
+        return 'bg-purple-100 text-purple-800';
       case 'interview':
         return 'bg-yellow-100 text-yellow-800';
       case 'hired':
