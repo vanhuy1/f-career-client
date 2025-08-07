@@ -19,7 +19,6 @@ import ROUTES from '@/constants/navigation';
 import { clearUser, useUser } from '@/services/state/userSlice';
 import { Button } from '@/components/ui/button';
 import { useAppDispatch } from '@/store/hooks';
-import { logout } from '@/services/state/authSlice';
 
 export default function Sidebar() {
   const pathname = usePathname(); // Get the current pathname
@@ -27,8 +26,14 @@ export default function Sidebar() {
 
   const dispatch = useAppDispatch();
   const handleLogout = () => {
-    dispatch(logout());
+    // Clear localStorage and cookies manually
+    localStorage.clear();
+    document.cookie =
+      'refreshToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+
     dispatch(clearUser());
+
+    window.location.href = ROUTES.HOMEPAGE.path;
   };
   return (
     <div className="flex w-60 flex-col border-r bg-white">

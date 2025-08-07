@@ -580,7 +580,7 @@ export default function SchedulePage() {
                   <div
                     className={`text-2xl font-bold ${
                       isToday
-                        ? 'flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-blue-600 text-white'
+                        ? 'flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-white'
                         : 'text-gray-900'
                     }`}
                   >
