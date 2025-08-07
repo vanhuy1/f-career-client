@@ -11,7 +11,6 @@ import { Button } from '@/components/ui/button';
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -86,7 +85,6 @@ export function EducationForm({
               : education.endYear
             : null,
           currentlyStudying: !education.endYear,
-          logo: education.logo || '',
           description: education.description || '',
         }
       : {
@@ -96,7 +94,6 @@ export function EducationForm({
           startYear: new Date().getFullYear(),
           endYear: null as number | null,
           currentlyStudying: false,
-          logo: '',
           description: '',
         };
 
@@ -151,7 +148,6 @@ export function EducationForm({
         field: values.field,
         startYear: values.startYear,
         endYear: values.currentlyStudying ? null : values.endYear,
-        logo: values.logo || '',
         description: values.description || '',
       };
 
@@ -278,26 +274,6 @@ export function EducationForm({
               )}
             />
           </div>
-
-          <FormField
-            control={form.control}
-            name="logo"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Institution Logo URL</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="https://example.com/logo.png"
-                    {...field}
-                  />
-                </FormControl>
-                <FormDescription>
-                  Enter a URL for the institution logo (optional)
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <FormField

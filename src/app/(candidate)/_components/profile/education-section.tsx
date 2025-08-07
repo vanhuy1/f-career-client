@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import Image from 'next/image';
 import { Edit2, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -102,15 +101,6 @@ export function EducationSection({
               </Button>
             )}
             <div className="flex gap-4">
-              <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded-full border bg-white">
-                <Image
-                  src={edu.logo || '/placeholder.svg'}
-                  alt={edu.institution}
-                  width={48}
-                  height={48}
-                  className="h-full w-full rounded-full object-cover"
-                />
-              </div>
               <div>
                 <h3 className="text-lg font-semibold">{edu.institution}</h3>
                 <div className="mb-2 text-gray-500">

@@ -45,7 +45,6 @@ export interface Experience {
 export interface Education {
   id: string;
   institution: string;
-  logo: string;
   degree: string;
   field: string;
   startYear: number;
