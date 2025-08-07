@@ -23,6 +23,10 @@ export const experienceSchema = z
   .refine((data) => !data.endDate || data.endDate <= new Date(), {
     message: 'End date cannot be in the future',
     path: ['endDate'],
+  })
+  .refine((data) => !data.endDate || data.endDate >= data.startDate, {
+    message: 'End date cannot be before start date',
+    path: ['endDate'],
   });
 
 export const educationSchema = z
