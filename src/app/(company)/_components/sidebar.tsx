@@ -18,7 +18,6 @@ import ROUTES from '@/constants/navigation';
 import { clearUser, useUser } from '@/services/state/userSlice';
 import { Button } from '@/components/ui/button';
 import { useAppDispatch } from '@/store/hooks';
-import { logout } from '@/services/state/authSlice';
 
 interface SidebarProps {
   onClose: () => void;
@@ -30,9 +29,14 @@ export default function Sidebar({ onClose }: SidebarProps) {
   const dispatch = useAppDispatch();
 
   const handleLogout = () => {
-    dispatch(logout());
+    // Clear localStorage and cookies manually
+    localStorage.clear();
+    document.cookie =
+      'refreshToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+
     dispatch(clearUser());
-    onClose(); // Close sidebar on logout
+
+    window.location.href = ROUTES.HOMEPAGE.path;
   };
 
   return (

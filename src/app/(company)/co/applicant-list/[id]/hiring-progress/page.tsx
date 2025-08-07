@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, MessageCircle, ChevronDown } from 'lucide-react';
+import { Plus, MessageCircle, ChevronDown, Calendar } from 'lucide-react';
 import { ApplicationStatus } from '@/enums/applicationStatus';
 import {
   clearApplicantDetail,
@@ -21,6 +21,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { toast } from 'react-toastify';
 import { useAppDispatch } from '@/store/hooks';
+import ScheduleEventModal from '@/app/(company)/_components/ScheduleEventModal';
+import { useUser } from '@/services/state/userSlice';
 
 const stageMapping = {
   [ApplicationStatus.APPLIED]: 'APPLIED',
@@ -45,6 +47,7 @@ export default function HiringManagementPage() {
   const [newNote, setNewNote] = useState('');
   const applicant = useApplicantDetail();
   const dispatch = useAppDispatch();
+  const user = useUser();
   const [notes, setNotes] = useState<Note[]>([
     {
       id: '1',
@@ -199,6 +202,18 @@ export default function HiringManagementPage() {
     }
   };
 
+  const handleEventCreated = () => {
+    console.log('Event created successfully!');
+    toast.success('Interview scheduled successfully!');
+  };
+
+  const isScheduleButtonEnabled = () => {
+    return (
+      applicant?.status === ApplicationStatus.INTERVIEW ||
+      applicant?.status === ApplicationStatus.HIRED
+    );
+  };
+
   return (
     <div className="mx-auto max-w-4xl space-y-6 p-6">
       {/* Header */}
@@ -289,51 +304,70 @@ export default function HiringManagementPage() {
               </div>
             </div>
 
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="border-gray-200 bg-white text-gray-400 hover:bg-gray-50"
-                  disabled={
-                    applicant?.status === ApplicationStatus.HIRED ||
-                    applicant?.status === ApplicationStatus.REJECTED
-                  }
-                >
-                  Move To Next Step
-                  <ChevronDown className="ml-2 h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                {stages.map((stage) => (
-                  <DropdownMenuItem
-                    key={stage.key}
-                    onClick={async () => {
-                      try {
-                        if (applicant?.id) {
-                          // Call API to update the status
-                          await applicationService.updateHiringProgress({
-                            applicantId: applicant.id.toString(),
-                            status: stage.key,
-                          });
-                          // You may want to add a toast notification or refresh data here
-                          console.log(
-                            `Successfully updated status to: ${stage.label}`,
-                          );
-                          toast.success(`Status updated to ${stage.label}`);
-                          dispatch(clearApplicantDetail());
-                        }
-                      } catch (error) {
-                        console.error('Failed to update status:', error);
-                        toast.error(error as string);
-                      }
-                    }}
-                    disabled={stage.key === applicant?.status}
+            <div className="flex gap-3">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="border-gray-200 bg-white text-gray-400 hover:bg-gray-50"
+                    disabled={
+                      applicant?.status === ApplicationStatus.HIRED ||
+                      applicant?.status === ApplicationStatus.REJECTED
+                    }
                   >
-                    {stage.label}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
+                    Move To Next Step
+                    <ChevronDown className="ml-2 h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  {stages.map((stage) => (
+                    <DropdownMenuItem
+                      key={stage.key}
+                      onClick={async () => {
+                        try {
+                          if (applicant?.id) {
+                            // Call API to update the status
+                            await applicationService.updateHiringProgress({
+                              applicantId: applicant.id.toString(),
+                              status: stage.key,
+                            });
+                            // You may want to add a toast notification or refresh data here
+                            console.log(
+                              `Successfully updated status to: ${stage.label}`,
+                            );
+                            toast.success(`Status updated to ${stage.label}`);
+                            dispatch(clearApplicantDetail());
+                          }
+                        } catch (error) {
+                          console.error('Failed to update status:', error);
+                          toast.error(error as string);
+                        }
+                      }}
+                      disabled={stage.key === applicant?.status}
+                    >
+                      {stage.label}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {isScheduleButtonEnabled() && (
+                <ScheduleEventModal
+                  companyId={user?.data?.companyId as number}
+                  candidateUserId={applicant?.candidate?.id}
+                  onEventCreated={handleEventCreated}
+                  triggerButton={
+                    <Button
+                      variant="outline"
+                      className="border-blue-200 bg-white text-blue-600 hover:bg-blue-50"
+                    >
+                      <Calendar className="mr-2 h-4 w-4" />
+                      Schedule Interview
+                    </Button>
+                  }
+                />
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>
