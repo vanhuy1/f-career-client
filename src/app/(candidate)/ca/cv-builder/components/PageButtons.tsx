@@ -38,19 +38,14 @@ const PageButtons = ({
   const router = useRouter();
   return (
     <div className="fixed right-4 bottom-24 flex flex-col gap-2">
-      <Button
-        variant="outline"
-        size="icon"
-        onClick={onScaleUp}
-        title="Phóng to"
-      >
+      <Button variant="outline" size="icon" onClick={onScaleUp} title="Zoom In">
         <ZoomIn className="h-4 w-4" />
       </Button>
       <Button
         variant="outline"
         size="icon"
         onClick={onScaleDown}
-        title="Thu nhỏ"
+        title="Zoom out"
       >
         <ZoomOut className="h-4 w-4" />
       </Button>
@@ -58,7 +53,7 @@ const PageButtons = ({
         variant="outline"
         size="icon"
         onClick={onPreview}
-        title="Xem trước"
+        title="Preview"
         className="border-purple-300 bg-purple-50 hover:bg-purple-100"
       >
         <Eye className="h-4 w-4 text-purple-600" />
@@ -67,7 +62,7 @@ const PageButtons = ({
         variant="outline"
         size="icon"
         onClick={onSave}
-        title="Lưu CV vào hệ thống"
+        title="Save CV to the system"
       >
         <Save className="h-4 w-4" />
       </Button>
@@ -75,7 +70,7 @@ const PageButtons = ({
         variant="outline"
         size="icon"
         onClick={onDownload}
-        title="Tải xuống PDF"
+        title="Download PDF"
       >
         <Download className="h-4 w-4" />
       </Button>
@@ -86,7 +81,7 @@ const PageButtons = ({
         variant="outline"
         size="icon"
         onClick={onSampleData}
-        title="Dữ liệu mẫu"
+        title="Sample data"
       >
         <FileText className="h-4 w-4" />
       </Button>
@@ -94,7 +89,7 @@ const PageButtons = ({
         variant="outline"
         size="icon"
         onClick={onShowSettings}
-        title="Cài đặt"
+        title="Setting"
       >
         <Settings className="h-4 w-4" />
       </Button>
@@ -102,7 +97,7 @@ const PageButtons = ({
         variant="outline"
         size="icon"
         onClick={() => router.push('/ca/cv-builder/')}
-        title="Thoát"
+        title="Exit"
       >
         <LogOut className="h-4 w-4" />
       </Button>

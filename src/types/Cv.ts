@@ -50,7 +50,7 @@ export interface Cv {
   linkedin: string;
   github: string;
   skills: string[];
-  phone: number;
+  phone: string;
   languages: string[];
   certifications: Certification[];
   education: Education[];

@@ -68,15 +68,16 @@ const CV2 = ({
       <div className="sidebar flex w-1/3 flex-col bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 p-8 text-white shadow-2xl print:w-1/3 print:bg-slate-900 print:p-8 print:shadow-none">
         <div className="sticky top-0 space-y-6 print:static">
           {/* Profile Image with enhanced styling */}
-          <div className="mb-8 flex justify-center">
-            <div className="relative">
+          <div className="mb-2 flex justify-center">
+            <div className="relative h-[140px] w-[140px] overflow-hidden rounded-2xl">
               <Image
                 src={cv.image || '/Gradient.jpg'}
-                className="rounded-2xl border-4 border-white/20 object-cover shadow-xl ring-4 ring-white/10"
+                className="h-full w-full border-4 border-white/20 object-cover shadow-xl ring-4 ring-white/10"
                 width={140}
                 height={140}
                 alt="Profile Picture"
                 quality={100}
+                style={{ objectFit: 'cover', width: '140px', height: '140px' }}
               />
               <div className="absolute inset-0 rounded-2xl bg-gradient-to-t from-black/20 to-transparent"></div>
             </div>
@@ -93,8 +94,8 @@ const CV2 = ({
           </div>
 
           {/* Contact Info with improved spacing and icons */}
-          <div className="group relative mt-8 space-y-4">
-            <div className="mb-6 flex items-center justify-between">
+          <div className="group relative space-y-4">
+            <div className="mb-2 flex items-center justify-between">
               <h2 className="flex items-center text-xl font-semibold text-white">
                 <div className="mr-3 h-6 w-1 rounded-full bg-blue-400"></div>
                 Contact
@@ -102,7 +103,7 @@ const CV2 = ({
               <Button
                 variant="ghost"
                 size="sm"
-                className="flex items-center gap-2 text-white/70 transition-all duration-200 hover:bg-white/10 hover:text-white"
+                className="flex items-center gap-2 text-white/70 opacity-0 transition-all duration-200 group-hover:opacity-100 hover:bg-white/10 hover:text-white"
                 onClick={() => setEditSection('contact')}
               >
                 <Edit className="h-4 w-4" />
@@ -172,8 +173,8 @@ const CV2 = ({
           </div>
 
           {/* Skills Section with enhanced design */}
-          <div className="mt-10">
-            <div className="group relative mb-6 flex items-center justify-between">
+          <div className="group">
+            <div className="relative mb-2 flex items-center justify-between">
               <h2 className="flex items-center text-xl font-semibold text-white">
                 <div className="mr-3 h-6 w-1 rounded-full bg-green-400"></div>
                 Skills
@@ -181,7 +182,7 @@ const CV2 = ({
               <Button
                 variant="ghost"
                 size="sm"
-                className="flex items-center gap-2 text-white/70 transition-all duration-200 hover:bg-white/10 hover:text-white"
+                className="flex items-center gap-2 text-white/70 opacity-0 transition-all duration-200 group-hover:opacity-100 hover:bg-white/10 hover:text-white"
                 onClick={() => setEditSection('skills')}
               >
                 <Edit className="h-4 w-4" />
@@ -190,7 +191,7 @@ const CV2 = ({
 
             <div className="space-y-6">
               <div className="skill-block">
-                <h3 className="mb-3 text-sm font-semibold tracking-wider text-blue-200 uppercase">
+                <h3 className="mb-2 text-sm font-semibold tracking-wider text-blue-200 uppercase">
                   Industry Knowledge
                 </h3>
                 <div className="flex flex-wrap gap-2">
@@ -207,7 +208,7 @@ const CV2 = ({
               </div>
 
               <div className="skill-block">
-                <h3 className="mb-3 text-sm font-semibold tracking-wider text-blue-200 uppercase">
+                <h3 className="mb-2 text-sm font-semibold tracking-wider text-blue-200 uppercase">
                   Languages
                 </h3>
                 <div className="flex flex-wrap gap-2">
@@ -230,8 +231,8 @@ const CV2 = ({
       {/* Main Content with enhanced styling */}
       <div className="main-content flex w-2/3 flex-col bg-white p-8 print:w-2/3 print:p-8">
         {/* About Section */}
-        <section className="mb-10 print:mb-8">
-          <div className="mb-6 flex items-center justify-between">
+        <section className="group mb-4 print:mb-4">
+          <div className="mb-2 flex items-center justify-between">
             <h2 className="flex items-center text-2xl font-bold text-slate-800">
               <div className="mr-4 h-8 w-1 rounded-full bg-blue-500"></div>
               About
@@ -239,7 +240,7 @@ const CV2 = ({
             <Button
               variant="ghost"
               size="sm"
-              className="flex items-center gap-2 text-slate-500 transition-all duration-200 hover:bg-slate-100 hover:text-slate-700"
+              className="flex items-center gap-2 text-slate-500 opacity-0 transition-all duration-200 group-hover:opacity-100 hover:bg-slate-100 hover:text-slate-700"
               onClick={() => setEditSection('about')}
             >
               <Edit className="h-4 w-4" />
@@ -251,8 +252,8 @@ const CV2 = ({
         </section>
 
         {/* Experience Section */}
-        <section className="mb-10 print:mb-8">
-          <div className="mb-6 flex items-center justify-between">
+        <section className="group mb-4 print:mb-4">
+          <div className="mb-2 flex items-center justify-between">
             <h2 className="flex items-center text-2xl font-bold text-slate-800">
               <div className="mr-4 h-8 w-1 rounded-full bg-purple-500"></div>
               Experience
@@ -260,20 +261,20 @@ const CV2 = ({
             <Button
               variant="ghost"
               size="sm"
-              className="flex items-center gap-2 text-slate-500 transition-all duration-200 hover:bg-slate-100 hover:text-slate-700"
+              className="flex items-center gap-2 text-slate-500 opacity-0 transition-all duration-200 group-hover:opacity-100 hover:bg-slate-100 hover:text-slate-700"
               onClick={() => setEditSection('experience')}
             >
               <Edit className="h-4 w-4" />
             </Button>
           </div>
 
-          <div className="space-y-6">
+          <div className="space-y-4">
             {cv.experience.map((experience, index) => (
               <div
                 key={index}
-                className="experience-block rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-300 hover:border-slate-300 hover:shadow-md"
+                className="experience-block rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-all duration-300 hover:border-slate-300 hover:shadow-md"
               >
-                <div className="mb-4">
+                <div className="mb-2">
                   <h3 className="mb-1 text-xl font-semibold text-slate-800">
                     {experience.role}
                   </h3>
@@ -304,8 +305,8 @@ const CV2 = ({
         </section>
 
         {/* Education Section */}
-        <section className="mb-10 print:mb-8">
-          <div className="mb-6 flex items-center justify-between">
+        <section className="group mb-4 print:mb-4">
+          <div className="mb-2 flex items-center justify-between">
             <h2 className="flex items-center text-2xl font-bold text-slate-800">
               <div className="mr-4 h-8 w-1 rounded-full bg-green-500"></div>
               Education
@@ -313,7 +314,7 @@ const CV2 = ({
             <Button
               variant="ghost"
               size="sm"
-              className="flex items-center gap-2 text-slate-500 transition-all duration-200 hover:bg-slate-100 hover:text-slate-700"
+              className="flex items-center gap-2 text-slate-500 opacity-0 transition-all duration-200 group-hover:opacity-100 hover:bg-slate-100 hover:text-slate-700"
               onClick={() => setEditSection('education')}
             >
               <Edit className="h-4 w-4" />
@@ -324,7 +325,7 @@ const CV2 = ({
             {cv.education.map((education, index) => (
               <div
                 key={index}
-                className="education-block rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-300 hover:border-slate-300 hover:shadow-md"
+                className="education-block rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-all duration-300 hover:border-slate-300 hover:shadow-md"
               >
                 <div className="flex items-start justify-between">
                   <div>
@@ -348,8 +349,8 @@ const CV2 = ({
         </section>
 
         {/* Certifications Section */}
-        <section>
-          <div className="mb-6 flex items-center justify-between">
+        <section className="group">
+          <div className="mb-4 flex items-center justify-between">
             <h2 className="flex items-center text-2xl font-bold text-slate-800">
               <div className="mr-4 h-8 w-1 rounded-full bg-orange-500"></div>
               Certifications
@@ -357,7 +358,7 @@ const CV2 = ({
             <Button
               variant="ghost"
               size="sm"
-              className="flex items-center gap-2 text-slate-500 transition-all duration-200 hover:bg-slate-100 hover:text-slate-700"
+              className="flex items-center gap-2 text-slate-500 opacity-0 transition-all duration-200 group-hover:opacity-100 hover:bg-slate-100 hover:text-slate-700"
               onClick={() => setEditSection('certifications')}
             >
               <Edit className="h-4 w-4" />
@@ -368,7 +369,7 @@ const CV2 = ({
             {cv.certifications.map((certification, index) => (
               <div
                 key={index}
-                className="certification-block rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-300 hover:border-slate-300 hover:shadow-md"
+                className="certification-block rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-all duration-300 hover:border-slate-300 hover:shadow-md"
               >
                 <div className="flex items-start justify-between">
                   <div>

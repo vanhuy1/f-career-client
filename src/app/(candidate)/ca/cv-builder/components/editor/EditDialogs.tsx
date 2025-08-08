@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -129,6 +129,8 @@ const EditDialogs = ({
   const dispatch = useAppDispatch();
   const [tempImageFile, setTempImageFile] = useState<File | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isContactValid, setIsContactValid] = useState(true);
+  const contactValidationRef = useRef<boolean>(true);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -140,9 +142,70 @@ const EditDialogs = ({
     onUploadImage(e);
   };
 
+  const handleContactValidationChange = (isValid: boolean) => {
+    setIsContactValid(isValid);
+    contactValidationRef.current = isValid;
+  };
+
+  const validateBeforeSave = (): boolean => {
+    // Basic validation
+    if (!cv.name || cv.name.trim() === '') {
+      toast.error('Name is required');
+      return false;
+    }
+
+    if (!cv.title || cv.title.trim() === '') {
+      toast.error('Job title is required');
+      return false;
+    }
+
+    if (!cv.email || cv.email.trim() === '') {
+      toast.error('Email is required');
+      return false;
+    }
+
+    // Email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(cv.email)) {
+      toast.error('Invalid email format');
+      return false;
+    }
+
+    // Phone validation
+    const phoneValue =
+      typeof cv.phone === 'number' ? String(cv.phone) : cv.phone || '';
+    if (!phoneValue) {
+      toast.error('Phone number is required');
+      return false;
+    }
+
+    // Vietnamese phone format validation
+    const phoneRegex = /^0[3|5|7|8|9][0-9]{8,9}$/;
+    if (!phoneRegex.test(phoneValue)) {
+      toast.error(
+        'Invalid phone number format. Must be 10-11 digits starting with 0',
+      );
+      return false;
+    }
+
+    // Check contact section validation if it's being edited
+    if (editSection === 'contact' && !contactValidationRef.current) {
+      toast.error('Please fix validation errors in contact information');
+      return false;
+    }
+
+    return true;
+  };
+
   const handleSaveToDatabase = async () => {
     if (!cvId) {
       console.error('Cannot save to database: CV ID is missing');
+      toast.error('Cannot save: CV ID is missing');
+      return;
+    }
+
+    // Validate before saving
+    if (!validateBeforeSave()) {
       return;
     }
 
@@ -179,7 +242,7 @@ const EditDialogs = ({
         }
       }
 
-      // Save CV data
+      // Save CV data (without generating PDF - that's only for the main save button)
       toast.update(processingToast, {
         render: 'Saving CV data...',
         type: 'info',
@@ -211,7 +274,13 @@ const EditDialogs = ({
           />
         );
       case 'contact':
-        return <Contact cv={cv} onUpdateCv={onUpdateCv} />;
+        return (
+          <Contact
+            cv={cv}
+            onUpdateCv={onUpdateCv}
+            onValidationChange={handleContactValidationChange}
+          />
+        );
       case 'skills':
         return (
           <Skills
@@ -260,6 +329,16 @@ const EditDialogs = ({
   const handleCancel = () => {
     setEditSection(null);
     setTempImageFile(null);
+    setIsContactValid(true);
+  };
+
+  const canSave = () => {
+    // For contact section, check real-time validation
+    if (editSection === 'contact') {
+      return !isSaving && isContactValid;
+    }
+    // For other sections, basic check
+    return !isSaving;
   };
 
   return (
@@ -273,8 +352,8 @@ const EditDialogs = ({
           <Button variant="outline" onClick={handleCancel} disabled={isSaving}>
             Cancel
           </Button>
-          <Button onClick={handleSaveToDatabase} disabled={isSaving}>
-            {isSaving ? 'Saving...' : 'Save'}
+          <Button onClick={handleSaveToDatabase} disabled={!canSave()}>
+            {isSaving ? 'Saving...' : 'Temporary Save'}
           </Button>
         </DialogFooter>
       </DialogContent>

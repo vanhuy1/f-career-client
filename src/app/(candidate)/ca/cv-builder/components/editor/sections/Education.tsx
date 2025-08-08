@@ -25,6 +25,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { toast } from 'react-toastify';
+import { cn } from '@/lib/utils';
 import type { Cv, Education } from '@/types/Cv';
 
 interface EducationsProps {
@@ -45,21 +54,41 @@ const Educations = ({
   const [field, setField] = useState('');
   const [startYear, setStartYear] = useState('');
   const [endYear, setEndYear] = useState('');
+  const [isCurrentlyStudying, setIsCurrentlyStudying] = useState(false);
   const [description, setDescription] = useState('');
   const [editIndex, setEditIndex] = useState<number | null>(null);
   const [deleteIndex, setDeleteIndex] = useState<number | null>(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [yearError, setYearError] = useState<string>('');
+
+  // Generate year options (current year to 50 years ago)
+  const currentYear = new Date().getFullYear();
+  const yearOptions = Array.from({ length: 50 }, (_, i) => currentYear - i);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!degree || !institution || !startYear) return;
+
+    if (!degree || !institution || !startYear) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    // Validate years
+    if (
+      !isCurrentlyStudying &&
+      endYear &&
+      parseInt(endYear) < parseInt(startYear)
+    ) {
+      setYearError('End year must be after start year');
+      return;
+    }
 
     const education: Education = {
       degree,
       institution,
       field,
       startYear,
-      endYear,
+      endYear: isCurrentlyStudying ? 'Present' : endYear,
       description,
     };
 
@@ -70,13 +99,20 @@ const Educations = ({
       onAddEducation(education);
     }
 
+    resetForm();
+    setShowEditDialog(false);
+  };
+
+  const resetForm = () => {
     setDegree('');
     setInstitution('');
     setField('');
     setStartYear('');
     setEndYear('');
+    setIsCurrentlyStudying(false);
     setDescription('');
-    setShowEditDialog(false);
+    setEditIndex(null);
+    setYearError('');
   };
 
   const handleEdit = (education: Education, index: number) => {
@@ -84,7 +120,15 @@ const Educations = ({
     setInstitution(education.institution);
     setField(education.field);
     setStartYear(education.startYear);
-    setEndYear(education.endYear || '');
+
+    if (education.endYear === 'Present') {
+      setIsCurrentlyStudying(true);
+      setEndYear('');
+    } else {
+      setIsCurrentlyStudying(false);
+      setEndYear(education.endYear || '');
+    }
+
     setDescription(education.description);
     setEditIndex(index);
     setShowEditDialog(true);
@@ -96,14 +140,18 @@ const Educations = ({
   };
 
   const handleCancel = () => {
-    setDegree('');
-    setInstitution('');
-    setField('');
-    setStartYear('');
-    setEndYear('');
-    setDescription('');
-    setEditIndex(null);
+    resetForm();
     setShowEditDialog(false);
+    setYearError('');
+  };
+
+  const handleEndYearChange = (value: string) => {
+    setEndYear(value);
+    if (startYear && value && parseInt(value) < parseInt(startYear)) {
+      setYearError('End year must be after start year');
+    } else {
+      setYearError('');
+    }
   };
 
   return (
@@ -172,68 +220,136 @@ const Educations = ({
           <ScrollArea className="max-h-[60vh] pr-4">
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <Label htmlFor="degree">Types of Degrees</Label>
-                <Input
-                  id="degree"
-                  value={degree}
-                  onChange={(e) => setDegree(e.target.value)}
-                  className="mt-1"
-                  required
-                />
+                <Label htmlFor="degree">Degree Type *</Label>
+                <Select value={degree} onValueChange={setDegree}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Select degree type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="High School">High School</SelectItem>
+                    <SelectItem value="Associate">Associate Degree</SelectItem>
+                    <SelectItem value="Bachelor">
+                      Bachelor&apos;s Degree
+                    </SelectItem>
+                    <SelectItem value="Master">Master&apos;s Degree</SelectItem>
+                    <SelectItem value="Doctorate">Doctorate</SelectItem>
+                    <SelectItem value="Certificate">Certificate</SelectItem>
+                    <SelectItem value="Diploma">Diploma</SelectItem>
+                    <SelectItem value="Other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>
-                <Label htmlFor="institution">University name</Label>
+                <Label htmlFor="institution">Institution Name *</Label>
                 <Input
                   id="institution"
                   value={institution}
                   onChange={(e) => setInstitution(e.target.value)}
                   className="mt-1"
                   required
+                  placeholder="e.g., Harvard University"
                 />
               </div>
 
               <div>
-                <Label htmlFor="field">Major name</Label>
+                <Label htmlFor="field">Field of Study</Label>
                 <Input
                   id="field"
                   value={field}
                   onChange={(e) => setField(e.target.value)}
                   className="mt-1"
+                  placeholder="e.g., Computer Science"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="startYear">Start Year</Label>
-                  <Input
-                    id="startYear"
-                    value={startYear}
-                    onChange={(e) => setStartYear(e.target.value)}
-                    className="mt-1"
-                    required
-                  />
+                  <Label htmlFor="startYear">Start Year *</Label>
+                  <Select value={startYear} onValueChange={setStartYear}>
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder="Select year" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {yearOptions.map((year) => (
+                        <SelectItem key={year} value={year.toString()}>
+                          {year}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div>
                   <Label htmlFor="endYear">End Year</Label>
-                  <Input
-                    id="endYear"
-                    value={endYear}
-                    onChange={(e) => setEndYear(e.target.value)}
-                    className="mt-1"
-                    placeholder="Present"
-                  />
+                  <div className="space-y-2">
+                    <Select
+                      value={isCurrentlyStudying ? '' : endYear}
+                      onValueChange={handleEndYearChange}
+                      disabled={isCurrentlyStudying}
+                    >
+                      <SelectTrigger
+                        className={cn(
+                          'mt-1',
+                          isCurrentlyStudying &&
+                            'cursor-not-allowed opacity-50',
+                        )}
+                      >
+                        <SelectValue
+                          placeholder={
+                            isCurrentlyStudying ? 'Present' : 'Select year'
+                          }
+                        />
+                      </SelectTrigger>
+                      {!isCurrentlyStudying && (
+                        <SelectContent>
+                          {yearOptions
+                            .filter(
+                              (year) =>
+                                !startYear || year >= parseInt(startYear),
+                            )
+                            .map((year) => (
+                              <SelectItem key={year} value={year.toString()}>
+                                {year}
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      )}
+                    </Select>
+
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id="currentlyStudying"
+                        checked={isCurrentlyStudying}
+                        onChange={(e) => {
+                          setIsCurrentlyStudying(e.target.checked);
+                          if (e.target.checked) {
+                            setEndYear('');
+                            setYearError('');
+                          }
+                        }}
+                        className="h-4 w-4"
+                      />
+                      <Label htmlFor="currentlyStudying" className="text-sm">
+                        Currently studying here
+                      </Label>
+                    </div>
+                    {yearError && (
+                      <p className="text-xs text-red-500">{yearError}</p>
+                    )}
+                  </div>
                 </div>
               </div>
 
               <div>
-                <Label htmlFor="description">Description</Label>
+                <Label htmlFor="description">Description (Optional)</Label>
                 <Textarea
                   id="description"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   className="mt-1 h-32"
+                  placeholder="Describe your achievements, activities, GPA, relevant courses, etc."
                 />
               </div>
             </form>
@@ -242,7 +358,7 @@ const Educations = ({
             <Button type="button" variant="outline" onClick={handleCancel}>
               Cancel
             </Button>
-            <Button onClick={handleSubmit}>
+            <Button onClick={handleSubmit} disabled={!!yearError}>
               {editIndex !== null ? 'Update Education' : 'Add Education'}
             </Button>
           </DialogFooter>

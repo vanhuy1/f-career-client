@@ -199,22 +199,6 @@ const getCommonLanguages = () => [
   'Xhosa',
 ];
 
-// Debounce utility with proper typing
-const debounce = <T extends (...args: Parameters<T>) => ReturnType<T>>(
-  func: T,
-  wait: number,
-): ((...args: Parameters<T>) => void) => {
-  let timeout: NodeJS.Timeout;
-  return (...args: Parameters<T>) => {
-    const later = () => {
-      clearTimeout(timeout);
-      func(...args);
-    };
-    clearTimeout(timeout);
-    timeout = setTimeout(later, wait);
-  };
-};
-
 const Skills = ({ cv, onAddTag, onRemoveTag }: SkillsProps) => {
   const [skill, setSkill] = useState('');
   const [language, setLanguage] = useState('');
@@ -231,61 +215,95 @@ const Skills = ({ cv, onAddTag, onRemoveTag }: SkillsProps) => {
   const skillDropdownRef = useRef<HTMLDivElement>(null);
   const languageDropdownRef = useRef<HTMLDivElement>(null);
 
-  // Fetch skill suggestions with debounce - using useCallback to avoid dependency issues
+  // Store timeout refs for debouncing
+  const skillTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const languageTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Fetch skill suggestions with debounce - fixed with inline function
   const fetchSkillsDebounced = useCallback(
-    debounce(async (query: string) => {
-      if (query.length < 2) {
-        setSkillSuggestions([]);
-        return;
+    (query: string) => {
+      // Clear previous timeout
+      if (skillTimeoutRef.current) {
+        clearTimeout(skillTimeoutRef.current);
       }
 
-      setIsLoadingSkills(true);
-      try {
-        const suggestions = await fetchSkillsSuggestions(query);
-        // Filter out skills that are already added
-        const filteredSuggestions = suggestions.filter(
-          (s) =>
-            !cv.skills.some((skill) => skill.toLowerCase() === s.toLowerCase()),
-        );
-        setSkillSuggestions(filteredSuggestions);
-      } catch (error) {
-        console.error('Error fetching skills:', error);
-        setSkillSuggestions([]);
-      } finally {
-        setIsLoadingSkills(false);
-      }
-    }, 300),
+      // Set new timeout
+      skillTimeoutRef.current = setTimeout(async () => {
+        if (query.length < 2) {
+          setSkillSuggestions([]);
+          return;
+        }
+
+        setIsLoadingSkills(true);
+        try {
+          const suggestions = await fetchSkillsSuggestions(query);
+          // Filter out skills that are already added
+          const filteredSuggestions = suggestions.filter(
+            (s) =>
+              !cv.skills.some(
+                (skill) => skill.toLowerCase() === s.toLowerCase(),
+              ),
+          );
+          setSkillSuggestions(filteredSuggestions);
+        } catch (error) {
+          console.error('Error fetching skills:', error);
+          setSkillSuggestions([]);
+        } finally {
+          setIsLoadingSkills(false);
+        }
+      }, 300);
+    },
     [cv.skills],
   );
 
-  // Fetch language suggestions with debounce - using useCallback to avoid dependency issues
+  // Fetch language suggestions with debounce - fixed with inline function
   const fetchLanguagesDebounced = useCallback(
-    debounce(async (query: string) => {
-      if (query.length < 1) {
-        setLanguageSuggestions([]);
-        return;
+    (query: string) => {
+      // Clear previous timeout
+      if (languageTimeoutRef.current) {
+        clearTimeout(languageTimeoutRef.current);
       }
 
-      setIsLoadingLanguages(true);
-      try {
-        const suggestions = await fetchLanguageSuggestions(query);
-        // Filter out languages that are already added
-        const filteredSuggestions = suggestions.filter(
-          (l) =>
-            !(cv.languages || []).some(
-              (lang) => lang.toLowerCase() === l.toLowerCase(),
-            ),
-        );
-        setLanguageSuggestions(filteredSuggestions);
-      } catch (error) {
-        console.error('Error fetching languages:', error);
-        setLanguageSuggestions([]);
-      } finally {
-        setIsLoadingLanguages(false);
-      }
-    }, 300),
+      // Set new timeout
+      languageTimeoutRef.current = setTimeout(async () => {
+        if (query.length < 1) {
+          setLanguageSuggestions([]);
+          return;
+        }
+
+        setIsLoadingLanguages(true);
+        try {
+          const suggestions = await fetchLanguageSuggestions(query);
+          // Filter out languages that are already added
+          const filteredSuggestions = suggestions.filter(
+            (l) =>
+              !(cv.languages || []).some(
+                (lang) => lang.toLowerCase() === l.toLowerCase(),
+              ),
+          );
+          setLanguageSuggestions(filteredSuggestions);
+        } catch (error) {
+          console.error('Error fetching languages:', error);
+          setLanguageSuggestions([]);
+        } finally {
+          setIsLoadingLanguages(false);
+        }
+      }, 300);
+    },
     [cv.languages],
   );
+
+  // Cleanup timeouts on unmount
+  useEffect(() => {
+    return () => {
+      if (skillTimeoutRef.current) {
+        clearTimeout(skillTimeoutRef.current);
+      }
+      if (languageTimeoutRef.current) {
+        clearTimeout(languageTimeoutRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (skill) {
