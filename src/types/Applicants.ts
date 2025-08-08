@@ -102,6 +102,34 @@ export interface ApplicantDetail {
       logoUrl: string | null;
     };
   };
+  interviewSchedule?: {
+    companyName: string;
+    createdBy: number;
+    title: string;
+    type: string;
+    status: string;
+    startsAt: string;
+    endsAt: string;
+    location: string;
+    notes: string | null;
+    version: number;
+    createdAt: string;
+    updatedAt: string;
+  };
+  interviewSchedules?: Array<{
+    companyName: string;
+    createdBy: number;
+    title: string;
+    type: string;
+    status: string;
+    startsAt: string;
+    endsAt: string;
+    location: string;
+    notes: string | null;
+    version: number;
+    createdAt: string;
+    updatedAt: string;
+  }>;
 }
 
 export interface UpdateApplicationStatusData {

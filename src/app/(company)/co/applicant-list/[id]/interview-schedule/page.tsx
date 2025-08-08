@@ -1,65 +1,21 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { Calendar, Clock, Video, MapPin, Plus, Loader2 } from 'lucide-react';
+import { Calendar, Clock, Video, MapPin, Plus } from 'lucide-react';
 import ScheduleEventModal from '@/app/(company)/_components/ScheduleEventModal';
 import { useUser } from '@/services/state/userSlice';
 import { useApplicantDetail } from '@/services/state/applicantDetailSlice';
-import { companyService } from '@/services/api/company/company-api';
-import {
-  ScheduleEventResponse,
-  EventType,
-  EventStatus,
-  ScheduleEventsListResponse,
-} from '@/types/Schedule';
-import { useState, useEffect, useCallback } from 'react';
-
-interface LoadingState {
-  loading: boolean;
-  error: string | null;
-}
 
 export default function InterviewSchedulePage() {
   const user = useUser();
   const applicant = useApplicantDetail();
-  const [events, setEvents] = useState<ScheduleEventResponse[]>([]);
-  const [loadingState, setLoadingState] = useState<LoadingState>({
-    loading: true,
-    error: null,
-  });
 
-  const fetchEvents = useCallback(async () => {
-    if (!user?.data?.companyId) return;
-
-    try {
-      setLoadingState({ loading: true, error: null });
-
-      const response: ScheduleEventsListResponse =
-        await companyService.getEvents(Number(user.data.companyId), {
-          type: EventType.INTERVIEW,
-          // We can add more filters here if needed
-        });
-
-      setEvents(response.data);
-    } catch (error) {
-      console.error('Failed to fetch events:', error);
-      setLoadingState({
-        loading: false,
-        error: 'Failed to load interview schedules. Please try again.',
-      });
-      return;
-    }
-
-    setLoadingState({ loading: false, error: null });
-  }, [user?.data?.companyId]);
-
-  useEffect(() => {
-    fetchEvents();
-  }, [fetchEvents]);
+  // Get the interview schedules from applicant data
+  const interviewSchedules = applicant?.interviewSchedules || [];
 
   const handleEventCreated = () => {
     console.log('Event created successfully!');
-    fetchEvents(); // Refresh the events list
+    // The layout will handle refetching applicant data which includes the updated schedule
   };
 
   const formatDate = (dateString: string) => {
@@ -96,19 +52,19 @@ export default function InterviewSchedulePage() {
     return `${formatTimeString(start)} - ${formatTimeString(end)}`;
   };
 
-  const getStatusDisplay = (status: EventStatus) => {
-    switch (status) {
-      case EventStatus.CONFIRMED:
+  const getStatusDisplay = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'confirmed':
         return {
           label: 'Scheduled',
           className: 'bg-green-100 text-green-700',
         };
-      case EventStatus.PENDING:
+      case 'pending':
         return {
           label: 'Pending Confirmation',
           className: 'bg-yellow-100 text-yellow-700',
         };
-      case EventStatus.CANCELLED:
+      case 'cancelled':
         return {
           label: 'Cancelled',
           className: 'bg-red-100 text-red-700',
@@ -120,40 +76,6 @@ export default function InterviewSchedulePage() {
         };
     }
   };
-
-  const getInterviewer = (event: ScheduleEventResponse) => {
-    const interviewer = event.participants.find(
-      (p) => p.role === 'interviewer' && p.user?.name,
-    );
-    return interviewer?.user?.name || 'TBD';
-  };
-
-  if (loadingState.loading) {
-    return (
-      <div className="flex items-center justify-center py-8">
-        <Loader2 className="h-6 w-6 animate-spin text-gray-600" />
-        <span className="ml-2 text-gray-600">
-          Loading interview schedules...
-        </span>
-      </div>
-    );
-  }
-
-  if (loadingState.error) {
-    return (
-      <div className="rounded-lg bg-red-50 p-4">
-        <p className="text-red-700">{loadingState.error}</p>
-        <Button
-          variant="outline"
-          size="sm"
-          className="mt-2"
-          onClick={fetchEvents}
-        >
-          Try Again
-        </Button>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">
@@ -170,21 +92,21 @@ export default function InterviewSchedulePage() {
       </div>
 
       <div className="space-y-4">
-        {events.map((event) => {
-          const statusDisplay = getStatusDisplay(event.status);
-          const interviewer = getInterviewer(event);
-
+        {interviewSchedules.map((schedule, index) => {
+          const statusDisplay = getStatusDisplay(schedule.status);
           return (
             <div
-              key={event.id}
+              key={`${schedule.createdAt}-${index}`}
               className="rounded-lg border border-gray-200 p-6"
             >
               <div className="mb-4 flex items-start justify-between">
                 <div>
                   <h4 className="mb-1 font-medium text-gray-900">
-                    {event.title}
+                    {schedule.title}
                   </h4>
-                  <p className="text-sm text-gray-600">{interviewer}</p>
+                  <p className="text-sm text-gray-600">
+                    {schedule.companyName}
+                  </p>
                 </div>
                 <div className="text-right">
                   <span
@@ -199,33 +121,33 @@ export default function InterviewSchedulePage() {
                 <div className="flex items-center gap-2">
                   <Calendar className="h-4 w-4 text-gray-400" />
                   <span className="text-sm text-gray-600">
-                    {formatDate(event.startsAt)}
+                    {formatDate(schedule.startsAt)}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Clock className="h-4 w-4 text-gray-400" />
                   <span className="text-sm text-gray-600">
-                    {formatTime(event.startsAt, event.endsAt)}
+                    {formatTime(schedule.startsAt, schedule.endsAt)}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  {event.location?.toLowerCase().includes('video') ||
-                  event.location?.toLowerCase().includes('call') ||
-                  event.location?.toLowerCase().includes('zoom') ||
-                  event.location?.toLowerCase().includes('meet') ? (
+                  {schedule.location?.toLowerCase().includes('video') ||
+                  schedule.location?.toLowerCase().includes('call') ||
+                  schedule.location?.toLowerCase().includes('zoom') ||
+                  schedule.location?.toLowerCase().includes('meet') ? (
                     <Video className="h-4 w-4 text-gray-400" />
                   ) : (
                     <MapPin className="h-4 w-4 text-gray-400" />
                   )}
                   <span className="text-sm text-gray-600">
-                    {event.location || 'Location TBD'}
+                    {schedule.location || 'Location TBD'}
                   </span>
                 </div>
               </div>
 
-              {event.notes && (
+              {schedule.notes && (
                 <div className="mb-4">
-                  <p className="text-sm text-gray-600">{event.notes}</p>
+                  <p className="text-sm text-gray-600">{schedule.notes}</p>
                 </div>
               )}
 
@@ -236,10 +158,10 @@ export default function InterviewSchedulePage() {
                 <Button variant="outline" size="sm">
                   Cancel
                 </Button>
-                {(event.location?.toLowerCase().includes('video') ||
-                  event.location?.toLowerCase().includes('call') ||
-                  event.location?.toLowerCase().includes('zoom') ||
-                  event.location?.toLowerCase().includes('meet')) && (
+                {(schedule.location?.toLowerCase().includes('video') ||
+                  schedule.location?.toLowerCase().includes('call') ||
+                  schedule.location?.toLowerCase().includes('zoom') ||
+                  schedule.location?.toLowerCase().includes('meet')) && (
                   <Button variant="outline" size="sm">
                     <Video className="mr-2 h-4 w-4" />
                     Join Call
@@ -251,7 +173,7 @@ export default function InterviewSchedulePage() {
         })}
       </div>
 
-      {events.length === 0 && (
+      {interviewSchedules.length === 0 && (
         <div className="rounded-lg bg-gray-50 p-6 text-center">
           <h4 className="mb-2 font-medium text-gray-900">
             No interviews scheduled
@@ -274,7 +196,7 @@ export default function InterviewSchedulePage() {
         </div>
       )}
 
-      {events.length > 0 && (
+      {interviewSchedules.length > 0 && (
         <div className="rounded-lg bg-gray-50 p-6 text-center">
           <h4 className="mb-2 font-medium text-gray-900">
             Schedule additional interviews
