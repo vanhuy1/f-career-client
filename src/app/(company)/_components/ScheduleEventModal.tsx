@@ -49,6 +49,7 @@ import {
 interface ScheduleEventModalProps {
   companyId: number;
   candidateUserId?: number;
+  applicationId?: number;
   onEventCreated?: () => void;
   triggerButton?: React.ReactNode;
 }
@@ -56,6 +57,7 @@ interface ScheduleEventModalProps {
 export default function ScheduleEventModal({
   companyId,
   candidateUserId,
+  applicationId,
   onEventCreated,
   triggerButton,
 }: ScheduleEventModalProps) {
@@ -71,6 +73,7 @@ export default function ScheduleEventModal({
       endsAt: '',
       location: '',
       notes: '',
+      applicationId,
       participantUserId: candidateUserId,
       participantRole: ParticipantRole.CANDIDATE,
     },
@@ -100,6 +103,7 @@ export default function ScheduleEventModal({
         endsAt,
         location: data.location,
         notes: data.notes || undefined,
+        ...(data.applicationId && { applicationId: data.applicationId }),
         participants: [
           {
             userId: data.participantUserId,
@@ -335,6 +339,31 @@ export default function ScheduleEventModal({
                   </FormItem>
                 )}
               />
+
+              {/* Application ID (hidden field) */}
+              {applicationId && (
+                <FormField
+                  control={form.control}
+                  name="applicationId"
+                  render={({ field }) => (
+                    <FormItem className="md:col-span-2">
+                      <FormControl>
+                        <Input
+                          type="number"
+                          hidden={true}
+                          {...field}
+                          onChange={(e) =>
+                            field.onChange(
+                              parseInt(e.target.value) || undefined,
+                            )
+                          }
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
 
               {/* Location */}
               <FormField

@@ -355,6 +355,7 @@ export default function HiringManagementPage() {
                 <ScheduleEventModal
                   companyId={user?.data?.companyId as number}
                   candidateUserId={applicant?.candidate?.id}
+                  applicationId={applicant?.id as number}
                   onEventCreated={handleEventCreated}
                   triggerButton={
                     <Button

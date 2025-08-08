@@ -164,6 +164,7 @@ export default function InterviewSchedulePage() {
         <ScheduleEventModal
           companyId={user?.data?.companyId as number}
           candidateUserId={applicant?.candidate?.id}
+          applicationId={applicant?.id as number}
           onEventCreated={handleEventCreated}
         />
       </div>
@@ -261,6 +262,7 @@ export default function InterviewSchedulePage() {
           <ScheduleEventModal
             companyId={user?.data?.companyId as number}
             candidateUserId={applicant?.candidate?.id}
+            applicationId={applicant?.id as number}
             onEventCreated={handleEventCreated}
             triggerButton={
               <Button variant="outline">
@@ -283,6 +285,7 @@ export default function InterviewSchedulePage() {
           <ScheduleEventModal
             companyId={user?.data?.companyId as number}
             candidateUserId={applicant?.candidate?.id}
+            applicationId={applicant?.id as number}
             onEventCreated={handleEventCreated}
             triggerButton={
               <Button variant="outline">
