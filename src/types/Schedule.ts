@@ -68,6 +68,7 @@ export interface CreateScheduleEventRequest {
   endsAt: string;
   location?: string;
   notes?: string;
+  applicationId?: number;
   participants: Array<{
     userId: number;
     role: ParticipantRole;

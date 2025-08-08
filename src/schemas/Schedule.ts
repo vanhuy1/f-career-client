@@ -40,6 +40,13 @@ export const scheduleEventFormSchema = z
       .max(500, { message: 'Notes must be less than 500 characters' })
       .optional(),
 
+    applicationId: z
+      .number({
+        invalid_type_error: 'Invalid application ID',
+      })
+      .min(1, { message: 'Valid application ID is required' })
+      .optional(),
+
     participantUserId: z
       .number({
         required_error: 'Participant is required',
@@ -72,6 +79,19 @@ export const scheduleEventFormSchema = z
     {
       message: 'Event duration cannot exceed 8 hours',
       path: ['endsAt'],
+    },
+  )
+  .refine(
+    (data) => {
+      // For INTERVIEW events, applicationId is required
+      if (data.type === EventType.INTERVIEW && !data.applicationId) {
+        return false;
+      }
+      return true;
+    },
+    {
+      message: 'Application ID is required for interview events',
+      path: ['applicationId'],
     },
   );
 
