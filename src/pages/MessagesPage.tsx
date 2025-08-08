@@ -27,10 +27,12 @@ const MessagesPage = () => {
   const [selectedConversation, setSelectedConversation] =
     useState<FrontendConversation | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+
   const socketRef = useRef<Socket | null>(null);
+  const socketConnectedRef = useRef<boolean>(false);
+
   const user = useUser();
   const currentUserId = user?.data?.id || '';
-  const fetchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastFetchTimeRef = useRef<number>(0);
   const messagesLoadedRef = useRef<{ [key: string]: boolean }>({});
 
@@ -49,6 +51,24 @@ const MessagesPage = () => {
     signal: SimplePeer.SignalData;
     conversationId: string;
   } | null>(null);
+
+  // Memoize handleSelectConversation với useCallback
+  const handleSelectConversation = useCallback(
+    (id: string) => {
+      setConversations((prevConversations) => {
+        const conv = prevConversations.find((c) => c.id === id);
+        if (conv) {
+          setSelectedConversation(conv);
+          // Reset the loaded flag when manually selecting a conversation
+          if (conv.id !== selectedConversation?.id) {
+            messagesLoadedRef.current[conv.id] = false;
+          }
+        }
+        return prevConversations;
+      });
+    },
+    [selectedConversation?.id],
+  );
 
   // Fetch conversations on mount
   useEffect(() => {
@@ -105,58 +125,7 @@ const MessagesPage = () => {
     };
 
     fetchConversations();
-  }, [currentUserId, searchParams]);
-
-  useEffect(() => {
-    if (!currentUserId) return;
-
-    const socketUrl =
-      process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-
-    // Tạo kết nối socket global riêng
-    const globalSocket = io(`${socketUrl}/messenger`, {
-      query: { userId: currentUserId },
-      withCredentials: true,
-    });
-
-    console.log('Creating global socket for incoming calls');
-
-    // Lắng nghe incoming calls từ TẤT CẢ conversations
-    globalSocket.on(
-      'video-call-offer',
-      ({ from, signal, conversationId: callConversationId }) => {
-        console.log('Received incoming call:', { from, callConversationId });
-
-        // Tìm conversation với người gọi
-        const conversation = conversations.find(
-          (conv) => conv.id === callConversationId,
-        );
-
-        if (conversation) {
-          // Lưu thông tin cuộc gọi đến
-          setIncomingCallData({
-            from,
-            signal,
-            conversationId: callConversationId,
-          });
-          setShowIncomingCallNotification(true);
-
-          // Tự động chọn conversation nếu chưa chọn
-          if (
-            !selectedConversation ||
-            selectedConversation.id !== callConversationId
-          ) {
-            setSelectedConversation(conversation);
-          }
-        }
-      },
-    );
-
-    return () => {
-      console.log('Disconnecting global socket');
-      globalSocket.disconnect();
-    };
-  }, [currentUserId, conversations, selectedConversation]);
+  }, [currentUserId, searchParams, handleSelectConversation]);
 
   // Debounced fetch messages function
   const fetchMessages = useCallback(
@@ -192,7 +161,7 @@ const MessagesPage = () => {
         });
 
         setSelectedConversation((prev) =>
-          prev
+          prev && prev.id === conversationId
             ? {
                 ...prev,
                 messages,
@@ -221,34 +190,9 @@ const MessagesPage = () => {
     [currentUserId],
   );
 
-  // Initialize WebSocket when a conversation is selected
-  useEffect(() => {
-    if (!selectedConversation || !currentUserId) {
-      if (socketRef.current) {
-        socketRef.current.disconnect();
-        socketRef.current = null;
-      }
-      return;
-    }
-
-    // Connect to the messenger namespace
-    const socketUrl =
-      (process.env.NEXT_PUBLIC_API_URL as string | undefined) ||
-      'http://localhost:8000';
-    socketRef.current = io(`${socketUrl}/messenger`, {
-      query: {
-        userId: currentUserId,
-        conversationId: selectedConversation.id,
-      },
-      withCredentials: true,
-    });
-
-    const socket = socketRef.current;
-
-    socket.emit('joinConversation', selectedConversation.id);
-
-    // Handle new messages
-    socket.on('newMessage', (message: Message & { sender: User }) => {
+  // Handler functions
+  const handleNewMessage = useCallback(
+    (message: Message & { sender: User }) => {
       // Check if sender has company information and add companyName
       if (
         message.sender.company &&
@@ -299,74 +243,194 @@ const MessagesPage = () => {
           currentUserId,
         );
       }
-    });
+    },
+    [currentUserId, selectedConversation],
+  );
 
-    // Handle user status updates
-    socket.on('userStatus', ({ userId, isOnline }) => {
+  const handleUserStatus = useCallback(
+    ({ userId, isOnline }: { userId: string; isOnline: boolean }) => {
       setOnlineUsers((prev) => ({
         ...prev,
         [userId]: isOnline,
       }));
-    });
+    },
+    [],
+  );
 
-    // Handle incoming video call
-    socket.on(
-      'video-call-offer',
-      ({ from, signal, conversationId: callConversationId }) => {
-        if (callConversationId === selectedConversation?.id) {
-          setIncomingCallData({
-            from,
-            signal,
-            conversationId: callConversationId,
-          });
+  const handleIncomingCall = useCallback(
+    ({
+      from,
+      signal,
+      conversationId,
+    }: {
+      from: string;
+      signal: SimplePeer.SignalData;
+      conversationId: string;
+    }) => {
+      console.log('Incoming call:', { from, conversationId });
+
+      // Sử dụng functional update để tránh phụ thuộc vào conversations state
+      setConversations((prevConversations) => {
+        const conversation = prevConversations.find(
+          (c) => c.id === conversationId,
+        );
+        if (conversation) {
+          setIncomingCallData({ from, signal, conversationId });
           setShowIncomingCallNotification(true);
-        }
-      },
-    );
 
-    // Handle errors
-    socket.on('error', (error) => {
-      console.error('Socket error:', error);
+          setSelectedConversation((prevSelected) => {
+            if (!prevSelected || prevSelected.id !== conversationId) {
+              return conversation;
+            }
+            return prevSelected;
+          });
+        }
+        return prevConversations;
+      });
+    },
+    [],
+  );
+
+  // Initialize socket - MỘT LẦN DUY NHẤT
+  useEffect(() => {
+    if (!currentUserId || socketRef.current) return;
+
+    const socketUrl =
+      process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+
+    console.log('Creating single socket connection...');
+
+    const socket = io(`${socketUrl}/messenger`, {
+      query: { userId: currentUserId },
+      withCredentials: true,
+      transports: ['polling', 'websocket'], // Cho phép cả 2
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      timeout: 20000,
     });
 
-    // Fetch messages only once when selecting a conversation
+    socket.on('connect', () => {
+      console.log('Socket connected:', socket.id);
+      socketConnectedRef.current = true;
+
+      // Re-join all conversations after reconnect
+      // Sử dụng functional update để lấy conversations hiện tại
+      setConversations((currentConversations) => {
+        currentConversations.forEach((conv) => {
+          socket.emit('joinConversation', conv.id);
+        });
+        return currentConversations;
+      });
+    });
+
+    socket.on('disconnect', () => {
+      console.log('Socket disconnected');
+      socketConnectedRef.current = false;
+    });
+
+    socket.on('connect_error', (error) => {
+      console.error('Socket connection error:', error.message);
+    });
+
+    socketRef.current = socket;
+
+    // Cleanup chỉ khi component unmount
+    return () => {
+      console.log('Component unmounting, disconnecting socket');
+      socket.disconnect();
+      socketRef.current = null;
+      socketConnectedRef.current = false;
+    };
+  }, [currentUserId]);
+
+  // Setup event listeners
+  useEffect(() => {
+    if (!socketRef.current) return;
+
+    const socket = socketRef.current;
+
+    // Add event listeners
+    socket.on('newMessage', handleNewMessage);
+    socket.on('userStatus', handleUserStatus);
+    socket.on('video-call-offer', handleIncomingCall);
+
+    // Handle video call events
+    socket.on('video-call-end', ({ from }: { from: string }) => {
+      if (from === selectedConversation?.contact.id) {
+        console.log('Remote ended call');
+        setIsVideoCallOpen(false);
+        setIsIncomingCall(false);
+      }
+    });
+
+    return () => {
+      // Cleanup listeners nhưng KHÔNG disconnect socket
+      socket.off('newMessage', handleNewMessage);
+      socket.off('userStatus', handleUserStatus);
+      socket.off('video-call-offer', handleIncomingCall);
+      socket.off('video-call-end');
+    };
+  }, [
+    handleNewMessage,
+    handleUserStatus,
+    handleIncomingCall,
+    selectedConversation,
+  ]);
+
+  // Join conversations khi danh sách conversations thay đổi
+  useEffect(() => {
+    if (!socketRef.current || !socketConnectedRef.current) return;
+
+    const socket = socketRef.current;
+
+    // Join all conversations để nhận notifications
+    conversations.forEach((conv) => {
+      socket.emit('joinConversation', conv.id);
+    });
+  }, [conversations]);
+
+  // Handle selected conversation change
+  useEffect(() => {
+    if (!selectedConversation) return;
+
+    // Fetch messages nếu chưa load
     if (!messagesLoadedRef.current[selectedConversation.id]) {
       fetchMessages(selectedConversation.id);
     }
 
-    return () => {
-      if (fetchTimeoutRef.current) {
-        clearTimeout(fetchTimeoutRef.current);
-        fetchTimeoutRef.current = null;
-      }
-
-      socket.off('newMessage');
-      socket.off('userStatus');
-      socket.off('error');
-      socket.off('video-call-offer');
-      socket.emit('leaveConversation', selectedConversation.id);
-      socket.disconnect();
-      socketRef.current = null;
-    };
-  }, [selectedConversation, currentUserId, fetchMessages]);
-
-  const handleSelectConversation = (id: string) => {
-    const conv = conversations.find((c) => c.id === id);
-    if (conv) {
-      setSelectedConversation(conv);
-      // Reset the loaded flag when manually selecting a conversation
-      if (conv.id !== selectedConversation?.id) {
-        messagesLoadedRef.current[conv.id] = false;
-      }
+    // Emit focus event để server biết user đang xem conversation nào
+    if (socketRef.current && socketConnectedRef.current) {
+      socketRef.current.emit('focusConversation', selectedConversation.id);
     }
-  };
+
+    return () => {
+      // Emit blur event khi chuyển conversation
+      if (socketRef.current && socketConnectedRef.current) {
+        socketRef.current.emit('blurConversation', selectedConversation.id);
+      }
+    };
+  }, [selectedConversation, fetchMessages]);
 
   const handleSendMessage = (content: string) => {
-    if (selectedConversation && socketRef.current && currentUserId) {
+    if (
+      selectedConversation &&
+      socketRef.current &&
+      socketConnectedRef.current &&
+      currentUserId
+    ) {
       socketRef.current.emit('sendMessage', {
         conversationId: selectedConversation.id,
         content,
         senderId: currentUserId,
+      });
+    } else {
+      console.error('Cannot send message:', {
+        hasConversation: !!selectedConversation,
+        hasSocket: !!socketRef.current,
+        isConnected: socketConnectedRef.current,
+        hasUserId: !!currentUserId,
       });
     }
   };

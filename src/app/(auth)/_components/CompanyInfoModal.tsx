@@ -32,6 +32,7 @@ import {
   FileCheck,
 } from 'lucide-react';
 import { ReportTaxCodeModal } from './ReportTaxCodeModal';
+import Image from 'next/image';
 
 interface Props {
   open: boolean;
@@ -410,11 +411,14 @@ export const CompanyInfoModal: React.FC<Props> = ({
                       {previewUrl ? (
                         // Image preview
                         <div className="overflow-hidden rounded-lg border border-gray-200 bg-gray-50">
-                          <img
-                            src={previewUrl}
-                            alt="Preview"
-                            className="h-48 w-full object-contain"
-                          />
+                          <div className="relative h-48 w-full">
+                            <Image
+                              src={previewUrl}
+                              alt="Preview"
+                              fill
+                              className="object-contain"
+                            />
+                          </div>
                         </div>
                       ) : pdfPreviewUrl ? (
                         // PDF preview

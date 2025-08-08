@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 import Modal from '../ui/Modal';
 import Icon from '../ui/Icon';
 import { Task } from './TaskBoard';
+import { toast } from 'react-toastify';
 
 interface TaskModalProps {
   isOpen: boolean;
@@ -13,7 +14,12 @@ interface TaskModalProps {
   onDelete?: (taskId: string) => void;
   task?: Task;
   roomUsers?: string[];
-  keepParentOpen?: boolean;
+}
+
+interface ReminderOption {
+  value: string;
+  label: string;
+  minutes: number | null;
 }
 
 export default function TaskModal({
@@ -22,7 +28,6 @@ export default function TaskModal({
   onSave,
   onDelete,
   task,
-  keepParentOpen = false,
 }: TaskModalProps) {
   const [formData, setFormData] = useState<Partial<Task>>({
     title: '',
@@ -36,21 +41,102 @@ export default function TaskModal({
   } as Partial<Task>);
   const [tagInput, setTagInput] = useState('');
   const [checklistInput, setChecklistInput] = useState('');
-  const [reminderHours, setReminderHours] = useState('1');
+  const [selectedReminder, setSelectedReminder] = useState<string>('none');
+  const [errors, setErrors] = useState<{
+    title?: string;
+    dueDate?: string;
+    reminder?: string;
+  }>({});
+
+  // Define reminder options
+  const reminderOptions: ReminderOption[] = [
+    { value: 'none', label: 'No reminder', minutes: null },
+    { value: '5', label: '5 minutes before', minutes: 5 },
+    { value: '10', label: '10 minutes before', minutes: 10 },
+    { value: '15', label: '15 minutes before', minutes: 15 },
+    { value: '30', label: '30 minutes before', minutes: 30 },
+    { value: '60', label: '1 hour before', minutes: 60 },
+    { value: '120', label: '2 hours before', minutes: 120 },
+    { value: '180', label: '3 hours before', minutes: 180 },
+    { value: '360', label: '6 hours before', minutes: 360 },
+    { value: '720', label: '12 hours before', minutes: 720 },
+    { value: '1440', label: '1 day before', minutes: 1440 },
+  ];
+
+  // Get smart reminder suggestions based on due date
+  const getSmartReminderSuggestions = (): ReminderOption[] => {
+    if (!formData.dueDate) return reminderOptions;
+
+    const now = new Date();
+    const dueDate = new Date(formData.dueDate);
+    const timeDiff = dueDate.getTime() - now.getTime();
+    const minutesUntilDue = Math.floor(timeDiff / (1000 * 60));
+
+    // Filter options that are valid for the time remaining
+    const validOptions = reminderOptions.filter((option) => {
+      if (option.minutes === null) return true; // Always include "none"
+      // Reminder should be at least 5 minutes from now
+      return option.minutes < minutesUntilDue - 5;
+    });
+
+    // If no valid options (due date too soon), suggest adjusted options
+    if (validOptions.length <= 1) {
+      // Only "none" is available
+      const adjustedOptions: ReminderOption[] = [
+        { value: 'none', label: 'No reminder', minutes: null },
+      ];
+
+      if (minutesUntilDue > 5) {
+        adjustedOptions.push({
+          value: '5',
+          label: '5 minutes before',
+          minutes: 5,
+        });
+      }
+
+      if (minutesUntilDue > 10) {
+        const halfTime = Math.floor(minutesUntilDue / 2);
+        adjustedOptions.push({
+          value: halfTime.toString(),
+          label: `${halfTime} minutes before (50% of time)`,
+          minutes: halfTime,
+        });
+      }
+
+      if (minutesUntilDue > 15) {
+        const quarterTime = Math.floor(minutesUntilDue / 4);
+        adjustedOptions.push({
+          value: quarterTime.toString(),
+          label: `${quarterTime} minutes before (25% of time)`,
+          minutes: quarterTime,
+        });
+      }
+
+      return adjustedOptions;
+    }
+
+    return validOptions;
+  };
+
+  // Get available reminder options
+  const availableReminderOptions = getSmartReminderSuggestions();
 
   useEffect(() => {
     if (task) {
       setFormData({
         ...task,
       });
-      if (task.reminderTime) {
-        // Extract hours from reminder time if it exists
-        const dueDate = new Date(task.dueDate || '');
+
+      // Set reminder selection
+      if (!task.reminderTime) {
+        setSelectedReminder('none');
+      } else if (task.dueDate) {
+        const dueDate = new Date(task.dueDate);
         const reminderDate = new Date(task.reminderTime);
-        const diffHours = Math.round(
-          (dueDate.getTime() - reminderDate.getTime()) / (1000 * 60 * 60),
+        const diffMinutes = Math.round(
+          (dueDate.getTime() - reminderDate.getTime()) / (1000 * 60),
         );
-        setReminderHours(diffHours.toString());
+        setSelectedReminder(diffMinutes.toString());
       }
     } else {
       setFormData({
@@ -62,9 +148,45 @@ export default function TaskModal({
         checklist: [],
         recurring: { frequency: null, interval: 1 },
       });
-      setReminderHours('1');
+      setSelectedReminder('none');
     }
+    setErrors({});
   }, [task, isOpen]);
+
+  const validateForm = (): boolean => {
+    const newErrors: typeof errors = {};
+
+    // Validate title length
+    if (!formData.title || formData.title.length < 3) {
+      newErrors.title = 'Title must be at least 3 characters long';
+    }
+
+    // Validate due date
+    if (formData.dueDate) {
+      const dueDate = new Date(formData.dueDate);
+      const now = new Date();
+
+      if (dueDate < now) {
+        newErrors.dueDate = 'Due date must be in the future';
+      }
+
+      // Validate reminder time if not "none"
+      if (selectedReminder !== 'none') {
+        const reminderMinutes = parseInt(selectedReminder);
+        const reminderMs = reminderMinutes * 60 * 1000;
+        const earliestReminderTime = new Date(now.getTime() + 5 * 60 * 1000); // At least 5 minutes from now
+        const reminderTime = new Date(dueDate.getTime() - reminderMs);
+
+        if (reminderTime < earliestReminderTime) {
+          newErrors.reminder =
+            'Reminder time is too early. Please adjust the due date or choose a different reminder time';
+        }
+      }
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -76,6 +198,14 @@ export default function TaskModal({
       ...formData,
       [name]: value,
     });
+
+    // Clear error when user starts typing
+    if (errors[name as keyof typeof errors]) {
+      setErrors({
+        ...errors,
+        [name]: undefined,
+      });
+    }
   };
 
   const handleAddTag = () => {
@@ -161,27 +291,53 @@ export default function TaskModal({
       dueDate,
     });
 
+    // Clear due date error
+    if (errors.dueDate) {
+      setErrors({
+        ...errors,
+        dueDate: undefined,
+        reminder: undefined,
+      });
+    }
+
     // Update reminder time if due date changes
-    if (dueDate) {
-      updateReminderTime(dueDate, reminderHours);
-    } else {
+    if (dueDate && selectedReminder !== 'none') {
+      updateReminderTime(dueDate, selectedReminder);
+    } else if (!dueDate) {
       setFormData((prev) => ({ ...prev, reminderTime: undefined }));
+      setSelectedReminder('none');
     }
   };
 
   const handleReminderChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const hours = e.target.value;
-    setReminderHours(hours);
+    const value = e.target.value;
+    setSelectedReminder(value);
 
-    if (formData.dueDate) {
-      updateReminderTime(formData.dueDate, hours);
+    // Clear reminder error
+    if (errors.reminder) {
+      setErrors({
+        ...errors,
+        reminder: undefined,
+      });
+    }
+
+    if (formData.dueDate && value !== 'none') {
+      updateReminderTime(formData.dueDate, value);
+    } else {
+      // Remove reminder time if "none" is selected
+      setFormData((prev) => ({ ...prev, reminderTime: undefined }));
     }
   };
 
-  const updateReminderTime = (dueDate: string, hours: string) => {
+  const updateReminderTime = (dueDate: string, minutes: string) => {
+    if (minutes === 'none') {
+      setFormData((prev) => ({ ...prev, reminderTime: undefined }));
+      return;
+    }
+
     const dueDateObj = new Date(dueDate);
     const reminderDate = new Date(
-      dueDateObj.getTime() - parseInt(hours) * 60 * 60 * 1000,
+      dueDateObj.getTime() - parseInt(minutes) * 60 * 1000,
     );
 
     setFormData((prev) => ({
@@ -231,43 +387,70 @@ export default function TaskModal({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!validateForm()) {
+      toast.error('Please fix the errors before saving');
+      return;
+    }
+
     if (formData.title) {
       onSave(formData as Task);
+      toast.success(
+        task ? 'Task updated successfully!' : 'New task created successfully!',
+      );
     }
   };
 
   const handleModalClose = () => {
-    if (!keepParentOpen) {
-      onClose();
+    // Reset form data
+    if (task) {
+      setFormData({
+        ...task,
+      });
     } else {
-      // Just reset the form without closing the parent modal
-      if (task) {
-        setFormData({
-          ...task,
-        });
-      } else {
-        setFormData({
-          title: '',
-          description: '',
-          status: 'todo',
-          priority: 'medium',
-          tags: [],
-          checklist: [],
-          recurring: { frequency: null, interval: 1 },
-        });
-      }
-      onClose();
+      setFormData({
+        title: '',
+        description: '',
+        status: 'todo',
+        priority: 'medium',
+        tags: [],
+        checklist: [],
+        recurring: { frequency: null, interval: 1 },
+      });
     }
+
+    setErrors({});
+    setSelectedReminder('none');
+    // Luôn gọi onClose (TaskBoard sẽ xử lý việc cập nhật state)
+    onClose();
   };
 
   // Calculate progress
   const progress = formData.progress || 0;
 
+  // Get minimum date/time for due date input (current time)
+  const getMinDateTime = () => {
+    const now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    return now.toISOString().slice(0, 16);
+  };
+
+  // Check if due date is too soon for meaningful reminders
+  const isDueDateTooSoon = () => {
+    if (!formData.dueDate) return false;
+    const dueDate = new Date(formData.dueDate);
+    const now = new Date();
+    const minutesUntilDue = Math.floor(
+      (dueDate.getTime() - now.getTime()) / (1000 * 60),
+    );
+    return minutesUntilDue < 10;
+  };
+
   return (
     <Modal
       isOpen={isOpen}
       onClose={handleModalClose}
-      title={task ? 'Edit Task' : 'Add New Task'}
+      title={task ? 'Edit Task' : 'Create New Task'}
       size="lg"
     >
       <form
@@ -275,16 +458,26 @@ export default function TaskModal({
         className="max-h-[80vh] space-y-4 overflow-y-auto p-4"
       >
         <div>
-          <label className="mb-1 block text-sm text-stone-400">Title *</label>
+          <label className="mb-1 block text-sm text-stone-400">
+            Title <span className="text-red-500">*</span>
+          </label>
           <input
             type="text"
             name="title"
             value={formData.title}
             onChange={handleChange}
-            className="w-full rounded-md border border-stone-700 bg-stone-800 px-3 py-2 text-white"
-            placeholder="Task title"
+            className={cn(
+              'w-full rounded-md border px-3 py-2 text-white',
+              errors.title
+                ? 'border-red-500 bg-red-900/20'
+                : 'border-stone-700 bg-stone-800',
+            )}
+            placeholder="Enter task title (min 3 characters)"
             required
           />
+          {errors.title && (
+            <p className="mt-1 text-xs text-red-500">{errors.title}</p>
+          )}
         </div>
 
         <div>
@@ -296,12 +489,12 @@ export default function TaskModal({
             value={formData.description}
             onChange={handleChange}
             className="h-24 w-full resize-none rounded-md border border-stone-700 bg-stone-800 px-3 py-2 text-white"
-            placeholder="Detailed task description"
+            placeholder="Add a detailed description (optional)"
           />
         </div>
 
-        {/* Status, Priority, and Assignee */}
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        {/* Status and Priority */}
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
             <label className="mb-1 block text-sm text-stone-400">Status</label>
             <select
@@ -345,28 +538,48 @@ export default function TaskModal({
               name="dueDate"
               value={formData.dueDate || ''}
               onChange={handleDueDateChange}
-              className="w-full rounded-md border border-stone-700 bg-stone-800 px-3 py-2 text-white"
+              min={getMinDateTime()}
+              className={cn(
+                'w-full rounded-md border px-3 py-2 text-white',
+                errors.dueDate
+                  ? 'border-red-500 bg-red-900/20'
+                  : 'border-stone-700 bg-stone-800',
+              )}
             />
+            {errors.dueDate && (
+              <p className="mt-1 text-xs text-red-500">{errors.dueDate}</p>
+            )}
           </div>
 
           <div>
             <label className="mb-1 block text-sm text-stone-400">
-              Reminder (before due date)
+              Reminder
             </label>
             <select
-              value={reminderHours}
+              value={selectedReminder}
               onChange={handleReminderChange}
               disabled={!formData.dueDate}
-              className="w-full rounded-md border border-stone-700 bg-stone-800 px-3 py-2 text-white disabled:opacity-50"
+              className={cn(
+                'w-full rounded-md border px-3 py-2 text-white disabled:opacity-50',
+                errors.reminder
+                  ? 'border-red-500 bg-red-900/20'
+                  : 'border-stone-700 bg-stone-800',
+              )}
             >
-              <option value="0.5">30 minutes</option>
-              <option value="1">1 hour</option>
-              <option value="2">2 hours</option>
-              <option value="4">4 hours</option>
-              <option value="8">8 hours</option>
-              <option value="24">1 day</option>
-              <option value="48">2 days</option>
+              {availableReminderOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
             </select>
+            {errors.reminder && (
+              <p className="mt-1 text-xs text-red-500">{errors.reminder}</p>
+            )}
+            {isDueDateTooSoon() && formData.dueDate && (
+              <p className="mt-1 text-xs text-yellow-500">
+                ⚠️ Due date is very soon. Limited reminder options available.
+              </p>
+            )}
           </div>
         </div>
 
@@ -544,7 +757,12 @@ export default function TaskModal({
           {task && onDelete && (
             <button
               type="button"
-              onClick={() => onDelete(task.id)}
+              onClick={() => {
+                if (confirm('Are you sure you want to delete this task?')) {
+                  onDelete(task.id);
+                  toast.success('Task deleted successfully!');
+                }
+              }}
               className="rounded-md bg-red-700 px-4 py-2 text-white hover:bg-red-600"
             >
               Delete
