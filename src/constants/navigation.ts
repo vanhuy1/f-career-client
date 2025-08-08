@@ -12,6 +12,11 @@ const ROUTES = {
       path: '/company',
       name: 'Browse Companies',
     },
+
+    ROOM: {
+      path: '/room',
+      name: 'Vitual workspaces',
+    },
   },
 
   //Public

@@ -5,16 +5,17 @@ import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import IconButton from './IconButton';
 import SceneSelector from '../scenes/SceneSelector';
-import MusicSelector from '../music/MusicSelector';
-import CalendarModal from '../calendar/CalendarModal';
+// import CalendarModal from '../calendar/CalendarModal';
 import TaskBoardModal from '../tasks/TaskBoardModal';
 import SoundControl from '../music/SoundControl';
-import { Maximize2, Minimize2 } from 'lucide-react';
+import { LogOut, Maximize2, Minimize2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 export default function Header() {
   const [isTaskBoardOpen, setIsTaskBoardOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isPomodoroActive, setIsPomodoroActive] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -44,9 +45,20 @@ export default function Header() {
 
   const togglePomodoro = () => {
     setIsPomodoroActive(!isPomodoroActive);
-    // Dispatch event for StudyRoom to handle
     const event = new CustomEvent('toggle-pomodoro');
     document.dispatchEvent(event);
+  };
+
+  const handleBackClick = () => {
+    const confirmLeave = window.confirm(
+      'Are you sure you want to leave workspaces?',
+    );
+    if (confirmLeave) {
+      if (document.fullscreenElement) {
+        document.exitFullscreen();
+      }
+      router.push('/');
+    }
   };
 
   return (
@@ -57,9 +69,8 @@ export default function Header() {
       >
         F-Career Study Room
       </Link>
-      <div className={cn('flex items-center gap-4')}>
+      <div className={cn('flex items-center gap-7')}>
         <SceneSelector />
-        <MusicSelector />
         <SoundControl />
         <IconButton
           icon="Clock"
@@ -67,7 +78,8 @@ export default function Header() {
           onClick={togglePomodoro}
           isActive={isPomodoroActive}
         />
-        <CalendarModal />
+        {/* <CalendarModal /> */}
+
         <button
           onClick={toggleFullscreen}
           className={cn(
@@ -84,6 +96,23 @@ export default function Header() {
           ) : (
             <Maximize2 className="h-5 w-5 text-white" />
           )}
+        </button>
+
+        <button
+          onClick={handleBackClick}
+          className={cn(
+            'group flex items-center gap-2 rounded-xl px-8 py-2',
+            'bg-gradient-to-r from-white/10 to-white/5',
+            'shadow-lg backdrop-blur-md',
+            'border border-white/20',
+            'transition-all duration-300 ease-out',
+            'hover:from-white/15 hover:to-white/10',
+            'hover:scale-105 hover:shadow-xl',
+            'text-white/90 hover:text-white',
+          )}
+        >
+          <LogOut className="h-4 w-4 rotate-180" />
+          <span className="text-sm font-medium">Exit Room</span>
         </button>
       </div>
       <TaskBoardModal

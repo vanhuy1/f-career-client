@@ -10,6 +10,8 @@ import Icon from '../ui/Icon';
 import { taskService } from '@/services/api/room/task-api';
 import { toast } from 'react-toastify';
 import { RefreshCw } from 'lucide-react';
+import TaskNotificationInspiration from './TaskNotificationInspiration';
+import { useUser } from '@/services/state/userSlice';
 
 export type TaskStatus = 'todo' | 'in-progress' | 'review' | 'done';
 export type TaskPriority = 'low' | 'medium' | 'high';
@@ -77,14 +79,11 @@ interface TaskBoardProps {
   keepParentOpen?: boolean;
   onTaskModalOpen?: () => void;
   onTaskModalClose?: () => void;
-  userId?: number;
 }
 
 export default function TaskBoard({
-  keepParentOpen = false,
   onTaskModalOpen,
   onTaskModalClose,
-  userId,
 }: TaskBoardProps) {
   const [tasks, setTasks] = useLocalStorageState<Task[]>(
     [],
@@ -109,8 +108,9 @@ export default function TaskBoard({
 
   const filterMenuRef = useRef<HTMLDivElement>(null);
   const actionsMenuRef = useRef<HTMLDivElement>(null);
+  const user = useUser();
+  const userId = Number(user?.data?.id);
 
-  // Notify parent when task modal is opened or closed
   useEffect(() => {
     if (isAddingTask || editingTask) {
       onTaskModalOpen?.();
@@ -330,18 +330,18 @@ export default function TaskBoard({
     }
   };
 
-  const handleExportTasks = () => {
-    const dataStr = JSON.stringify(tasks, null, 2);
-    const dataUri =
-      'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
+  // const handleExportTasks = () => {
+  //   const dataStr = JSON.stringify(tasks, null, 2);
+  //   const dataUri =
+  //     'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
 
-    const exportFileDefaultName = `tasks-${new Date().toISOString().slice(0, 10)}.json`;
+  //   const exportFileDefaultName = `tasks-${new Date().toISOString().slice(0, 10)}.json`;
 
-    const linkElement = document.createElement('a');
-    linkElement.setAttribute('href', dataUri);
-    linkElement.setAttribute('download', exportFileDefaultName);
-    linkElement.click();
-  };
+  //   const linkElement = document.createElement('a');
+  //   linkElement.setAttribute('href', dataUri);
+  //   linkElement.setAttribute('download', exportFileDefaultName);
+  //   linkElement.click();
+  // };
 
   const handleDragStart = (e: React.DragEvent, taskId: string) => {
     e.dataTransfer.setData('taskId', taskId);
@@ -425,6 +425,11 @@ export default function TaskBoard({
   return (
     <div className="p-4">
       {/* Header with controls */}
+      <TaskNotificationInspiration
+        tasks={tasks}
+        onTaskUpdate={handleUpdateTask}
+      />
+
       <div className="mb-6 flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
         <h2 className="flex items-center gap-2 text-2xl font-bold text-white">
           <Icon name="Board" className="h-6 w-6" />
@@ -453,7 +458,7 @@ export default function TaskBoard({
             disabled={isSyncing || !isInitialized}
           >
             <RefreshCw className={cn('h-4 w-4', isSyncing && 'animate-spin')} />
-            <span>{isSyncing ? 'save...' : 'Save'}</span>
+            <span>{isSyncing ? 'Save...' : 'Save'}</span>
           </button>
 
           <div className="relative" ref={filterMenuRef}>
@@ -603,7 +608,7 @@ export default function TaskBoard({
             </button>
             {isActionsMenuOpen && (
               <div className="absolute top-full right-0 z-10 mt-2 w-48 rounded-md border border-stone-700 bg-stone-800 p-2 shadow-lg">
-                <button
+                {/* <button
                   onClick={() => {
                     handleExportTasks();
                     setIsActionsMenuOpen(false);
@@ -612,7 +617,7 @@ export default function TaskBoard({
                 >
                   <Icon name="Note" className="h-4 w-4" />
                   Export Tasks
-                </button>
+                </button> */}
                 <button
                   onClick={() => {
                     handleDeleteAllCompleted();
@@ -621,7 +626,7 @@ export default function TaskBoard({
                   className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-red-400 hover:bg-stone-700"
                 >
                   <Icon name="Trash" className="h-4 w-4" />
-                  Delete Completed
+                  Delete Done
                 </button>
               </div>
             )}
@@ -708,7 +713,6 @@ export default function TaskBoard({
           isOpen={isAddingTask}
           onClose={() => setIsAddingTask(false)}
           onSave={handleAddTask}
-          keepParentOpen={keepParentOpen}
         />
       )}
 
@@ -720,7 +724,6 @@ export default function TaskBoard({
           onSave={handleUpdateTask}
           onDelete={handleDeleteTask}
           task={editingTask}
-          keepParentOpen={keepParentOpen}
         />
       )}
     </div>

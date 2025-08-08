@@ -5,7 +5,6 @@ import { cn } from '@/lib/utils';
 import { useRoomInit } from '../hooks/useRoomInit';
 import Header from './ui/Header';
 import Scenes from './scenes/Scenes';
-import Music from './music/Music';
 import Clock from './promodo/Clock';
 import PomodoroTimer from './promodo/PomodoroTimer';
 import RoomChat from './chat/RoomChat';
@@ -217,7 +216,6 @@ export default function StudyRoom({
     <div className={cn('relative min-h-screen')}>
       <Scenes />
       <Header />
-      <Music />
       <Clock />
 
       <div className="animate-in fade-in fixed top-20 left-8 z-20 flex flex-col gap-4 rounded-lg border border-green-500/30 bg-stone-900/80 p-4 backdrop-blur-sm duration-300">
@@ -271,7 +269,6 @@ export default function StudyRoom({
       <TaskBoardModal
         isOpen={isTaskBoardOpen}
         onClose={() => setIsTaskBoardOpen(false)}
-        userId={userId}
       />
     </div>
   );

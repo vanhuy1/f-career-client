@@ -104,6 +104,21 @@ export default function Header() {
                 <div className="absolute bottom-0 left-1/2 h-1 w-1 -translate-x-1/2 transform rounded-full bg-blue-700"></div>
               )}
             </Link>
+            {user && (
+              <Link
+                href={ROUTES.HOMEPAGE.ROOM.path}
+                className={`relative rounded-lg px-3 py-2 font-medium transition-all duration-200 ${
+                  pathname === ROUTES.HOMEPAGE.ROOM.path
+                    ? 'bg-[#5e5cff]/10 text-blue-700'
+                    : 'text-gray-700 hover:bg-gray-100 hover:text-blue-700'
+                }`}
+              >
+                {ROUTES.HOMEPAGE.ROOM.name}
+                {pathname === ROUTES.HOMEPAGE.ROOM.path && (
+                  <div className="absolute bottom-0 left-1/2 h-1 w-1 -translate-x-1/2 transform rounded-full bg-blue-700"></div>
+                )}
+              </Link>
+            )}
           </nav>
 
           {/* Auth Section */}
