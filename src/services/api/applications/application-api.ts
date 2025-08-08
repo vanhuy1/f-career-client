@@ -1,4 +1,8 @@
-import { Application, ApplicationsResponse } from '@/types/Application';
+import {
+  Application,
+  ApplicationsResponse,
+  CandidateApplicationDetail,
+} from '@/types/Application';
 import { RequestBuilder } from '@/utils/axios/request-builder';
 import { ApplicationFormData } from '@/app/(public)/_components/apply-dialog';
 import { httpClient } from '@/utils/axios';
@@ -174,6 +178,22 @@ class ApplicationService {
       },
       config: {
         withCredentials: false,
+      },
+    });
+    return response;
+  }
+
+  async getCandidateApplicationDetail(
+    id: string,
+  ): Promise<CandidateApplicationDetail> {
+    const url = this.requestBuilder.buildUrl(`${id}/user`);
+    const response = await httpClient.get<CandidateApplicationDetail>({
+      url,
+      typeCheck: (data) => {
+        return {
+          success: true,
+          data: data as CandidateApplicationDetail,
+        };
       },
     });
     return response;

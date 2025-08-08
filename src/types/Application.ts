@@ -74,3 +74,59 @@ export type ApplicationStatus =
   | 'INTERVIEW'
   | 'HIRED'
   | 'REJECTED';
+
+export interface CandidateApplicationDetail {
+  id: number;
+  status: ApplicationStatus;
+  cv_id: string;
+  cover_letter: string;
+  applied_at: string;
+  updated_at: string;
+  job: {
+    id: string;
+    title: string;
+    location: string;
+    typeOfEmployment: string;
+    salaryMin: string;
+    salaryMax: string;
+    description: string;
+  };
+  company: {
+    id: string;
+    name: string;
+    logoUrl: string;
+    website: string;
+    phone: string;
+    email: string;
+    about: string;
+    contact: string[];
+  };
+  interviewSchedule?: {
+    companyName: string;
+    createdBy: number;
+    title: string;
+    type: string;
+    status: string;
+    startsAt: string;
+    endsAt: string;
+    location: string;
+    notes: string | null;
+    version: number;
+    createdAt: string;
+    updatedAt: string;
+  };
+  interviewSchedules?: Array<{
+    companyName: string;
+    createdBy: number;
+    title: string;
+    type: string;
+    status: string;
+    startsAt: string;
+    endsAt: string;
+    location: string;
+    notes: string | null;
+    version: number;
+    createdAt: string;
+    updatedAt: string;
+  }>;
+}
