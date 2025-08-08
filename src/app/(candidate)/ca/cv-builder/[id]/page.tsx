@@ -1134,7 +1134,7 @@ export default function CvBuilderPage() {
       name: 'John Doe',
       image: '',
       email: 'john.doe@example.com',
-      phone: 1234567890,
+      phone: '03234567890',
       linkedin: 'linkedin.com/in/johndoe',
       github: 'github.com/johndoe',
       title: 'Software Engineer',

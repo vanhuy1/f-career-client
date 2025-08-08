@@ -76,13 +76,13 @@ export default function CvListPage() {
       name: 'Name Example',
       image: '',
       title: 'Example Title',
-      linkedin: 'linkedin@example',
-      github: 'github@example',
-      phone: 123458690,
+      linkedin: '',
+      github: '',
+      phone: '0323458690',
       summary:
         'A Fullstack Developer passionate about crafting efficient, user-centric software solutions that make a meaningful impact.',
       skills: ['Nest', 'Next', 'Sql'],
-      languages: ['Vietnamese (Native)', 'English'],
+      languages: ['Vietnamese', 'English'],
       certifications: [
         {
           title: 'AWS Certified Developer',

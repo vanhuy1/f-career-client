@@ -14,7 +14,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { Pencil, Trash2 } from 'lucide-react';
+import { Pencil, Trash2, Calendar } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,6 +25,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
+import { toast } from 'react-toastify';
 import type { Cv, Experience } from '@/types/Cv';
 
 interface ExperiencesProps {
@@ -44,24 +53,39 @@ const Experiences = ({
   const [company, setCompany] = useState('');
   const [employmentType, setEmploymentType] = useState('');
   const [location, setLocation] = useState('');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
+  const [startDate, setStartDate] = useState<Date | undefined>();
+  const [endDate, setEndDate] = useState<Date | undefined>();
+  const [isCurrentJob, setIsCurrentJob] = useState(false);
   const [description, setDescription] = useState('');
   const [editIndex, setEditIndex] = useState<number | null>(null);
   const [deleteIndex, setDeleteIndex] = useState<number | null>(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [dateError, setDateError] = useState<string>('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title || !company || !startDate || !description) return;
+    if (!title || !company || !startDate || !description) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    // Validate dates
+    if (!isCurrentJob && endDate && startDate > endDate) {
+      setDateError('End date must be after start date');
+      return;
+    }
 
     const experience: Experience = {
       role: title,
       company,
       employmentType,
       location,
-      startDate,
-      endDate,
+      startDate: format(startDate, 'yyyy-MM-dd'),
+      endDate: isCurrentJob
+        ? 'Present'
+        : endDate
+          ? format(endDate, 'yyyy-MM-dd')
+          : '',
       description,
     };
 
@@ -72,14 +96,21 @@ const Experiences = ({
       onAddExperience(experience);
     }
 
+    resetForm();
+    setShowEditDialog(false);
+  };
+
+  const resetForm = () => {
     setTitle('');
     setCompany('');
     setEmploymentType('');
     setLocation('');
-    setStartDate('');
-    setEndDate('');
+    setStartDate(undefined);
+    setEndDate(undefined);
+    setIsCurrentJob(false);
     setDescription('');
-    setShowEditDialog(false);
+    setEditIndex(null);
+    setDateError('');
   };
 
   const handleEdit = (experience: Experience, index: number) => {
@@ -87,8 +118,20 @@ const Experiences = ({
     setCompany(experience.company);
     setEmploymentType(experience.employmentType);
     setLocation(experience.location);
-    setStartDate(experience.startDate);
-    setEndDate(experience.endDate || '');
+
+    // Parse dates
+    if (experience.startDate) {
+      setStartDate(new Date(experience.startDate));
+    }
+
+    if (experience.endDate === 'Present') {
+      setIsCurrentJob(true);
+      setEndDate(undefined);
+    } else if (experience.endDate) {
+      setEndDate(new Date(experience.endDate));
+      setIsCurrentJob(false);
+    }
+
     setDescription(experience.description || '');
     setEditIndex(index);
     setShowEditDialog(true);
@@ -100,15 +143,9 @@ const Experiences = ({
   };
 
   const handleCancel = () => {
-    setTitle('');
-    setCompany('');
-    setEmploymentType('');
-    setLocation('');
-    setStartDate('');
-    setEndDate('');
-    setDescription('');
-    setEditIndex(null);
+    resetForm();
     setShowEditDialog(false);
+    setDateError('');
   };
 
   return (
@@ -203,13 +240,19 @@ const Experiences = ({
 
               <div>
                 <Label htmlFor="employmentType">Employment Type</Label>
-                <Input
+                <select
                   id="employmentType"
                   value={employmentType}
                   onChange={(e) => setEmploymentType(e.target.value)}
-                  className="mt-1"
-                  placeholder="e.g., FULL_TIME"
-                />
+                  className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2"
+                >
+                  <option value="">Select type</option>
+                  <option value="FULL_TIME">Full Time</option>
+                  <option value="PART_TIME">Part Time</option>
+                  <option value="CONTRACT">Contract</option>
+                  <option value="FREELANCE">Freelance</option>
+                  <option value="INTERNSHIP">Internship</option>
+                </select>
               </div>
 
               <div>
@@ -225,24 +268,100 @@ const Experiences = ({
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="startDate">Start Date</Label>
-                  <Input
-                    id="startDate"
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                    className="mt-1"
-                    required
-                  />
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          'mt-1 w-full justify-start text-left font-normal',
+                          !startDate && 'text-muted-foreground',
+                        )}
+                      >
+                        <Calendar className="mr-2 h-4 w-4" />
+                        {startDate ? format(startDate, 'PPP') : 'Select date'}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <CalendarComponent
+                        mode="single"
+                        selected={startDate}
+                        onSelect={setStartDate}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
 
                 <div>
                   <Label htmlFor="endDate">End Date</Label>
-                  <Input
-                    id="endDate"
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                    className="mt-1"
-                    placeholder="Present"
-                  />
+                  <div className="space-y-2">
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          disabled={isCurrentJob}
+                          className={cn(
+                            'mt-1 w-full justify-start text-left font-normal',
+                            !endDate &&
+                              !isCurrentJob &&
+                              'text-muted-foreground',
+                            isCurrentJob && 'cursor-not-allowed opacity-50',
+                          )}
+                        >
+                          <Calendar className="mr-2 h-4 w-4" />
+                          {isCurrentJob
+                            ? 'Present'
+                            : endDate
+                              ? format(endDate, 'PPP')
+                              : 'Select date'}
+                        </Button>
+                      </PopoverTrigger>
+                      {!isCurrentJob && (
+                        <PopoverContent className="w-auto p-0">
+                          <CalendarComponent
+                            mode="single"
+                            selected={endDate}
+                            onSelect={(date) => {
+                              setEndDate(date);
+                              if (date && startDate && date < startDate) {
+                                setDateError(
+                                  'End date must be after start date',
+                                );
+                              } else {
+                                setDateError('');
+                              }
+                            }}
+                            disabled={(date) =>
+                              startDate ? date < startDate : false
+                            }
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      )}
+                    </Popover>
+
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id="currentJob"
+                        checked={isCurrentJob}
+                        onChange={(e) => {
+                          setIsCurrentJob(e.target.checked);
+                          if (e.target.checked) {
+                            setEndDate(undefined);
+                            setDateError('');
+                          }
+                        }}
+                        className="h-4 w-4"
+                      />
+                      <Label htmlFor="currentJob" className="text-sm">
+                        I currently work here
+                      </Label>
+                    </div>
+                    {dateError && (
+                      <p className="text-xs text-red-500">{dateError}</p>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -253,6 +372,7 @@ const Experiences = ({
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   className="mt-1 h-32"
+                  placeholder="Describe your responsibilities, achievements, and skills used..."
                   required
                 />
               </div>
@@ -262,7 +382,7 @@ const Experiences = ({
             <Button type="button" variant="outline" onClick={handleCancel}>
               Cancel
             </Button>
-            <Button onClick={handleSubmit}>
+            <Button onClick={handleSubmit} disabled={!!dateError}>
               {editIndex !== null ? 'Update Experience' : 'Add Experience'}
             </Button>
           </DialogFooter>

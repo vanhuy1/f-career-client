@@ -58,8 +58,10 @@ const CV = ({
   onUpdateExperience,
   onDeleteExperience,
 }: CVProps) => {
-  const items = 'flex items-center mr-3 mt-2';
-  const itemsSVG = 'h-4 w-4 text-gray-700 mr-1';
+  // Fixed styles for better PDF export
+  const items = 'inline-flex items-center mr-3 mt-2 print:inline-flex';
+  const itemsSVG = 'inline-block h-4 w-4 text-gray-700 mr-1 align-middle';
+  const itemText = 'inline-block text-xs align-middle';
   const titles = 'text-sm font-medium uppercase text-primary';
   const paragraphSize = 'text-[0.705rem] mt-1 text-gray-700';
   const jobSize = 'text-[0.775rem] text-gray-500';
@@ -75,14 +77,21 @@ const CV = ({
             <div className="flex items-center">
               {cv.image ? (
                 <div className="mr-4 flex">
-                  <Image
-                    src={cv.image}
-                    className="rounded-full border object-cover shadow-sm"
-                    width={72}
-                    height={72}
-                    alt="Profile Picture"
-                    quality={100}
-                  />
+                  <div className="h-[72px] w-[72px] overflow-hidden rounded-full border shadow-sm">
+                    <Image
+                      src={cv.image}
+                      className="h-full w-full object-cover"
+                      width={72}
+                      height={72}
+                      alt="Profile Picture"
+                      quality={100}
+                      style={{
+                        objectFit: 'cover',
+                        width: '72px',
+                        height: '72px',
+                      }}
+                    />
+                  </div>
                 </div>
               ) : (
                 <Image
@@ -104,7 +113,7 @@ const CV = ({
             <Button
               variant="outline"
               size="sm"
-              className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100"
+              className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100 print:hidden"
               onClick={() => setEditSection('about')}
             >
               <User className="h-3 w-3" />
@@ -112,56 +121,67 @@ const CV = ({
             </Button>
           </div>
 
-          {/* SOCIAL LINKS */}
+          {/* SOCIAL LINKS - Fixed for PDF export */}
           <div className="group relative mt-4">
-            <div className="flex flex-wrap items-center justify-between">
-              <div className="flex flex-wrap items-center">
-                <a
-                  href={`mailto:${cv.email}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className={items}
-                >
-                  <Mail className={itemsSVG} />
-                  <span className="text-xs">{cv.email}</span>
-                </a>
-                {cv.github && (
-                  <a
-                    href={websiteLinkCreator(cv.github)}
-                    target="_blank"
-                    rel="noreferrer"
-                    className={items}
-                  >
-                    <Github className={itemsSVG} />
-                    <span className="text-xs">
-                      {resolvedWebsiteLink(cv.github)}
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                {/* Use inline-block instead of flex for better PDF rendering */}
+                <div className="contact-info">
+                  {cv.email && (
+                    <a
+                      href={`mailto:${cv.email}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className={items}
+                      style={{ display: 'inline-flex', alignItems: 'center' }}
+                    >
+                      <Mail className={itemsSVG} />
+                      <span className={itemText}>{cv.email}</span>
+                    </a>
+                  )}
+                  {cv.phone && (
+                    <span
+                      className={items}
+                      style={{ display: 'inline-flex', alignItems: 'center' }}
+                    >
+                      <Phone className={itemsSVG} />
+                      <span className={itemText}>{cv.phone}</span>
                     </span>
-                  </a>
-                )}
-                {cv.linkedin && (
-                  <a
-                    href={websiteLinkCreator(cv.linkedin)}
-                    target="_blank"
-                    rel="noreferrer"
-                    className={items}
-                  >
-                    <Linkedin className={itemsSVG} />
-                    <span className="text-xs">
-                      {resolvedWebsiteLink(cv.linkedin)}
-                    </span>
-                  </a>
-                )}
-                {cv.phone && (
-                  <div className={items}>
-                    <Phone className={itemsSVG} />
-                    <span className="text-xs">{cv.phone}</span>
-                  </div>
-                )}
+                  )}
+                  {cv.github && (
+                    <a
+                      href={websiteLinkCreator(cv.github)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className={items}
+                      style={{ display: 'inline-flex', alignItems: 'center' }}
+                    >
+                      <Github className={itemsSVG} />
+                      <span className={itemText}>
+                        {resolvedWebsiteLink(cv.github)}
+                      </span>
+                    </a>
+                  )}
+                  {cv.linkedin && (
+                    <a
+                      href={websiteLinkCreator(cv.linkedin)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className={items}
+                      style={{ display: 'inline-flex', alignItems: 'center' }}
+                    >
+                      <Linkedin className={itemsSVG} />
+                      <span className={itemText}>
+                        {resolvedWebsiteLink(cv.linkedin)}
+                      </span>
+                    </a>
+                  )}
+                </div>
               </div>
               <Button
                 variant="outline"
                 size="sm"
-                className="ml-2 flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100"
+                className="ml-2 flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100 print:hidden"
                 onClick={() => setEditSection('contact')}
               >
                 <Edit className="h-3 w-3" />
@@ -172,13 +192,13 @@ const CV = ({
         </section>
 
         {/* ABOUT SECTION */}
-        <section id="about" className="group relative mt-6">
+        <section id="about" className="group relative mt-1">
           <div className="flex items-center justify-between">
             <h2 className={titles}>About</h2>
             <Button
               variant="outline"
               size="sm"
-              className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100"
+              className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100 print:hidden"
               onClick={() => setEditSection('about')}
             >
               <Edit className="h-3 w-3" />
@@ -191,20 +211,20 @@ const CV = ({
         </section>
 
         {/* SKILLS SECTION */}
-        <section id="skills" className="group skill-block relative mt-6">
+        <section id="skills" className="group skill-block relative mt-4">
           <div className="flex items-center justify-between">
             <h2 className={titles}>Skills</h2>
             <Button
               variant="outline"
               size="sm"
-              className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100"
+              className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100 print:hidden"
               onClick={() => setEditSection('skills')}
             >
               <Edit className="h-3 w-3" />
               <span>Edit</span>
             </Button>
           </div>
-          <div className="mt-2 grid grid-cols-2 gap-4">
+          <div className="mt-1 grid grid-cols-2 gap-4">
             <div>
               <h3 className="text-xs font-medium">Skills</h3>
               <div className="mt-2 flex flex-wrap gap-1">
@@ -237,13 +257,13 @@ const CV = ({
         </section>
 
         {/* EXPERIENCE SECTION */}
-        <section id="experience" className="group relative mt-6">
+        <section id="experience" className="group relative mt-4">
           <div className="flex items-center justify-between">
             <h2 className={titles}>Experience</h2>
             <Button
               variant="outline"
               size="sm"
-              className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100"
+              className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100 print:hidden"
               onClick={() => setEditSection('experience')}
             >
               <Edit className="h-3 w-3" />
@@ -253,11 +273,11 @@ const CV = ({
           <div className="mt-2 space-y-4">
             {cv.experience.map((experience, index) => (
               <Card key={index} className="experience-block">
-                <CardContent className="p-4">
-                  <div className="space-y-4">
+                <CardContent className="p-4 pt-0 pb-0">
+                  <div className="space-y-2">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
-                        <div className="mb-2 flex items-center gap-2">
+                        <div className="flex items-center gap-2">
                           <h3 className="text-lg font-semibold text-gray-900">
                             {experience.company}
                           </h3>
@@ -322,13 +342,13 @@ const CV = ({
         </section>
 
         {/* EDUCATION SECTION */}
-        <section id="education" className="group relative mt-6">
+        <section id="education" className="group relative mt-4">
           <div className="flex items-center justify-between">
             <h2 className={titles}>Education</h2>
             <Button
               variant="outline"
               size="sm"
-              className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100"
+              className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100 print:hidden"
               onClick={() => setEditSection('education')}
             >
               <Edit className="h-3 w-3" />
@@ -338,7 +358,7 @@ const CV = ({
           <div className="mt-2 space-y-4">
             {cv.education.map((education, index) => (
               <Card key={index} className="education-block">
-                <CardContent className="p-4">
+                <CardContent className="p-4 pt-0 pb-0">
                   <div className="flex items-start justify-between">
                     <div>
                       <div className="flex items-center">
@@ -368,13 +388,13 @@ const CV = ({
         </section>
 
         {/* CERTIFICATIONS SECTION */}
-        <section id="certifications" className="group relative mt-6">
+        <section id="certifications" className="group relative mt-4">
           <div className="flex items-center justify-between">
             <h2 className={titles}>Certifications / awards</h2>
             <Button
               variant="outline"
               size="sm"
-              className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100"
+              className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100 print:hidden"
               onClick={() => setEditSection('certifications')}
             >
               <Edit className="h-3 w-3" />
@@ -384,7 +404,7 @@ const CV = ({
           <div className="mt-2 space-y-4">
             {cv.certifications.map((certification, index) => (
               <Card key={index} className="certification-block">
-                <CardContent className="p-4">
+                <CardContent className="p-4 pt-0 pb-0">
                   <div className="flex items-start justify-between">
                     <div>
                       <div className="flex items-center">
@@ -447,6 +467,22 @@ const CV = ({
           onDeleteExperience={onDeleteExperience}
         />
       </div>
+
+      {/* Add custom styles for PDF export */}
+      <style jsx>{`
+        @media print {
+          .contact-info {
+            display: block !important;
+          }
+          .contact-info a,
+          .contact-info span {
+            display: inline-flex !important;
+            align-items: center !important;
+            margin-right: 12px !important;
+            margin-top: 8px !important;
+          }
+        }
+      `}</style>
     </div>
   );
 };

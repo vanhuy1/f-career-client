@@ -18,6 +18,9 @@ import {
   FileCheck,
   Eye,
   Clock,
+  AlertCircle,
+  Edit,
+  Save,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -46,6 +49,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import FileUploader from '@/components/common/FileUploader';
 import { SupabaseBucket, SupabaseFolder } from '@/enums/supabase';
 import { applicationService } from '@/services/api/applications/application-api';
@@ -55,7 +59,7 @@ import type { Cv } from '@/types/Cv';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/services/state/userSlice';
 
-// Updated validation schema to include cvFile for client-side validation
+// Schema validation
 const applicationSchema = z.object({
   coverLetter: z
     .string()
@@ -88,6 +92,7 @@ interface ApplyDialogProps {
   applicantInfo: ApplicantInfo;
 }
 
+// Helper functions
 const formatDate = (dateString: string) => {
   const date = new Date(dateString);
   return date.toLocaleDateString('en-US', {
@@ -128,6 +133,20 @@ const formatRelativeTime = (dateString?: string) => {
   return date.toLocaleDateString();
 };
 
+// Check if CV is unsaved (no URL)
+const isUnsavedCV = (cv: Cv): boolean => {
+  return !cv.url || cv.url === '';
+};
+
+// Check if CV was created within last 24 hours
+const isRecentlyCreatedCV = (cv: Cv): boolean => {
+  if (!cv.createdAt) return false;
+  const createdDate = new Date(cv.createdAt);
+  const now = new Date();
+  const hoursDiff = (now.getTime() - createdDate.getTime()) / (1000 * 60 * 60);
+  return hoursDiff < 24;
+};
+
 export default function ApplyDialog({
   isOpen,
   onClose,
@@ -150,6 +169,7 @@ export default function ApplyDialog({
   const [selectedCvId, setSelectedCvId] = useState<string>('');
   const [userCvs, setUserCvs] = useState<Cv[]>([]);
   const [isLoadingCvs, setIsLoadingCvs] = useState(false);
+  const [unsavedCvsCount, setUnsavedCvsCount] = useState(0);
 
   const form = useForm<ApplicationFormData>({
     resolver: zodResolver(applicationSchema),
@@ -175,7 +195,12 @@ export default function ApplyDialog({
         const userId = user.data.id;
         const response = await cvService.findAll(Number(userId));
         console.log('Fetched user CVs:', response);
-        setUserCvs(response.items || []);
+        const cvs = response.items || [];
+        setUserCvs(cvs);
+
+        // Count unsaved CVs
+        const unsaved = cvs.filter(isUnsavedCV).length;
+        setUnsavedCvsCount(unsaved);
       } catch (error) {
         console.error('Error fetching CVs:', error);
       } finally {
@@ -197,14 +222,6 @@ export default function ApplyDialog({
     form.setValue('cvId', '');
   };
 
-  useEffect(() => {
-    return () => {
-      if (cvFile) {
-        // Cleanup if needed
-      }
-    };
-  }, [cvFile]);
-
   const handleCvSelect = (cvId: string) => {
     setSelectedCvId(cvId);
     form.setValue('existingCvId', cvId);
@@ -213,6 +230,12 @@ export default function ApplyDialog({
   const handlePreviewCv = (url: string, e: React.MouseEvent) => {
     e.stopPropagation();
     window.open(url, '_blank');
+  };
+
+  const handleEditCv = (cvId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    router.push(`/ca/cv-builder/${cvId}`);
+    onClose();
   };
 
   const handleCreateCv = () => {
@@ -268,8 +291,16 @@ export default function ApplyDialog({
 
         // Find the selected CV
         const selectedCv = userCvs.find((cv) => cv.id === data.existingCvId);
-        if (!selectedCv || !selectedCv.url) {
-          throw new Error('Selected CV not found or has no URL');
+
+        if (!selectedCv) {
+          throw new Error('Selected CV not found');
+        }
+
+        // Check if CV has URL
+        if (!selectedCv.url || selectedCv.url === '') {
+          throw new Error(
+            'This CV is incomplete. Please edit and save it before applying.',
+          );
         }
 
         cvUrl = selectedCv.url;
@@ -281,7 +312,7 @@ export default function ApplyDialog({
         cvId: cvUrl,
       };
 
-      // Use the actual API service
+      // Call API service
       await applicationService.applyJob(submissionData, Number(jobId));
       setSubmitMessage({
         type: 'success',
@@ -324,8 +355,174 @@ export default function ApplyDialog({
     if (cvSource === 'upload') {
       return !!cvFile;
     } else {
-      return !!existingCvId;
+      // Check if selected CV has URL
+      const selectedCv = userCvs.find((cv) => cv.id === existingCvId);
+      return selectedCv && !!selectedCv.url;
     }
+  };
+
+  // Component to display CV item
+  const CVItem = ({ cv }: { cv: Cv }) => {
+    const isUnsaved = isUnsavedCV(cv);
+    const isRecent = isRecentlyCreatedCV(cv);
+    const isSelected = selectedCvId === cv.id;
+
+    return (
+      <Card
+        className={`group cursor-pointer border py-0 transition-all duration-200 ${
+          isUnsaved
+            ? 'border-orange-200 bg-orange-50/50 hover:border-orange-300'
+            : 'hover:border-indigo-200 hover:shadow-md'
+        } ${
+          isSelected && !isUnsaved
+            ? 'bg-indigo-50/80 ring-2 ring-indigo-500'
+            : isSelected && isUnsaved
+              ? 'bg-orange-100/50 ring-2 ring-orange-400'
+              : 'hover:bg-gray-50/80'
+        }`}
+        onClick={() => !isUnsaved && handleCvSelect(cv.id || '')}
+      >
+        <CardContent className="p-4">
+          {isUnsaved && (
+            <div className="mb-3 flex flex-col gap-2 rounded-md bg-orange-100 p-2 text-xs">
+              <div className="flex items-start gap-2">
+                <AlertCircle className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-orange-600" />
+                <div className="text-orange-700">
+                  <span className="font-medium">Incomplete CV:</span> This CV
+                  needs to be edited and saved before it can be used
+                </div>
+              </div>
+              <div className="ml-5 text-orange-600 italic">
+                To complete: Edit the CV and click the &ldquo;save&rdquo; icon
+                on the right side of the CV layout
+              </div>
+            </div>
+          )}
+
+          <div className="flex items-start justify-between">
+            <div className="flex flex-1 items-start gap-3">
+              <div
+                className={`rounded-lg p-2.5 transition-colors ${
+                  isUnsaved
+                    ? 'bg-orange-100'
+                    : isSelected
+                      ? 'bg-indigo-100'
+                      : 'bg-gray-100 group-hover:bg-indigo-50'
+                }`}
+              >
+                <FileText
+                  className={`h-5 w-5 transition-colors ${
+                    isUnsaved
+                      ? 'text-orange-500'
+                      : isSelected
+                        ? 'text-indigo-600'
+                        : 'text-gray-500 group-hover:text-indigo-500'
+                  }`}
+                />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <h4 className="truncate font-medium text-gray-900">
+                    {cv.title || cv.name || `CV #${cv.id}`}
+                  </h4>
+                  {isUnsaved && (
+                    <Badge
+                      variant="outline"
+                      className="border-orange-300 bg-orange-100 text-orange-700"
+                    >
+                      Unsaved
+                    </Badge>
+                  )}
+                  {!isUnsaved && isRecent && (
+                    <Badge
+                      variant="secondary"
+                      className="bg-green-100 text-green-700"
+                    >
+                      New
+                    </Badge>
+                  )}
+                  {isSelected && !isUnsaved && (
+                    <Badge
+                      variant="secondary"
+                      className="animate-in fade-in bg-indigo-100 text-indigo-700 duration-200"
+                    >
+                      Selected
+                    </Badge>
+                  )}
+                </div>
+                <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-gray-500">
+                  <span className="flex items-center gap-1.5 rounded-full bg-gray-100/80 px-2 py-1">
+                    <Clock className="h-3 w-3" />
+                    {formatRelativeTime(cv.updatedAt || cv.createdAt)}
+                  </span>
+                  {!isUnsaved && (
+                    <span className="flex items-center gap-1.5 rounded-full bg-gray-100/80 px-2 py-1">
+                      <FileText className="h-3 w-3" />
+                      {cv.fileType || 'PDF'}
+                    </span>
+                  )}
+                  {isUnsaved && (
+                    <span className="flex items-center gap-1.5 rounded-full bg-orange-100 px-2 py-1 text-orange-600">
+                      <Save className="h-3 w-3" />
+                      Needs saving
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {isUnsaved ? (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="flex h-8 items-center gap-1.5 border-orange-300 px-3 text-orange-600 transition-colors hover:bg-orange-100"
+                        onClick={(e) => handleEditCv(cv.id || '', e)}
+                      >
+                        <Edit className="h-3.5 w-3.5" />
+                        Edit
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="left" className="bg-gray-900 text-xs">
+                      Edit and save this CV
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              ) : (
+                cv.url && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="flex h-8 items-center gap-1.5 px-3 transition-colors hover:bg-indigo-50 hover:text-indigo-600"
+                          onClick={(e) => handlePreviewCv(cv.url!, e)}
+                        >
+                          <Eye className="h-3.5 w-3.5" />
+                          Preview
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent
+                        side="left"
+                        className="bg-gray-900 text-xs"
+                      >
+                        Open CV in new tab
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
   };
 
   return (
@@ -646,6 +843,31 @@ export default function ApplyDialog({
                                           </FormLabel>
                                           <FormControl>
                                             <div className="space-y-4">
+                                              {unsavedCvsCount > 0 && (
+                                                <Alert className="border-orange-200 bg-orange-50">
+                                                  <AlertCircle className="h-4 w-4 text-orange-600" />
+                                                  <AlertTitle className="text-orange-800">
+                                                    {unsavedCvsCount} incomplete
+                                                    CV
+                                                    {unsavedCvsCount !== 1
+                                                      ? 's'
+                                                      : ''}
+                                                  </AlertTitle>
+                                                  <AlertDescription className="text-orange-700">
+                                                    These CVs need to be edited
+                                                    and saved before they can be
+                                                    used for applications.
+                                                    <span className="mt-1 block font-medium">
+                                                      To complete: Edit the CV
+                                                      and click the
+                                                      &ldquo;save&rdquo; icon on
+                                                      the right side of the CV
+                                                      layout.
+                                                    </span>
+                                                  </AlertDescription>
+                                                </Alert>
+                                              )}
+
                                               {isLoadingCvs ? (
                                                 <div className="flex items-center justify-center rounded-lg border border-dashed border-indigo-300 bg-white py-8">
                                                   <Loader2 className="h-6 w-6 animate-spin text-indigo-600" />
@@ -673,115 +895,34 @@ export default function ApplyDialog({
                                                 </div>
                                               ) : (
                                                 <div className="space-y-4">
+                                                  {/* Helper text for saved CVs */}
+                                                  {userCvs.filter(
+                                                    (cv) => !isUnsavedCV(cv),
+                                                  ).length > 0 && (
+                                                    <div className="flex items-start gap-2 rounded-md bg-blue-50 p-3 text-xs">
+                                                      <AlertCircle className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-blue-600" />
+                                                      <div className="text-blue-700">
+                                                        <span className="font-medium">
+                                                          Tip:
+                                                        </span>{' '}
+                                                        Please review your CV
+                                                        before submitting. If
+                                                        you don&apos;t see
+                                                        recent changes, click
+                                                        the &ldquo;save&rdquo;
+                                                        icon on the right side
+                                                        of the CV layout to save
+                                                        your data.
+                                                      </div>
+                                                    </div>
+                                                  )}
+
                                                   <div className="grid gap-3 p-2">
                                                     {userCvs.map((cv) => (
-                                                      <Card
+                                                      <CVItem
                                                         key={cv.id}
-                                                        className={`group cursor-pointer border py-0 transition-all duration-200 hover:border-indigo-200 hover:shadow-md ${
-                                                          selectedCvId === cv.id
-                                                            ? 'bg-indigo-50/80 ring-2 ring-indigo-500'
-                                                            : 'hover:bg-gray-50/80'
-                                                        }`}
-                                                        onClick={() =>
-                                                          handleCvSelect(
-                                                            cv.id || '',
-                                                          )
-                                                        }
-                                                      >
-                                                        <CardContent className="p-4">
-                                                          <div className="flex items-start justify-between">
-                                                            <div className="flex flex-1 items-start gap-3">
-                                                              <div
-                                                                className={`rounded-lg p-2.5 transition-colors ${
-                                                                  selectedCvId ===
-                                                                  cv.id
-                                                                    ? 'bg-indigo-100'
-                                                                    : 'bg-gray-100 group-hover:bg-indigo-50'
-                                                                }`}
-                                                              >
-                                                                <FileText
-                                                                  className={`h-5 w-5 transition-colors ${
-                                                                    selectedCvId ===
-                                                                    cv.id
-                                                                      ? 'text-indigo-600'
-                                                                      : 'text-gray-500 group-hover:text-indigo-500'
-                                                                  }`}
-                                                                />
-                                                              </div>
-                                                              <div className="min-w-0 flex-1">
-                                                                <div className="flex items-center gap-2">
-                                                                  <h4 className="truncate font-medium text-gray-900">
-                                                                    {cv.title ||
-                                                                      cv.name ||
-                                                                      `CV #${cv.id}`}
-                                                                  </h4>
-                                                                  {selectedCvId ===
-                                                                    cv.id && (
-                                                                    <Badge
-                                                                      variant="secondary"
-                                                                      className="animate-in fade-in bg-indigo-100 text-indigo-700 duration-200"
-                                                                    >
-                                                                      Selected
-                                                                    </Badge>
-                                                                  )}
-                                                                </div>
-                                                                <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-gray-500">
-                                                                  <span className="flex items-center gap-1.5 rounded-full bg-gray-100/80 px-2 py-1">
-                                                                    <Clock className="h-3 w-3" />
-                                                                    {formatRelativeTime(
-                                                                      cv.updatedAt ||
-                                                                        cv.createdAt,
-                                                                    )}
-                                                                  </span>
-                                                                  <span className="flex items-center gap-1.5 rounded-full bg-gray-100/80 px-2 py-1">
-                                                                    <FileText className="h-3 w-3" />
-                                                                    {cv.fileType ||
-                                                                      'PDF'}
-                                                                  </span>
-                                                                </div>
-                                                              </div>
-                                                            </div>
-
-                                                            <div className="flex items-center gap-2">
-                                                              {cv.url && (
-                                                                <TooltipProvider>
-                                                                  <Tooltip>
-                                                                    <TooltipTrigger
-                                                                      asChild
-                                                                    >
-                                                                      <Button
-                                                                        type="button"
-                                                                        variant="outline"
-                                                                        size="sm"
-                                                                        className="flex h-8 items-center gap-1.5 px-3 transition-colors hover:bg-indigo-50 hover:text-indigo-600"
-                                                                        onClick={(
-                                                                          e,
-                                                                        ) =>
-                                                                          cv.url &&
-                                                                          handlePreviewCv(
-                                                                            cv.url,
-                                                                            e,
-                                                                          )
-                                                                        }
-                                                                      >
-                                                                        <Eye className="h-3.5 w-3.5" />
-                                                                        Preview
-                                                                      </Button>
-                                                                    </TooltipTrigger>
-                                                                    <TooltipContent
-                                                                      side="left"
-                                                                      className="bg-gray-900 text-xs"
-                                                                    >
-                                                                      Open CV in
-                                                                      new tab
-                                                                    </TooltipContent>
-                                                                  </Tooltip>
-                                                                </TooltipProvider>
-                                                              )}
-                                                            </div>
-                                                          </div>
-                                                        </CardContent>
-                                                      </Card>
+                                                        cv={cv}
+                                                      />
                                                     ))}
                                                   </div>
 
@@ -791,7 +932,11 @@ export default function ApplyDialog({
                                                       {userCvs.length !== 1
                                                         ? 's'
                                                         : ''}{' '}
-                                                      available
+                                                      {userCvs.filter(
+                                                        (cv) =>
+                                                          !isUnsavedCV(cv),
+                                                      ).length > 0 &&
+                                                        `(${userCvs.filter((cv) => !isUnsavedCV(cv)).length} available)`}
                                                     </p>
                                                     <Button
                                                       type="button"

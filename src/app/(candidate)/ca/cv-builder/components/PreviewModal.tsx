@@ -325,7 +325,7 @@ const PreviewModal = ({
                         }}
                       >
                         <FileText size={14} />
-                        Trang {pageIndex + 1} / {pageCount}
+                        Page {pageIndex + 1} / {pageCount}
                       </div>
                     </div>
                   ))}
@@ -337,12 +337,12 @@ const PreviewModal = ({
             <div className="flex-shrink-0 border-t bg-white px-6 py-4">
               <div className="flex w-full items-center justify-between">
                 <p className="text-sm text-gray-600">
-                  Kiểm tra kỹ CV của bạn trước khi lưu hoặc tải xuống • Tổng số:{' '}
-                  {pageCount} trang
+                  Double check your CV before saving or downloading • Total:{' '}
+                  {pageCount} Page
                 </p>
                 <div className="flex gap-2">
                   <Button variant="outline" onClick={onClose}>
-                    Đóng
+                    Close
                   </Button>
                   <Button
                     variant="default"
@@ -350,7 +350,7 @@ const PreviewModal = ({
                     className="bg-blue-600 hover:bg-blue-700"
                   >
                     <Save className="mr-2 h-4 w-4" />
-                    Lưu vào hệ thống
+                    Save to system
                   </Button>
                   <Button
                     variant="default"
@@ -358,7 +358,7 @@ const PreviewModal = ({
                     className="bg-green-600 hover:bg-green-700"
                   >
                     <Download className="mr-2 h-4 w-4" />
-                    Tải xuống PDF
+                    Download PDF
                   </Button>
                 </div>
               </div>
