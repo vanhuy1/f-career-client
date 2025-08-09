@@ -1,16 +1,17 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAppDispatch } from '@/store/hooks';
 import {
   optimizeCvById,
+  fetchOptimizationHistory,
+  restoreFromHistoryById,
   useCvOptimizationSuggestions,
   useCvOptimizationLoadingState,
-  useCvOptimizationErrors,
+  useCvOptimizationHistory,
+  useCvOptimizationHistoryLoadingState,
   clearOptimizationSuggestions,
   useCvDetailById,
-  useCvOptimizationHistory,
-  restoreFromHistory,
 } from '@/services/state/cvSlice';
 import { LoadingState } from '@/store/store.model';
 import { Button } from '@/components/ui/button';
@@ -44,14 +45,15 @@ import {
   Briefcase,
   Target,
   CheckCircle,
-  AlertCircle,
   Zap,
+  RefreshCw,
 } from 'lucide-react';
 import type { Cv, Experience, Education } from '@/types/Cv';
 import { toast } from 'react-toastify';
-import { format } from 'date-fns';
 import OptimizationHistory from './OptimizationHistory';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useUser } from '@/services/state/userSlice';
+import { CvOptimizationHistoryItem } from '@/services/api/cv/cv-api';
 
 interface CvOptimizerProps {
   cvId: string;
@@ -69,17 +71,39 @@ export default function CvOptimizer({ cvId, onUpdateCv }: CvOptimizerProps) {
   const dispatch = useAppDispatch();
   const suggestions = useCvOptimizationSuggestions();
   const loadingState = useCvOptimizationLoadingState();
-  const error = useCvOptimizationErrors();
   const cv = useCvDetailById(cvId);
   const history = useCvOptimizationHistory();
+  const historyLoadingState = useCvOptimizationHistoryLoadingState();
   const isLoading = loadingState === LoadingState.loading;
+  const isHistoryLoading = historyLoadingState === LoadingState.loading;
+  const user = useUser();
+  const userId = user?.data?.id;
+  // Load history từ API khi mở dialog
+  useEffect(() => {
+    if (isOpen && cvId) {
+      dispatch(fetchOptimizationHistory({ cvId, limit: 10, offset: 0 }));
+    }
+  }, [isOpen, cvId, dispatch]);
 
   const handleOptimize = async () => {
     try {
+      if (!userId) {
+      }
+
       await dispatch(
-        optimizeCvById({ cvId, jobTitle, jobDescription }),
+        optimizeCvById({
+          cvId,
+          jobTitle,
+          jobDescription,
+          userId: Number(userId),
+        }),
       ).unwrap();
+
+      // Refresh history sau khi optimize thành công
+      dispatch(fetchOptimizationHistory({ cvId, limit: 10, offset: 0 }));
+
       setActiveTab('summary');
+      toast.success('CV optimized successfully!');
     } catch (error) {
       console.error('Failed to optimize CV:', error);
       toast.error('Failed to optimize CV. Please try again.');
@@ -94,14 +118,13 @@ export default function CvOptimizer({ cvId, onUpdateCv }: CvOptimizerProps) {
     setActiveTab('summary');
   };
 
-  const handleApplySummary = () => {
+  const handleApplySummarySuggestion = () => {
     if (suggestions?.summary && cv) {
-      const summaryText = suggestions.summary.suggestion;
-
-      if (summaryText !== cv.summary) {
+      const updatedSummary = suggestions.summary.suggestion;
+      if (cv.summary !== updatedSummary) {
         onUpdateCv((currentCv: Cv) => ({
           ...currentCv,
-          summary: summaryText,
+          summary: updatedSummary,
         }));
         toast.success('Summary updated successfully!');
       } else {
@@ -110,35 +133,21 @@ export default function CvOptimizer({ cvId, onUpdateCv }: CvOptimizerProps) {
     }
   };
 
-  const handleApplySkills = () => {
-    if (
-      suggestions?.skills &&
-      suggestions.skills.suggestions &&
-      Array.isArray(suggestions.skills.suggestions) &&
-      cv
-    ) {
-      try {
-        const newSkills = [...suggestions.skills.suggestions];
-        const currentSkills = [...(cv.skills || [])];
-        const skillsChanged =
-          JSON.stringify(newSkills.sort()) !==
-          JSON.stringify(currentSkills.sort());
+  const handleApplySkillsSuggestion = () => {
+    if (suggestions?.skills && cv) {
+      const updatedSkills = suggestions.skills.suggestions;
+      const currentSkillsStr = JSON.stringify(cv.skills?.sort());
+      const updatedSkillsStr = JSON.stringify(updatedSkills.sort());
 
-        if (skillsChanged) {
-          onUpdateCv((currentCv: Cv) => ({
-            ...currentCv,
-            skills: newSkills,
-          }));
-          toast.success('Skills updated successfully!');
-        } else {
-          toast.info('No changes detected in skills');
-        }
-      } catch (error) {
-        console.error('Error applying skills:', error);
-        toast.error('Failed to apply skills. Please try again.');
+      if (currentSkillsStr !== updatedSkillsStr) {
+        onUpdateCv((currentCv: Cv) => ({
+          ...currentCv,
+          skills: updatedSkills,
+        }));
+        toast.success('Skills updated successfully!');
+      } else {
+        toast.info('No changes detected in skills');
       }
-    } else {
-      toast.error('Unable to apply skills. Invalid data format.');
     }
   };
 
@@ -204,11 +213,26 @@ export default function CvOptimizer({ cvId, onUpdateCv }: CvOptimizerProps) {
     }
   };
 
-  const handleRestoreFromHistory = (index: number) => {
-    if (history && history[index]) {
-      dispatch(restoreFromHistory(history[index].suggestions));
+  // Restore từ history thông qua API
+  const handleRestoreFromHistory = async (
+    historyItem: CvOptimizationHistoryItem,
+  ) => {
+    try {
+      await dispatch(restoreFromHistoryById(historyItem.id)).unwrap();
+
+      // Apply optimized CV to current CV
+      if (historyItem.optimizedCv) {
+        onUpdateCv((currentCv: Cv) => ({
+          ...currentCv,
+          ...historyItem.optimizedCv,
+        }));
+      }
+
       setActiveTab('summary');
-      toast.info('Restored suggestions from history');
+      toast.success('Successfully restored from history!');
+    } catch (error) {
+      console.error('Failed to restore from history:', error);
+      toast.error('Failed to restore from history');
     }
   };
 
@@ -239,7 +263,7 @@ export default function CvOptimizer({ cvId, onUpdateCv }: CvOptimizerProps) {
         AI Optimize CV
       </Button>
 
-      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <Dialog open={isOpen} onOpenChange={handleClose}>
         <DialogContent className="max-h-[90vh] max-w-4xl overflow-hidden sm:max-w-2xl">
           <DialogHeader className="border-b pb-4">
             <DialogTitle className="flex items-center gap-3 text-xl">
@@ -303,59 +327,23 @@ export default function CvOptimizer({ cvId, onUpdateCv }: CvOptimizerProps) {
                       </label>
                       <Textarea
                         id="jobDescription"
-                        placeholder="Paste the complete job description here for the most accurate optimization results..."
-                        rows={8}
+                        placeholder="Paste the full job description here..."
                         value={jobDescription}
                         onChange={(e) => setJobDescription(e.target.value)}
-                        className="resize-none"
+                        className="min-h-[200px] resize-none"
                       />
                     </div>
                   </div>
 
-                  {history && history.length > 0 && (
-                    <Card className="border-dashed">
-                      <CardHeader className="pb-3">
-                        <CardTitle className="flex items-center gap-2 text-base">
-                          <History className="h-4 w-4 text-purple-600" />
-                          Quick Restore
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="grid grid-cols-1 gap-3 pr-4">
-                          {history.slice(0, 4).map((item, index) => (
-                            <Button
-                              key={index}
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleRestoreFromHistory(index)}
-                              className="h-auto w-[100%] justify-start p-3 hover:border-purple-200 hover:bg-purple-50"
-                            >
-                              <div className="w-full text-left">
-                                <p className="max-w-[100%] truncate text-sm font-medium">
-                                  {item.jobTitle || 'Untitled Position'}
-                                </p>
-                                <p className="text-xs text-gray-500">
-                                  {format(
-                                    new Date(item.timestamp),
-                                    'MMM d, h:mm a',
-                                  )}
-                                </p>
-                              </div>
-                            </Button>
-                          ))}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )}
-
-                  <div className="flex justify-end gap-3 border-t pt-4">
-                    <Button variant="outline" onClick={handleClose}>
-                      Cancel
-                    </Button>
+                  <div className="flex items-center justify-between border-t pt-6">
+                    <p className="text-sm text-gray-500">
+                      Provide detailed job information for better optimization
+                      results
+                    </p>
                     <Button
                       onClick={handleOptimize}
-                      disabled={isLoading || (!jobTitle && !jobDescription)}
-                      className="min-w-32 bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:from-purple-700 hover:to-indigo-700"
+                      disabled={isLoading || !jobTitle}
+                      className="min-w-[140px]"
                     >
                       {isLoading ? (
                         <>
@@ -370,6 +358,43 @@ export default function CvOptimizer({ cvId, onUpdateCv }: CvOptimizerProps) {
                       )}
                     </Button>
                   </div>
+
+                  {/* History Section */}
+                  {history && history.length > 0 && (
+                    <div className="border-t pt-6">
+                      <div className="mb-4 flex items-center justify-between">
+                        <h3 className="flex items-center gap-2 text-lg font-semibold">
+                          <History className="h-5 w-5" />
+                          Recent Optimizations
+                        </h3>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() =>
+                            dispatch(
+                              fetchOptimizationHistory({
+                                cvId,
+                                limit: 10,
+                                offset: 0,
+                              }),
+                            )
+                          }
+                          disabled={isHistoryLoading}
+                        >
+                          {isHistoryLoading ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <RefreshCw className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
+                      <OptimizationHistory
+                        history={history}
+                        onRestore={handleRestoreFromHistory}
+                        className="max-h-[300px] overflow-y-auto"
+                      />
+                    </div>
+                  )}
                 </div>
               ) : !isLoading && suggestions ? (
                 <div className="flex h-full flex-col space-y-4 py-4">
@@ -382,323 +407,252 @@ export default function CvOptimizer({ cvId, onUpdateCv }: CvOptimizerProps) {
                     </AlertDescription>
                   </Alert>
 
-                  <Tabs
-                    value={activeTab}
-                    onValueChange={setActiveTab}
-                    className="flex min-h-0 flex-1 flex-col"
-                  >
-                    <TabsList className="mb-4 grid w-full grid-cols-5">
+                  <Tabs value={activeTab} onValueChange={setActiveTab}>
+                    <TabsList className="grid w-full grid-cols-5">
                       <TabsTrigger
                         value="summary"
-                        className="flex items-center gap-2"
+                        className="flex items-center gap-1"
                       >
                         {getTabIcon('summary')}
                         <span className="hidden sm:inline">Summary</span>
                       </TabsTrigger>
                       <TabsTrigger
                         value="skills"
-                        className="flex items-center gap-2"
+                        className="flex items-center gap-1"
                       >
                         {getTabIcon('skills')}
                         <span className="hidden sm:inline">Skills</span>
                       </TabsTrigger>
                       <TabsTrigger
                         value="experience"
-                        className="flex items-center gap-2"
+                        className="flex items-center gap-1"
                       >
                         {getTabIcon('experience')}
                         <span className="hidden sm:inline">Experience</span>
                       </TabsTrigger>
                       <TabsTrigger
                         value="education"
-                        className="flex items-center gap-2"
+                        className="flex items-center gap-1"
                       >
                         {getTabIcon('education')}
                         <span className="hidden sm:inline">Education</span>
                       </TabsTrigger>
                       <TabsTrigger
                         value="history"
-                        className="flex items-center gap-2"
+                        className="flex items-center gap-1"
                       >
                         {getTabIcon('history')}
                         <span className="hidden sm:inline">History</span>
                       </TabsTrigger>
                     </TabsList>
 
-                    <div className="min-h-0 flex-1 overflow-hidden">
-                      <TabsContent
-                        value="summary"
-                        className="h-full space-y-4 data-[state=active]:block"
-                      >
-                        {suggestions.summary ? (
-                          <Card className="border-green-200">
-                            <CardHeader>
-                              <CardTitle className="flex items-center gap-2">
-                                <FileText className="h-5 w-5 text-green-600" />
-                                Optimized Professional Summary
-                              </CardTitle>
-                              <CardDescription>
-                                AI-crafted summary that highlights your key
-                                strengths for this role.
-                              </CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-4">
-                              <div className="rounded-lg border-l-4 border-l-green-500 bg-gray-50 p-4">
-                                <p className="text-sm leading-relaxed">
+                    {/* Summary Tab */}
+                    <TabsContent value="summary" className="mt-4">
+                      {suggestions.summary ? (
+                        <Card>
+                          <CardHeader>
+                            <CardTitle className="text-lg">
+                              Summary Suggestion
+                            </CardTitle>
+                            <CardDescription>
+                              AI-optimized professional summary
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="space-y-4">
+                              <div className="rounded-lg bg-blue-50 p-4">
+                                <p className="text-sm text-gray-700">
                                   {suggestions.summary.suggestion}
                                 </p>
                               </div>
-                              {suggestions.summary.reason && (
-                                <Alert>
-                                  <AlertCircle className="h-4 w-4" />
-                                  <AlertDescription>
-                                    <strong>Why this works:</strong>{' '}
-                                    {suggestions.summary.reason}
-                                  </AlertDescription>
-                                </Alert>
-                              )}
-                            </CardContent>
-                            <CardFooter>
-                              <Button
-                                onClick={handleApplySummary}
-                                className="ml-auto bg-green-600 text-white hover:bg-green-700"
-                              >
-                                <CheckCircle className="mr-2 h-4 w-4" />
-                                Apply Summary
-                              </Button>
-                            </CardFooter>
-                          </Card>
-                        ) : (
-                          <div className="flex flex-col items-center justify-center py-12">
-                            <FileText className="mb-4 h-12 w-12 text-gray-300" />
-                            <p className="text-gray-500">
-                              No summary suggestions available.
-                            </p>
-                          </div>
-                        )}
-                      </TabsContent>
+                              <div className="rounded-lg bg-gray-50 p-3">
+                                <p className="mb-1 text-xs font-medium text-gray-500">
+                                  Why this change?
+                                </p>
+                                <p className="text-sm text-gray-600">
+                                  {suggestions.summary.reason}
+                                </p>
+                              </div>
+                            </div>
+                          </CardContent>
+                          <CardFooter>
+                            <Button
+                              onClick={handleApplySummarySuggestion}
+                              className="w-full"
+                            >
+                              Apply Summary
+                            </Button>
+                          </CardFooter>
+                        </Card>
+                      ) : (
+                        <p className="text-center text-gray-500">
+                          No summary suggestions available
+                        </p>
+                      )}
+                    </TabsContent>
 
-                      <TabsContent
-                        value="skills"
-                        className="h-full space-y-4 data-[state=active]:block"
-                      >
-                        {suggestions.skills &&
-                        suggestions.skills.suggestions.length > 0 ? (
-                          <Card className="border-blue-200">
+                    {/* Skills Tab */}
+                    <TabsContent value="skills" className="mt-4">
+                      {suggestions.skills ? (
+                        <Card>
+                          <CardHeader>
+                            <CardTitle className="text-lg">
+                              Skills Suggestions
+                            </CardTitle>
+                            <CardDescription>
+                              Recommended skills for the position
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="space-y-4">
+                              <div className="flex flex-wrap gap-2">
+                                {suggestions.skills.suggestions.map(
+                                  (skill, index) => (
+                                    <Badge key={index} variant="secondary">
+                                      {skill}
+                                    </Badge>
+                                  ),
+                                )}
+                              </div>
+                              <div className="rounded-lg bg-gray-50 p-3">
+                                <p className="mb-1 text-xs font-medium text-gray-500">
+                                  Why these skills?
+                                </p>
+                                <p className="text-sm text-gray-600">
+                                  {suggestions.skills.reason}
+                                </p>
+                              </div>
+                            </div>
+                          </CardContent>
+                          <CardFooter>
+                            <Button
+                              onClick={handleApplySkillsSuggestion}
+                              className="w-full"
+                            >
+                              Apply Skills
+                            </Button>
+                          </CardFooter>
+                        </Card>
+                      ) : (
+                        <p className="text-center text-gray-500">
+                          No skills suggestions available
+                        </p>
+                      )}
+                    </TabsContent>
+
+                    {/* Experience Tab */}
+                    <TabsContent value="experience" className="mt-4 space-y-4">
+                      {suggestions.experience &&
+                      suggestions.experience.length > 0 ? (
+                        suggestions.experience.map((exp, index) => (
+                          <Card key={index}>
                             <CardHeader>
-                              <CardTitle className="flex items-center gap-2">
-                                <Target className="h-5 w-5 text-blue-600" />
-                                Recommended Skills
+                              <CardTitle className="text-base">
+                                Experience Item #{index + 1}
                               </CardTitle>
-                              <CardDescription>
-                                Skills that align with the job requirements and
-                                industry standards.
-                              </CardDescription>
                             </CardHeader>
-                            <CardContent className="space-y-4">
-                              <div className="rounded-lg border-l-4 border-l-blue-500 bg-blue-50 p-4">
-                                <div className="flex flex-wrap gap-2">
-                                  {suggestions.skills.suggestions.map(
-                                    (skill, index) => (
-                                      <Badge
-                                        key={index}
-                                        className="bg-blue-100 text-blue-800 transition-colors hover:bg-blue-200"
-                                      >
-                                        {skill}
-                                      </Badge>
-                                    ),
-                                  )}
+                            <CardContent>
+                              <div className="space-y-3">
+                                <div className="rounded-lg bg-blue-50 p-3">
+                                  <p className="text-sm text-gray-700">
+                                    {exp.suggestion}
+                                  </p>
+                                </div>
+                                <div className="rounded-lg bg-gray-50 p-3">
+                                  <p className="mb-1 text-xs font-medium text-gray-500">
+                                    Reason
+                                  </p>
+                                  <p className="text-sm text-gray-600">
+                                    {exp.reason}
+                                  </p>
                                 </div>
                               </div>
-                              {suggestions.skills.reason && (
-                                <Alert>
-                                  <AlertCircle className="h-4 w-4" />
-                                  <AlertDescription>
-                                    <strong>Why these skills:</strong>{' '}
-                                    {suggestions.skills.reason}
-                                  </AlertDescription>
-                                </Alert>
-                              )}
                             </CardContent>
                             <CardFooter>
                               <Button
-                                onClick={handleApplySkills}
-                                className="ml-auto bg-blue-600 text-white hover:bg-blue-700"
+                                onClick={() =>
+                                  handleApplyExperienceSuggestion(
+                                    exp.index,
+                                    exp.field,
+                                  )
+                                }
+                                className="w-full"
+                                size="sm"
                               >
-                                <CheckCircle className="mr-2 h-4 w-4" />
-                                Apply All Skills
+                                Apply This Change
                               </Button>
                             </CardFooter>
                           </Card>
-                        ) : (
-                          <div className="flex flex-col items-center justify-center py-12">
-                            <Target className="mb-4 h-12 w-12 text-gray-300" />
-                            <p className="text-gray-500">
-                              No skill suggestions available.
-                            </p>
-                          </div>
-                        )}
-                      </TabsContent>
+                        ))
+                      ) : (
+                        <p className="text-center text-gray-500">
+                          No experience suggestions available
+                        </p>
+                      )}
+                    </TabsContent>
 
-                      <TabsContent
-                        value="experience"
-                        className="h-full space-y-4 data-[state=active]:block"
-                      >
-                        {suggestions.experience &&
-                        suggestions.experience.length > 0 ? (
-                          <div className="space-y-4 pb-4">
-                            {suggestions.experience.map((exp, index) => (
-                              <Card key={index} className="border-orange-200">
-                                <CardHeader>
-                                  <CardTitle className="flex items-center gap-2">
-                                    <Briefcase className="h-5 w-5 text-orange-600" />
-                                    Experience Enhancement #{exp.index + 1}
-                                  </CardTitle>
-                                  <CardDescription>
-                                    Improved {exp.field} description
-                                  </CardDescription>
-                                </CardHeader>
-                                <CardContent className="space-y-4">
-                                  <div className="rounded-lg border-l-4 border-l-orange-500 bg-orange-50 p-4">
-                                    <p className="text-sm leading-relaxed">
-                                      {exp.suggestion}
-                                    </p>
-                                  </div>
-                                  {exp.reason && (
-                                    <Alert>
-                                      <AlertCircle className="h-4 w-4" />
-                                      <AlertDescription>
-                                        <strong>Enhancement rationale:</strong>{' '}
-                                        {exp.reason}
-                                      </AlertDescription>
-                                    </Alert>
-                                  )}
-                                </CardContent>
-                                <CardFooter>
-                                  <Button
-                                    onClick={() =>
-                                      handleApplyExperienceSuggestion(
-                                        exp.index,
-                                        exp.field,
-                                      )
-                                    }
-                                    className="ml-auto bg-orange-600 text-white hover:bg-orange-700"
-                                  >
-                                    <CheckCircle className="mr-2 h-4 w-4" />
-                                    Apply Enhancement
-                                  </Button>
-                                </CardFooter>
-                              </Card>
-                            ))}
-                          </div>
-                        ) : (
-                          <div className="flex flex-col items-center justify-center py-12">
-                            <Briefcase className="mb-4 h-12 w-12 text-gray-300" />
-                            <p className="text-gray-500">
-                              No experience suggestions available.
-                            </p>
-                          </div>
-                        )}
-                      </TabsContent>
+                    {/* Education Tab */}
+                    <TabsContent value="education" className="mt-4 space-y-4">
+                      {suggestions.education &&
+                      suggestions.education.length > 0 ? (
+                        suggestions.education.map((edu, index) => (
+                          <Card key={index}>
+                            <CardHeader>
+                              <CardTitle className="text-base">
+                                Education Item #{index + 1}
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                              <div className="space-y-3">
+                                <div className="rounded-lg bg-blue-50 p-3">
+                                  <p className="text-sm text-gray-700">
+                                    {edu.suggestion}
+                                  </p>
+                                </div>
+                                <div className="rounded-lg bg-gray-50 p-3">
+                                  <p className="mb-1 text-xs font-medium text-gray-500">
+                                    Reason
+                                  </p>
+                                  <p className="text-sm text-gray-600">
+                                    {edu.reason}
+                                  </p>
+                                </div>
+                              </div>
+                            </CardContent>
+                            <CardFooter>
+                              <Button
+                                onClick={() =>
+                                  handleApplyEducationSuggestion(
+                                    edu.index,
+                                    edu.field,
+                                  )
+                                }
+                                className="w-full"
+                                size="sm"
+                              >
+                                Apply This Change
+                              </Button>
+                            </CardFooter>
+                          </Card>
+                        ))
+                      ) : (
+                        <p className="text-center text-gray-500">
+                          No education suggestions available
+                        </p>
+                      )}
+                    </TabsContent>
 
-                      <TabsContent
-                        value="education"
-                        className="h-full space-y-4 data-[state=active]:block"
-                      >
-                        {suggestions.education &&
-                        suggestions.education.length > 0 ? (
-                          <div className="space-y-4 pb-4">
-                            {suggestions.education.map((edu, index) => (
-                              <Card key={index} className="border-purple-200">
-                                <CardHeader>
-                                  <CardTitle className="flex items-center gap-2">
-                                    <GraduationCap className="h-5 w-5 text-purple-600" />
-                                    Education Enhancement #{edu.index + 1}
-                                  </CardTitle>
-                                  <CardDescription>
-                                    Improved {edu.field} description
-                                  </CardDescription>
-                                </CardHeader>
-                                <CardContent className="space-y-4">
-                                  <div className="rounded-lg border-l-4 border-l-purple-500 bg-purple-50 p-4">
-                                    <p className="text-sm leading-relaxed">
-                                      {edu.suggestion}
-                                    </p>
-                                  </div>
-                                  {edu.reason && (
-                                    <Alert>
-                                      <AlertCircle className="h-4 w-4" />
-                                      <AlertDescription>
-                                        <strong>Enhancement rationale:</strong>{' '}
-                                        {edu.reason}
-                                      </AlertDescription>
-                                    </Alert>
-                                  )}
-                                </CardContent>
-                                <CardFooter>
-                                  <Button
-                                    onClick={() =>
-                                      handleApplyEducationSuggestion(
-                                        edu.index,
-                                        edu.field,
-                                      )
-                                    }
-                                    className="ml-auto bg-purple-600 text-white hover:bg-purple-700"
-                                  >
-                                    <CheckCircle className="mr-2 h-4 w-4" />
-                                    Apply Enhancement
-                                  </Button>
-                                </CardFooter>
-                              </Card>
-                            ))}
-                          </div>
-                        ) : (
-                          <div className="flex flex-col items-center justify-center py-12">
-                            <GraduationCap className="mb-4 h-12 w-12 text-gray-300" />
-                            <p className="text-gray-500">
-                              No education suggestions available.
-                            </p>
-                          </div>
-                        )}
-                      </TabsContent>
-
-                      <TabsContent
-                        value="history"
-                        className="h-full max-w-2xl data-[state=active]:block"
-                      >
-                        <OptimizationHistory
-                          history={history || []}
-                          onRestore={handleRestoreFromHistory}
-                        />
-                      </TabsContent>
-                    </div>
+                    {/* History Tab */}
+                    <TabsContent value="history" className="mt-4">
+                      <OptimizationHistory
+                        history={history}
+                        onRestore={handleRestoreFromHistory}
+                      />
+                    </TabsContent>
                   </Tabs>
-
-                  <div className="flex items-center justify-between border-t pt-4">
-                    <Button variant="outline" onClick={handleClose}>
-                      Close
-                    </Button>
-                    <Button
-                      onClick={handleOptimize}
-                      disabled={isLoading || (!jobTitle && !jobDescription)}
-                      className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:from-purple-700 hover:to-indigo-700"
-                    >
-                      <Sparkles className="mr-2 h-4 w-4" />
-                      Re-Optimize
-                    </Button>
-                  </div>
                 </div>
               ) : null}
             </div>
-
-            {error && (
-              <Alert variant="destructive" className="mt-4">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>
-                  <strong>Error:</strong> {error}
-                </AlertDescription>
-              </Alert>
-            )}
           </ScrollArea>
         </DialogContent>
       </Dialog>

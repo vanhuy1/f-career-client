@@ -5,9 +5,9 @@ import { AppStoreState, LoadingState } from '@/store/store.model';
 import { Cv } from '@/types/Cv';
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import { cvService } from '../api/cv/cv-api';
+import { cvService, CvOptimizationHistoryItem } from '../api/cv/cv-api';
 
-// Async thunks
+// Async thunks - giữ nguyên existing thunks
 export const fetchCvList = createAsyncThunk(
   'cv/fetchList',
   async (userId: number) => {
@@ -77,19 +77,31 @@ export const deleteCvById = createAsyncThunk(
   },
 );
 
+// Updated optimizeCvById - sẽ tự động lưu vào history từ backend
 export const optimizeCvById = createAsyncThunk(
   'cv/optimize',
   async ({
     cvId,
     jobTitle,
     jobDescription,
+    userId,
   }: {
     cvId: string;
-    jobTitle?: string;
-    jobDescription?: string;
+    jobTitle: string;
+    jobDescription: string;
+    userId: number;
   }) => {
-    console.log('Optimizing CV with ID:', cvId);
-    const response = await cvService.optimizeCv(cvId, jobTitle, jobDescription);
+    if (!userId) {
+      throw new Error('User ID is required for optimization');
+    }
+
+    console.log('Optimizing CV with ID:', cvId, 'User ID:', userId);
+    const response = await cvService.optimizeCv(
+      cvId,
+      jobTitle,
+      jobDescription,
+      userId,
+    );
     console.log('Optimization API Response:', response);
 
     if (!response || !response.data) {
@@ -117,6 +129,56 @@ export const optimizeCvById = createAsyncThunk(
   },
 );
 
+// New async thunks for history
+export const fetchOptimizationHistory = createAsyncThunk(
+  'cv/fetchOptimizationHistory',
+  async ({
+    cvId,
+    limit = 10,
+    offset = 0,
+  }: {
+    cvId: string;
+    limit?: number;
+    offset?: number;
+  }) => {
+    const response = await cvService.getOptimizationHistory(
+      cvId,
+      limit,
+      offset,
+    );
+    return response.data;
+  },
+);
+
+export const restoreFromHistoryById = createAsyncThunk(
+  'cv/restoreFromHistory',
+  async (historyId: string) => {
+    const response = await cvService.restoreFromHistory(historyId);
+    return response.data;
+  },
+);
+
+export const fetchUserOptimizationHistory = createAsyncThunk(
+  'cv/fetchUserOptimizationHistory',
+  async ({
+    userId,
+    limit = 10,
+    offset = 0,
+  }: {
+    userId: number;
+    limit?: number;
+    offset?: number;
+  }) => {
+    const response = await cvService.getUserOptimizationHistory(
+      userId,
+      limit,
+      offset,
+    );
+    return response.data;
+  },
+);
+
+// Interfaces
 interface CvSuggestion {
   summary?: {
     suggestion: string;
@@ -140,13 +202,6 @@ interface CvSuggestion {
   }[];
 }
 
-interface OptimizationHistoryItem {
-  timestamp: string;
-  suggestions: CvSuggestion;
-  jobTitle?: string;
-  jobDescription?: string;
-}
-
 interface CvState {
   list: AppStoreState<Cv[]>;
   details: {
@@ -156,8 +211,15 @@ interface CvState {
   };
   optimization: {
     suggestions: CvSuggestion | null;
-    history: OptimizationHistoryItem[];
+    history: CvOptimizationHistoryItem[];
+    selectedHistoryId: string | null;
+    historyMeta: {
+      total: number;
+      limit: number;
+      offset: number;
+    };
     loadingState: LoadingState;
+    historyLoadingState: LoadingState;
     errors: string | null;
   };
 }
@@ -176,7 +238,14 @@ const initialState: CvState = {
   optimization: {
     suggestions: null,
     history: [],
+    selectedHistoryId: null,
+    historyMeta: {
+      total: 0,
+      limit: 10,
+      offset: 0,
+    },
     loadingState: LoadingState.init,
+    historyLoadingState: LoadingState.init,
     errors: null,
   },
 };
@@ -241,22 +310,21 @@ const cvSlice = createSlice({
       state.optimization.loadingState = LoadingState.init;
       state.optimization.errors = null;
     },
-    saveToOptimizationHistory(
-      state,
-      action: PayloadAction<OptimizationHistoryItem>,
-    ) {
-      state.optimization.history.push(action.payload);
-      // Keep only the last 10 items in history
-      if (state.optimization.history.length > 10) {
-        state.optimization.history = state.optimization.history.slice(-10);
-      }
+    selectHistoryItem(state, action: PayloadAction<string | null>) {
+      state.optimization.selectedHistoryId = action.payload;
     },
-    restoreFromHistory(state, action: PayloadAction<CvSuggestion>) {
-      state.optimization.suggestions = action.payload;
+    clearOptimizationHistory(state) {
+      state.optimization.history = [];
+      state.optimization.historyMeta = {
+        total: 0,
+        limit: 10,
+        offset: 0,
+      };
     },
   },
   extraReducers: (builder) => {
     builder
+      // Existing fetch CV list handlers
       .addCase(fetchCvList.pending, (state) => {
         state.list.loadingState = LoadingState.loading;
         state.list.errors = null;
@@ -270,6 +338,7 @@ const cvSlice = createSlice({
         state.list.loadingState = LoadingState.loaded;
         state.list.errors = action.error.message || 'Failed to fetch CVs';
       })
+      // Existing fetch CV by ID handlers
       .addCase(fetchCvById.pending, (state) => {
         state.details.loadingState = LoadingState.loading;
         state.details.errors = null;
@@ -291,16 +360,16 @@ const cvSlice = createSlice({
         state.details.loadingState = LoadingState.loaded;
         state.details.errors = action.error.message || 'Failed to fetch CV';
       })
+      // Existing create CV handlers
       .addCase(createCv.pending, (state) => {
         state.details.loadingState = LoadingState.loading;
         state.details.errors = null;
       })
       .addCase(createCv.fulfilled, (state, action) => {
         state.details.data.push(action.payload);
-        if (!state.list.data) {
-          state.list.data = [];
+        if (state.list.data) {
+          state.list.data.push(action.payload);
         }
-        state.list.data.push(action.payload);
         state.details.loadingState = LoadingState.loaded;
         state.details.errors = null;
       })
@@ -308,6 +377,7 @@ const cvSlice = createSlice({
         state.details.loadingState = LoadingState.loaded;
         state.details.errors = action.error.message || 'Failed to create CV';
       })
+      // Existing update CV handlers
       .addCase(updateCvById.pending, (state) => {
         state.details.loadingState = LoadingState.loading;
         state.details.errors = null;
@@ -318,19 +388,14 @@ const cvSlice = createSlice({
         );
         if (existingIndex !== -1) {
           state.details.data[existingIndex] = action.payload;
-        } else {
-          state.details.data.push(action.payload);
         }
-        if (!state.list.data) {
-          state.list.data = [];
-        }
-        const listIndex = state.list.data.findIndex(
-          (cv) => cv.id === action.payload.id,
-        );
-        if (listIndex !== -1) {
-          state.list.data[listIndex] = action.payload;
-        } else {
-          state.list.data.push(action.payload);
+        if (state.list.data) {
+          const listIndex = state.list.data.findIndex(
+            (cv) => cv.id === action.payload.id,
+          );
+          if (listIndex !== -1) {
+            state.list.data[listIndex] = action.payload;
+          }
         }
         state.details.loadingState = LoadingState.loaded;
         state.details.errors = null;
@@ -339,10 +404,7 @@ const cvSlice = createSlice({
         state.details.loadingState = LoadingState.loaded;
         state.details.errors = action.error.message || 'Failed to update CV';
       })
-      .addCase(deleteCvById.pending, (state) => {
-        state.details.loadingState = LoadingState.loading;
-        state.details.errors = null;
-      })
+      // Existing delete CV handlers
       .addCase(deleteCvById.fulfilled, (state, action) => {
         state.details.data = state.details.data.filter(
           (cv) => cv.id !== action.payload,
@@ -352,39 +414,14 @@ const cvSlice = createSlice({
             (cv) => cv.id !== action.payload,
           );
         }
-        state.details.loadingState = LoadingState.loaded;
-        state.details.errors = null;
       })
-      .addCase(deleteCvById.rejected, (state, action) => {
-        state.details.loadingState = LoadingState.loaded;
-        state.details.errors = action.error.message || 'Failed to delete CV';
-      })
+      // Optimization handlers - updated
       .addCase(optimizeCvById.pending, (state) => {
         state.optimization.loadingState = LoadingState.loading;
         state.optimization.errors = null;
       })
       .addCase(optimizeCvById.fulfilled, (state, action) => {
         state.optimization.suggestions = action.payload.suggestions;
-
-        // Save to history
-        if (action.payload.suggestions) {
-          const historyItem: OptimizationHistoryItem = {
-            timestamp: new Date().toISOString(),
-            suggestions: action.payload.suggestions,
-            jobTitle: action.payload.jobTitle,
-            jobDescription: action.payload.jobDescription,
-          };
-          state.optimization.history.push(historyItem);
-
-          // Keep only the last 10 items in history
-          if (state.optimization.history.length > 10) {
-            state.optimization.history = state.optimization.history.slice(-10);
-          }
-        }
-
-        // Note: We no longer automatically update the CV in the details state
-        // The optimizedCv will only be applied when the user explicitly clicks apply
-
         state.optimization.loadingState = LoadingState.loaded;
         state.optimization.errors = null;
       })
@@ -392,6 +429,32 @@ const cvSlice = createSlice({
         state.optimization.loadingState = LoadingState.loaded;
         state.optimization.errors =
           action.error.message || 'Failed to optimize CV';
+      })
+      // New history handlers
+      .addCase(fetchOptimizationHistory.pending, (state) => {
+        state.optimization.historyLoadingState = LoadingState.loading;
+      })
+      .addCase(fetchOptimizationHistory.fulfilled, (state, action) => {
+        state.optimization.history = action.payload;
+        state.optimization.historyLoadingState = LoadingState.loaded;
+      })
+      .addCase(fetchOptimizationHistory.rejected, (state, action) => {
+        state.optimization.historyLoadingState = LoadingState.loaded;
+        state.optimization.errors =
+          action.error.message || 'Failed to fetch optimization history';
+      })
+      // Restore from history handlers
+      .addCase(restoreFromHistoryById.pending, (state) => {
+        state.optimization.loadingState = LoadingState.loading;
+      })
+      .addCase(restoreFromHistoryById.fulfilled, (state, action) => {
+        state.optimization.suggestions = action.payload.suggestions;
+        state.optimization.loadingState = LoadingState.loaded;
+      })
+      .addCase(restoreFromHistoryById.rejected, (state, action) => {
+        state.optimization.loadingState = LoadingState.loaded;
+        state.optimization.errors =
+          action.error.message || 'Failed to restore from history';
       });
   },
 });
@@ -407,8 +470,8 @@ export const {
   clearCvDetail,
   removeCvDetail,
   clearOptimizationSuggestions,
-  saveToOptimizationHistory,
-  restoreFromHistory,
+  selectHistoryItem,
+  clearOptimizationHistory,
 } = cvSlice.actions;
 
 export default cvSlice.reducer;
@@ -436,9 +499,15 @@ export const selectCvOptimizationLoadingState = (state: RootState) =>
 export const selectCvOptimizationErrors = (state: RootState) =>
   state.cv.optimization.errors;
 
-// Add selectors for history
+// History selectors
 export const selectCvOptimizationHistory = (state: RootState) =>
   state.cv.optimization.history;
+export const selectCvOptimizationHistoryLoadingState = (state: RootState) =>
+  state.cv.optimization.historyLoadingState;
+export const selectSelectedHistoryId = (state: RootState) =>
+  state.cv.optimization.selectedHistoryId;
+export const selectHistoryMeta = (state: RootState) =>
+  state.cv.optimization.historyMeta;
 
 // Custom hooks for list
 export const useCvs = () => useAppSelector(selectCv);
@@ -461,6 +530,11 @@ export const useCvOptimizationLoadingState = () =>
 export const useCvOptimizationErrors = () =>
   useAppSelector(selectCvOptimizationErrors);
 
-// Add custom hooks for history
+// Custom hooks for history
 export const useCvOptimizationHistory = () =>
   useAppSelector(selectCvOptimizationHistory);
+export const useCvOptimizationHistoryLoadingState = () =>
+  useAppSelector(selectCvOptimizationHistoryLoadingState);
+export const useSelectedHistoryId = () =>
+  useAppSelector(selectSelectedHistoryId);
+export const useHistoryMeta = () => useAppSelector(selectHistoryMeta);
