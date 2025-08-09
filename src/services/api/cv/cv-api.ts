@@ -1,3 +1,4 @@
+// src/services/api/cv/cv-api.ts
 import { Cv } from '@/types/Cv';
 import { httpClient } from '@/utils/axios';
 import { RequestBuilder } from '@/utils/axios/request-builder';
@@ -43,6 +44,59 @@ interface CvOptimizationResponse {
     };
   };
   meta?: string;
+}
+
+// Interfaces cho history
+export interface CvOptimizationHistoryItem {
+  id: string;
+  cvId: string;
+  jobTitle?: string;
+  jobDescription?: string;
+  suggestions: {
+    summary?: {
+      suggestion: string;
+      reason: string;
+    };
+    skills?: {
+      suggestions: string[];
+      reason: string;
+    };
+    experience?: {
+      index: number;
+      field: string;
+      suggestion: string;
+      reason: string;
+    }[];
+    education?: {
+      index: number;
+      field: string;
+      suggestion: string;
+      reason: string;
+    }[];
+  };
+  optimizedCv: Cv;
+  isApplied: boolean;
+  createdAt: string;
+}
+
+interface OptimizationHistoryResponse {
+  data: CvOptimizationHistoryItem[];
+  meta: {
+    total: number;
+    limit: number;
+    offset: number;
+  };
+}
+
+interface RestoreHistoryResponse {
+  data: {
+    optimizedCv: Cv;
+    suggestions: CvOptimizationHistoryItem['suggestions'];
+  };
+  meta: {
+    restoredFrom: string;
+    restoredAt: string;
+  };
 }
 
 class CvService {
@@ -127,17 +181,72 @@ class CvService {
     cvId: string,
     jobTitle?: string,
     jobDescription?: string,
+    userId?: number,
   ): Promise<CvOptimizationResponse> {
     const url = this.rb.buildUrl(`${cvId}/optimize`);
     const response = await httpClient.post<
       CvOptimizationResponse,
-      { jobTitle?: string; jobDescription?: string }
+      { jobTitle?: string; jobDescription?: string; userId?: number }
     >({
       url,
-      body: { jobTitle, jobDescription },
+      body: { jobTitle, jobDescription, userId },
       typeCheck: (data) => {
         const optimizationResponse = data as CvOptimizationResponse;
         return { success: true, data: optimizationResponse };
+      },
+    });
+    return response;
+  }
+
+  // New API methods for history
+  async getOptimizationHistory(
+    cvId: string,
+    limit = 10,
+    offset = 0,
+  ): Promise<OptimizationHistoryResponse> {
+    const url = this.rb.buildUrl(
+      `${cvId}/optimization-history?limit=${limit}&offset=${offset}`,
+    );
+    const response = await httpClient.get<OptimizationHistoryResponse>({
+      url,
+      typeCheck: (data) => {
+        const historyResponse = data as OptimizationHistoryResponse;
+        return { success: true, data: historyResponse };
+      },
+    });
+    return response;
+  }
+
+  async restoreFromHistory(historyId: string): Promise<RestoreHistoryResponse> {
+    const url = this.rb.buildUrl(`optimization-history/${historyId}/restore`);
+    const response = await httpClient.post<
+      RestoreHistoryResponse,
+      Record<string, never>
+    >({
+      url,
+      body: {},
+      typeCheck: (data) => {
+        const restoreResponse = data as RestoreHistoryResponse;
+        return { success: true, data: restoreResponse };
+      },
+    });
+    return response;
+  }
+
+  async getUserOptimizationHistory(
+    userId: number,
+    limit = 10,
+    offset = 0,
+  ): Promise<OptimizationHistoryResponse> {
+    const rb = new RequestBuilder().setResourcePath('users');
+    const url = rb.buildUrl(
+      `${userId}/optimization-history?limit=${limit}&offset=${offset}`,
+    );
+    const response = await httpClient.get<OptimizationHistoryResponse>({
+      url,
+      typeCheck: (data) => {
+        const historyResponse = data as OptimizationHistoryResponse;
+        return { success: true, data: historyResponse };
       },
     });
     return response;
