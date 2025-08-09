@@ -22,6 +22,9 @@ import {
 } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import StatusBadge from '@/app/(candidate)/_components/applications-list/StatusBadge';
+import InterviewScheduleDialog, {
+  InterviewScheduleData,
+} from '@/app/(candidate)/_components/InterviewScheduleDialog';
 import { createSafeHtml } from '@/utils/html-sanitizer';
 import { applicationService } from '@/services/api/applications/application-api';
 import {
@@ -38,6 +41,11 @@ export default function ApplicationDetailPage() {
     useState<CandidateApplicationDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Dialog state for interview schedule
+  const [selectedSchedule, setSelectedSchedule] =
+    useState<InterviewScheduleData | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   useEffect(() => {
     const loadApplicationDetail = async () => {
@@ -65,6 +73,16 @@ export default function ApplicationDetailPage() {
 
   const handleBack = () => {
     router.back();
+  };
+
+  const handleScheduleClick = (scheduleData: InterviewScheduleData) => {
+    setSelectedSchedule(scheduleData);
+    setIsDialogOpen(true);
+  };
+
+  const handleDialogClose = () => {
+    setIsDialogOpen(false);
+    setSelectedSchedule(null);
   };
 
   if (loading) {
@@ -222,7 +240,25 @@ export default function ApplicationDetailPage() {
               <CardContent>
                 <div className="space-y-4">
                   {application.interviewSchedule && (
-                    <div className="rounded-lg border p-4">
+                    <div
+                      className="cursor-pointer rounded-lg border p-4 transition-colors hover:bg-gray-50"
+                      onClick={() =>
+                        handleScheduleClick({
+                          companyName: application.company.name,
+                          createdBy: application.interviewSchedule!.createdBy,
+                          title: application.interviewSchedule!.title,
+                          type: application.interviewSchedule!.type,
+                          status: application.interviewSchedule!.status,
+                          startsAt: application.interviewSchedule!.startsAt,
+                          endsAt: application.interviewSchedule!.endsAt,
+                          location: application.interviewSchedule!.location,
+                          notes: application.interviewSchedule!.notes,
+                          version: application.interviewSchedule!.version,
+                          createdAt: application.interviewSchedule!.createdAt,
+                          updatedAt: application.interviewSchedule!.updatedAt,
+                        })
+                      }
+                    >
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <h4 className="font-medium text-gray-900">
@@ -268,7 +304,26 @@ export default function ApplicationDetailPage() {
                   )}
 
                   {application.interviewSchedules?.map((interview, index) => (
-                    <div key={index} className="rounded-lg border p-4">
+                    <div
+                      key={index}
+                      className="cursor-pointer rounded-lg border p-4 transition-colors hover:bg-gray-50"
+                      onClick={() =>
+                        handleScheduleClick({
+                          companyName: application.company.name,
+                          createdBy: interview.createdBy,
+                          title: interview.title,
+                          type: interview.type,
+                          status: interview.status,
+                          startsAt: interview.startsAt,
+                          endsAt: interview.endsAt,
+                          location: interview.location,
+                          notes: interview.notes,
+                          version: interview.version,
+                          createdAt: interview.createdAt,
+                          updatedAt: interview.updatedAt,
+                        })
+                      }
+                    >
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <h4 className="font-medium text-gray-900">
@@ -393,6 +448,13 @@ export default function ApplicationDetailPage() {
           </Card>
         </div>
       </div>
+
+      {/* Interview Schedule Dialog */}
+      <InterviewScheduleDialog
+        isOpen={isDialogOpen}
+        onOpenChange={handleDialogClose}
+        scheduleData={selectedSchedule}
+      />
     </div>
   );
 }
