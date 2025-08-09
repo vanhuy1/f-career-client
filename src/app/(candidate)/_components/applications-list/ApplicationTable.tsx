@@ -267,8 +267,6 @@ export default function ApplicationTable({
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem>View Details</DropdownMenuItem>
-                      <DropdownMenuItem>Send Message</DropdownMenuItem>
-                      <DropdownMenuItem>Schedule Interview</DropdownMenuItem>
                       <DropdownMenuItem className="text-red-600">
                         Withdraw
                       </DropdownMenuItem>

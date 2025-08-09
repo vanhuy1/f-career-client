@@ -38,13 +38,12 @@ export default function ApplicantProfilePage() {
               {applicant?.candidate.gender}
             </p>
           </div>
-          <div>
+          {/* <div>
             <label className="text-sm text-gray-600">Date of Birth</label>
             <p className="mt-1 text-sm font-medium text-gray-900">
-              {/* {applicant?.candidateProfile.birthDate}<span className="text-gray-500">(26 y.o)</span> */}
               {applicant?.candidateProfile.birthDate}
             </p>
-          </div>
+          </div> */}
           <div>
             <label className="text-sm text-gray-600">Language</label>
             <p className="mt-1 text-sm font-medium text-gray-900">
@@ -84,16 +83,16 @@ export default function ApplicantProfilePage() {
               {applicant?.candidateProfile?.title}
             </p>
           </div>
-          <div>
+          {/* <div>
             <label className="text-sm text-gray-600">Experience in Years</label>
             <p className="mt-1 text-sm font-medium text-gray-900">4 Years</p>
-          </div>
+          </div> */}
           <div>
             <label className="text-sm text-gray-600">
               Highest Qualification Held
             </label>
             <p className="mt-1 text-sm font-medium text-gray-900">
-              Bachelors in Engineering
+              {applicant?.candidateProfile?.educations[0]?.field}
             </p>
           </div>
           <div>

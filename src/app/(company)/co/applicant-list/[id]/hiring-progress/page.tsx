@@ -1,12 +1,9 @@
 'use client';
 
-import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Textarea } from '@/components/ui/textarea';
-import { Plus, MessageCircle, ChevronDown, Calendar } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { ChevronDown, Calendar } from 'lucide-react';
 import { ApplicationStatus } from '@/enums/applicationStatus';
 import {
   clearApplicantDetail,
@@ -33,39 +30,10 @@ const stageMapping = {
   [ApplicationStatus.REJECTED]: 'REJECTED',
 };
 
-interface Note {
-  id: string;
-  author: string;
-  avatar: string;
-  content: string;
-  timestamp: string;
-  replies?: number;
-}
-
 export default function HiringManagementPage() {
-  const [showAddNote, setShowAddNote] = useState(false);
-  const [newNote, setNewNote] = useState('');
   const applicant = useApplicantDetail();
   const dispatch = useAppDispatch();
   const user = useUser();
-  const [notes, setNotes] = useState<Note[]>([
-    {
-      id: '1',
-      author: 'Maria Kelly',
-      avatar: '/placeholder.svg?height=40&width=40',
-      content:
-        'Please, do an interview stage immediately. The design division needs more new employee now',
-      timestamp: '10 July, 2021 • 11:30 AM',
-      replies: 2,
-    },
-    {
-      id: '2',
-      author: 'Maria Kelly',
-      avatar: '/placeholder.svg?height=40&width=40',
-      content: 'Please, do an interview stage immediately.',
-      timestamp: '10 July, 2021 • 10:30 AM',
-    },
-  ]);
 
   const stages = [
     { key: ApplicationStatus.APPLIED, label: 'APPLIED' },
@@ -181,27 +149,6 @@ export default function HiringManagementPage() {
     }
   };
 
-  const handleAddNote = () => {
-    if (newNote.trim()) {
-      const note: Note = {
-        id: Date.now().toString(),
-        author: 'Current User',
-        avatar: '/placeholder.svg?height=40&width=40',
-        content: newNote,
-        timestamp: new Date().toLocaleDateString('en-US', {
-          day: 'numeric',
-          month: 'long',
-          year: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit',
-        }),
-      };
-      setNotes([note, ...notes]);
-      setNewNote('');
-      setShowAddNote(false);
-    }
-  };
-
   const handleEventCreated = () => {
     console.log('Event created successfully!');
     toast.success('Interview scheduled successfully!');
@@ -245,14 +192,14 @@ export default function HiringManagementPage() {
             <h2 className="text-xl font-semibold text-gray-900">Stage Info</h2>
 
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-              <div>
+              {/* <div>
                 <h3 className="mb-2 text-sm font-medium text-gray-500">
                   Interview Date
                 </h3>
                 <p className="text-lg font-medium text-gray-900">
                   10 - 13 July 2021
                 </p>
-              </div>
+              </div> */}
 
               <div>
                 <h3 className="mb-2 text-sm font-medium text-gray-500">
@@ -270,7 +217,7 @@ export default function HiringManagementPage() {
             </div>
 
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-              <div>
+              {/* <div>
                 <h3 className="mb-2 text-sm font-medium text-gray-500">
                   Interview Location
                 </h3>
@@ -281,9 +228,9 @@ export default function HiringManagementPage() {
                   <p>3517 W. Gray St. Utica,</p>
                   <p>Pennsylvania 57867</p>
                 </div>
-              </div>
+              </div> */}
 
-              <div>
+              {/* <div>
                 <h3 className="mb-2 text-sm font-medium text-gray-500">
                   Assigned to
                 </h3>
@@ -301,7 +248,7 @@ export default function HiringManagementPage() {
                     <AvatarFallback>AB</AvatarFallback>
                   </Avatar>
                 </div>
-              </div>
+              </div> */}
             </div>
 
             <div className="flex gap-3">
@@ -373,8 +320,7 @@ export default function HiringManagementPage() {
         </CardContent>
       </Card>
 
-      {/* Notes Section */}
-      <Card>
+      {/* <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="text-xl font-semibold text-gray-900">
@@ -391,7 +337,6 @@ export default function HiringManagementPage() {
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Add Note Form */}
           {showAddNote && (
             <div className="space-y-3">
               <Textarea
@@ -418,7 +363,6 @@ export default function HiringManagementPage() {
             </div>
           )}
 
-          {/* Notes List */}
           <div className="space-y-4">
             {notes.map((note) => (
               <div key={note.id} className="flex gap-3">
@@ -454,7 +398,7 @@ export default function HiringManagementPage() {
             ))}
           </div>
         </CardContent>
-      </Card>
+      </Card> */}
     </div>
   );
 }

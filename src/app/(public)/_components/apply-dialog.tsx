@@ -974,10 +974,11 @@ export default function ApplyDialog({
                         <FormLabel>Cover Letter</FormLabel>
                         <FormDescription>
                           1. On a scale of 1 to 10, how would you rate your
-                          English proficiency? (1 = Beginner, 10 = Fluent) 2.
-                          Which position level are you applying for? (Fresher,
-                          Junior, Standard, Standard++, Senior, Senior++, or
-                          Lead)
+                          English proficiency? (1 = Beginner, 10 = Fluent){' '}
+                          <br />
+                          2. Which position level are you applying for?
+                          (Fresher, Junior, Standard, Standard++, Senior,
+                          Senior++, or Lead)
                         </FormDescription>
                         <FormControl>
                           <Textarea
