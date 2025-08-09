@@ -7,7 +7,6 @@ import {
   FileText,
   User,
   Settings,
-  HelpCircle,
   LogOut,
   FileUser,
   Calendar,
@@ -109,12 +108,6 @@ export default function Sidebar() {
               icon={<Settings />}
               label="Settings"
               active={pathname === ROUTES.CA.HOME.SETTINGS.path}
-            />
-            <NavItem
-              href="/help"
-              icon={<HelpCircle />}
-              label="Help Center"
-              active={pathname === '/help'}
             />
           </ul>
         </div>

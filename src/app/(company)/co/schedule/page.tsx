@@ -186,11 +186,11 @@ export default function CompanySchedulePage() {
 
       // Calculate position in day (0-100%)
       const dayStart = new Date(startDate);
-      dayStart.setHours(6, 0, 0, 0); // Calendar starts at 6 AM
+      dayStart.setHours(0, 0, 0, 0); // Calendar starts at 12 AM
       const dayEnd = new Date(startDate);
-      dayEnd.setHours(22, 0, 0, 0); // Calendar ends at 10 PM
+      dayEnd.setHours(24, 0, 0, 0); // Calendar ends at 12 AM next day
 
-      const totalDayMinutes = 16 * 60; // 6 AM to 10 PM = 16 hours
+      const totalDayMinutes = 24 * 60; // 24 hours
       const eventStartMinutes =
         (startDate.getTime() - dayStart.getTime()) / (1000 * 60);
 
@@ -228,12 +228,19 @@ export default function CompanySchedulePage() {
 
   // Time slots for the day view
   const timeSlots = useMemo(() => {
-    const slots = [];
-    for (let hour = 6; hour <= 22; hour++) {
+    const slots = [] as Array<{ time: number; label: string; value: string }>;
+    for (let hour = 0; hour <= 23; hour++) {
+      const label =
+        hour === 0
+          ? '12 AM'
+          : hour === 12
+            ? '12 PM'
+            : hour < 12
+              ? `${hour} AM`
+              : `${hour - 12} PM`;
       slots.push({
         time: hour,
-        label:
-          hour === 12 ? '12 PM' : hour > 12 ? `${hour - 12} PM` : `${hour} AM`,
+        label,
         value: `${hour}:00`,
       });
     }

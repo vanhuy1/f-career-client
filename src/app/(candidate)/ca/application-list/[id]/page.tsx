@@ -230,8 +230,7 @@ export default function ApplicationDetailPage() {
           </Card>
 
           {/* Interview Schedule Section */}
-          {(application.interviewSchedule ||
-            application.interviewSchedules?.length) && (
+          {application.interviewSchedules?.length ? (
             <Card className="mb-6">
               <CardHeader>
                 <CardTitle>Interview Schedule</CardTitle>
@@ -239,70 +238,6 @@ export default function ApplicationDetailPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {application.interviewSchedule && (
-                    <div
-                      className="cursor-pointer rounded-lg border p-4 transition-colors hover:bg-gray-50"
-                      onClick={() =>
-                        handleScheduleClick({
-                          companyName: application.company.name,
-                          createdBy: application.interviewSchedule!.createdBy,
-                          title: application.interviewSchedule!.title,
-                          type: application.interviewSchedule!.type,
-                          status: application.interviewSchedule!.status,
-                          startsAt: application.interviewSchedule!.startsAt,
-                          endsAt: application.interviewSchedule!.endsAt,
-                          location: application.interviewSchedule!.location,
-                          notes: application.interviewSchedule!.notes,
-                          version: application.interviewSchedule!.version,
-                          createdAt: application.interviewSchedule!.createdAt,
-                          updatedAt: application.interviewSchedule!.updatedAt,
-                        })
-                      }
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <h4 className="font-medium text-gray-900">
-                            {application.interviewSchedule.title}
-                          </h4>
-                          <div className="mt-2 space-y-2 text-sm text-gray-600">
-                            <div className="flex items-center gap-2">
-                              <Clock className="h-4 w-4" />
-                              <span>
-                                {formatDateTime(
-                                  application.interviewSchedule.startsAt,
-                                )}{' '}
-                                -{' '}
-                                {new Date(
-                                  application.interviewSchedule.endsAt,
-                                ).toLocaleTimeString()}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <MapPin className="h-4 w-4" />
-                              <span>
-                                {application.interviewSchedule.location}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Users className="h-4 w-4" />
-                              <span>
-                                Status: {application.interviewSchedule.status}
-                              </span>
-                            </div>
-                          </div>
-                          {application.interviewSchedule.notes && (
-                            <div className="mt-2">
-                              <p className="text-sm text-gray-600">
-                                <strong>Notes:</strong>{' '}
-                                {application.interviewSchedule.notes}
-                              </p>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
                   {application.interviewSchedules?.map((interview, index) => (
                     <div
                       key={index}
@@ -362,7 +297,7 @@ export default function ApplicationDetailPage() {
                 </div>
               </CardContent>
             </Card>
-          )}
+          ) : null}
         </div>
 
         {/* Right Column - Company Info */}

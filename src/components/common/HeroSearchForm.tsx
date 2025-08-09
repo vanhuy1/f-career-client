@@ -35,6 +35,7 @@ export default function HeroSearchForm({
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
+  const hasInitializedLocationRef = useRef(false);
   const debouncedKeyword = useDebounce(keyword, 300);
 
   const popularSearches = [
@@ -46,10 +47,19 @@ export default function HeroSearchForm({
 
   // Update location when user's profile location becomes available
   useEffect(() => {
-    if (userLocation && !initialLocation && !location) {
-      setLocation(userLocation);
+    if (hasInitializedLocationRef.current) return;
+
+    if (initialLocation) {
+      setLocation(initialLocation);
+      hasInitializedLocationRef.current = true;
+      return;
     }
-  }, [userLocation, initialLocation, location]);
+
+    if (userLocation) {
+      setLocation(userLocation);
+      hasInitializedLocationRef.current = true;
+    }
+  }, [userLocation, initialLocation]);
 
   useEffect(() => {
     const handleOutsideClick = (e: MouseEvent) => {

@@ -6,7 +6,6 @@ import Image from 'next/image';
 import {
   MapPin,
   Save,
-  Camera,
   Briefcase,
   Building,
   Edit,
@@ -139,18 +138,6 @@ export function ProfileHeader({
         <div className="absolute inset-0 opacity-20">
           <div className="absolute inset-0 bg-[radial-gradient(white_1px,transparent_1px)] [background-size:16px_16px]"></div>
         </div>
-        {!readOnly && (
-          <div className="absolute right-4 bottom-4 flex gap-2">
-            <Button
-              variant="secondary"
-              size="sm"
-              className="h-9 gap-1.5 bg-white/90 px-3 text-sm font-medium text-gray-700 shadow-sm backdrop-blur-sm hover:bg-white"
-            >
-              <Camera className="h-4 w-4" />
-              Change Cover
-            </Button>
-          </div>
-        )}
       </div>
       <CardContent className="relative px-6 pt-0 pb-6">
         <div className="flex flex-col items-start gap-6 md:flex-row md:items-end">
@@ -167,18 +154,6 @@ export function ProfileHeader({
                 />
               ) : (
                 <AvatarInitial name={profile?.name} fontSize="text-4xl" />
-              )}
-              {!readOnly && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
-                  <Button
-                    variant="secondary"
-                    size="icon"
-                    className="h-10 w-10 rounded-full bg-white/80 text-gray-700 backdrop-blur-sm hover:bg-white"
-                  >
-                    <Camera className="h-5 w-5" />
-                    <span className="sr-only">Change profile picture</span>
-                  </Button>
-                </div>
               )}
             </div>
           </div>
