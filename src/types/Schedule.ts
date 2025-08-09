@@ -100,6 +100,7 @@ export interface ScheduleEventResponse {
   endsAt: string;
   location?: string;
   notes?: string;
+  applicationId?: number;
   version: number;
   createdAt: string;
   updatedAt: string;
