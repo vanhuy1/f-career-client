@@ -1,3 +1,7 @@
+import {
+  UpdateStatusScheduleEventCompanyRequest,
+  UpdateStatusScheduleEventCompanyResponse,
+} from '@/types/Schedule';
 import { httpClient } from '@/utils/axios';
 import { RequestBuilder } from '@/utils/axios/request-builder';
 
@@ -36,6 +40,25 @@ class EventService {
         };
       },
     });
+  }
+
+  async updateStatusScheduleEventCompany(
+    eventId: string,
+    request: UpdateStatusScheduleEventCompanyRequest,
+  ): Promise<UpdateStatusScheduleEventCompanyResponse> {
+    const url = this.requestBuilder.buildUrl(`${eventId}`);
+    const response = await httpClient.patch<
+      UpdateStatusScheduleEventCompanyResponse,
+      UpdateStatusScheduleEventCompanyRequest
+    >({
+      url,
+      body: request,
+      typeCheck: (data) => ({
+        success: true,
+        data: data as UpdateStatusScheduleEventCompanyResponse,
+      }),
+    });
+    return response;
   }
 }
 

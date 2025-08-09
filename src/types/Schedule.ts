@@ -173,3 +173,27 @@ export interface CandidateScheduleResponse {
   limit: number;
   totalPages: number;
 }
+
+export interface UpdateStatusScheduleEventCompanyRequest {
+  status: EventStatus;
+}
+
+// Response type for updating schedule event status by company
+export interface UpdateStatusScheduleEventCompanyResponse {
+  id: string; // UUID string
+  companyId: string;
+  companyName: string;
+  createdBy: number;
+  title: string;
+  type: EventType;
+  status: EventStatus;
+  startsAt: string;
+  endsAt: string;
+  location?: string;
+  notes?: string;
+  applicationId?: number;
+  version: number;
+  createdAt: string;
+  updatedAt: string;
+  participants: ScheduleParticipantResponse[];
+}

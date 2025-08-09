@@ -12,6 +12,8 @@ import {
   MapPin,
   Filter,
   X,
+  Check,
+  XCircle,
 } from 'lucide-react';
 import {
   Select,
@@ -25,9 +27,16 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import ScheduleEventModal from '@/app/(company)/_components/ScheduleEventModal';
 import { useUser } from '@/services/state/userSlice';
 import { companyService } from '@/services/api/company/company-api';
+import { eventService } from '@/services/api/schedule/schedule-api';
 import {
   ScheduleEventResponse,
   EventType,
@@ -36,6 +45,7 @@ import {
   GetScheduleEventsQuery,
 } from '@/types/Schedule';
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { toast } from 'react-toastify';
 
 interface LoadingState {
   loading: boolean;
@@ -88,6 +98,11 @@ export default function CompanySchedulePage() {
   } | null>(null);
   const [dateFilter, setDateFilter] = useState<DateFilter>({});
   const [showFilterPopover, setShowFilterPopover] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(
+    null,
+  );
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isActionLoading, setIsActionLoading] = useState(false);
 
   const fetchEvents = useCallback(async () => {
     if (!user?.data?.companyId) return;
@@ -319,6 +334,75 @@ export default function CompanySchedulePage() {
       dateFilter.type ||
       dateFilter.status
     );
+  };
+
+  const handleEventClick = (event: CalendarEvent) => {
+    setSelectedEvent(event);
+    setIsModalOpen(true);
+  };
+
+  const handleConfirmEvent = async () => {
+    if (!selectedEvent) return;
+
+    try {
+      setIsActionLoading(true);
+      await eventService.updateStatusScheduleEventCompany(selectedEvent.id, {
+        status: EventStatus.CONFIRMED,
+      });
+
+      // Show success toast
+      toast.success('Event confirmed successfully!', {
+        className: 'bg-green-500 text-white font-semibold',
+      });
+
+      setIsModalOpen(false);
+      setSelectedEvent(null);
+      // Refresh events to show updated status
+      fetchEvents();
+    } catch (error) {
+      console.error('Failed to confirm event:', error);
+      // Show error toast
+      toast.error('Failed to confirm event. Please try again.', {
+        className: 'bg-red-500 text-white font-semibold',
+      });
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
+
+  const handleCancelEvent = async () => {
+    if (!selectedEvent) return;
+
+    try {
+      setIsActionLoading(true);
+      await eventService.updateStatusScheduleEventCompany(selectedEvent.id, {
+        status: EventStatus.CANCELLED,
+      });
+
+      // Show success toast
+      toast.success('Event cancelled successfully!', {
+        className: 'bg-green-500 text-white font-semibold',
+      });
+
+      setIsModalOpen(false);
+      setSelectedEvent(null);
+      // Refresh events to show updated status
+      fetchEvents();
+    } catch (error) {
+      console.error('Failed to cancel event:', error);
+      // Show error toast
+      toast.error('Failed to cancel event. Please try again.', {
+        className: 'bg-red-500 text-white font-semibold',
+      });
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setSelectedEvent(null);
+    setIsActionLoading(false);
   };
 
   if (loadingState.loading) {
@@ -650,6 +734,7 @@ export default function CompanySchedulePage() {
                         hour: '2-digit',
                         minute: '2-digit',
                       })}`}
+                      onClick={() => handleEventClick(event)}
                     >
                       {/* Event Header with Type and Status */}
                       <div className="mb-1 flex items-center justify-between">
@@ -723,6 +808,199 @@ export default function CompanySchedulePage() {
           }}
         />
       )}
+
+      {/* Event Details Modal */}
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <span className="text-2xl">
+                {selectedEvent && getTypeIcon(selectedEvent.type)}
+              </span>
+              <span>Event Details</span>
+            </DialogTitle>
+          </DialogHeader>
+
+          {selectedEvent && (
+            <div className="space-y-4">
+              {/* Event Type and Status */}
+              <div className="flex items-center justify-between">
+                <Badge variant="outline" className="capitalize">
+                  {selectedEvent.type}
+                </Badge>
+                <Badge className={getStatusBadgeColor(selectedEvent.status)}>
+                  {selectedEvent.status.charAt(0).toUpperCase() +
+                    selectedEvent.status.slice(1)}
+                </Badge>
+              </div>
+
+              {/* Event Title */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  {selectedEvent.title}
+                </h3>
+              </div>
+
+              {/* Event Time */}
+              <div className="flex items-center gap-2 text-gray-600">
+                <Clock className="h-4 w-4" />
+                <span>
+                  {new Date(selectedEvent.startsAt).toLocaleDateString(
+                    'en-US',
+                    {
+                      weekday: 'long',
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                    },
+                  )}
+                </span>
+              </div>
+              <div className="flex items-center gap-2 text-gray-600">
+                <Clock className="h-4 w-4" />
+                <span>
+                  {new Date(selectedEvent.startsAt).toLocaleTimeString(
+                    'en-US',
+                    {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    },
+                  )}{' '}
+                  -{' '}
+                  {new Date(selectedEvent.endsAt).toLocaleTimeString('en-US', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                </span>
+              </div>
+
+              {/* Event Location */}
+              {selectedEvent.location && (
+                <div className="flex items-center gap-2 text-gray-600">
+                  {selectedEvent.location.toLowerCase().includes('video') ||
+                  selectedEvent.location.toLowerCase().includes('call') ||
+                  selectedEvent.location.toLowerCase().includes('zoom') ||
+                  selectedEvent.location.toLowerCase().includes('meet') ? (
+                    <Video className="h-4 w-4" />
+                  ) : (
+                    <MapPin className="h-4 w-4" />
+                  )}
+                  <span>{selectedEvent.location}</span>
+                </div>
+              )}
+
+              {/* Event Notes */}
+              {selectedEvent.notes && (
+                <div>
+                  <h4 className="mb-2 font-medium text-gray-900">Notes</h4>
+                  <p className="text-sm text-gray-600">{selectedEvent.notes}</p>
+                </div>
+              )}
+
+              {/* Participants */}
+              {selectedEvent.participants &&
+                selectedEvent.participants.length > 0 && (
+                  <div>
+                    <h4 className="mb-2 font-medium text-gray-900">
+                      Participants
+                    </h4>
+                    <div className="space-y-2">
+                      {selectedEvent.participants.map((participant, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between rounded-lg border border-gray-200 p-3"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-sm font-medium text-gray-700">
+                              {participant.user.name
+                                ? participant.user.name.charAt(0).toUpperCase()
+                                : 'U'}
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-gray-900">
+                                {participant.user.name || 'Unknown User'}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                {participant.user.email}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Badge
+                              variant="outline"
+                              className="text-xs capitalize"
+                            >
+                              {participant.role}
+                            </Badge>
+                            <Badge
+                              className={`text-xs ${
+                                participant.response === 'accepted'
+                                  ? 'border-green-300 bg-green-100 text-green-800'
+                                  : participant.response === 'declined'
+                                    ? 'border-red-300 bg-red-100 text-red-800'
+                                    : 'border-yellow-300 bg-yellow-100 text-yellow-800'
+                              }`}
+                            >
+                              {participant.response.charAt(0).toUpperCase() +
+                                participant.response.slice(1)}
+                            </Badge>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+              {/* Action Buttons */}
+              {(selectedEvent.status === EventStatus.PENDING ||
+                selectedEvent.status === EventStatus.CONFIRMED) && (
+                <div className="flex gap-3 pt-4">
+                  {selectedEvent.status === EventStatus.PENDING && (
+                    <Button
+                      onClick={handleConfirmEvent}
+                      disabled={isActionLoading}
+                      className="flex-1 bg-green-600 hover:bg-green-700"
+                    >
+                      {isActionLoading ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Check className="mr-2 h-4 w-4" />
+                      )}
+                      Confirm
+                    </Button>
+                  )}
+                  <Button
+                    onClick={handleCancelEvent}
+                    disabled={isActionLoading}
+                    variant="outline"
+                    className="flex-1 border-red-300 text-red-700 hover:bg-red-50"
+                  >
+                    {isActionLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <XCircle className="mr-2 h-4 w-4" />
+                    )}
+                    Cancel
+                  </Button>
+                </div>
+              )}
+
+              {/* Close button for cancelled events */}
+              {selectedEvent.status === EventStatus.CANCELLED && (
+                <div className="pt-4">
+                  <Button
+                    onClick={closeModal}
+                    className="w-full"
+                    variant="outline"
+                  >
+                    Close
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
