@@ -34,6 +34,7 @@ import {
 } from '@/components/ui/dialog';
 import { userService } from '@/services/api/auth/user-api';
 import { eventService } from '@/services/api/schedule/schedule-api';
+import { applicationService } from '@/services/api/applications/application-api';
 import {
   ScheduleEventResponse,
   EventType,
@@ -41,6 +42,7 @@ import {
   CandidateScheduleResponse,
   GetCandidateScheduleRequest,
 } from '@/types/Schedule';
+import { CandidateApplicationDetail } from '@/types/Application';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { toast } from 'react-toastify';
 
@@ -95,6 +97,9 @@ export default function SchedulePage() {
   );
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isActionLoading, setIsActionLoading] = useState(false);
+  const [applicationDetail, setApplicationDetail] =
+    useState<CandidateApplicationDetail | null>(null);
+  const [isLoadingApplication, setIsLoadingApplication] = useState(false);
 
   const fetchEvents = useCallback(async () => {
     try {
@@ -318,9 +323,32 @@ export default function SchedulePage() {
     );
   };
 
+  const fetchApplicationDetail = async (applicationId: number) => {
+    try {
+      setIsLoadingApplication(true);
+      const detail = await applicationService.getCandidateApplicationDetail(
+        applicationId.toString(),
+      );
+      setApplicationDetail(detail);
+    } catch (error) {
+      console.error('Failed to fetch application detail:', error);
+      setApplicationDetail(null);
+    } finally {
+      setIsLoadingApplication(false);
+    }
+  };
+
   const handleEventClick = (event: CalendarEvent) => {
     setSelectedEvent(event);
     setIsModalOpen(true);
+
+    // Reset previous application detail
+    setApplicationDetail(null);
+
+    // Fetch application detail if applicationId exists
+    if (event.applicationId) {
+      fetchApplicationDetail(event.applicationId);
+    }
   };
 
   const handleConfirmEvent = async () => {
@@ -337,6 +365,9 @@ export default function SchedulePage() {
 
       setIsModalOpen(false);
       setSelectedEvent(null);
+      setApplicationDetail(null);
+      // Refresh events to show updated status
+      fetchEvents();
     } catch (error) {
       console.error('Failed to confirm event:', error);
       // Show error toast
@@ -362,6 +393,9 @@ export default function SchedulePage() {
 
       setIsModalOpen(false);
       setSelectedEvent(null);
+      setApplicationDetail(null);
+      // Refresh events to show updated status
+      fetchEvents();
     } catch (error) {
       console.error('Failed to decline event:', error);
       // Show error toast
@@ -377,6 +411,8 @@ export default function SchedulePage() {
     setIsModalOpen(false);
     setSelectedEvent(null);
     setIsActionLoading(false);
+    setApplicationDetail(null);
+    setIsLoadingApplication(false);
   };
 
   if (loadingState.loading) {
@@ -739,6 +775,44 @@ export default function SchedulePage() {
                   {selectedEvent.title}
                 </h3>
               </div>
+
+              {/* Application Details */}
+              {selectedEvent.applicationId && (
+                <div className="space-y-2">
+                  <h4 className="font-medium text-gray-900">
+                    Application Details
+                  </h4>
+                  {isLoadingApplication ? (
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span>Loading application details...</span>
+                    </div>
+                  ) : applicationDetail ? (
+                    <div className="space-y-2 rounded-lg border border-gray-200 p-3">
+                      <div>
+                        <span className="text-sm font-medium text-gray-700">
+                          Job Title:
+                        </span>
+                        <p className="text-sm text-gray-900">
+                          {applicationDetail.job?.title || 'N/A'}
+                        </p>
+                      </div>
+                      <div>
+                        <span className="text-sm font-medium text-gray-700">
+                          Company:
+                        </span>
+                        <p className="text-sm text-gray-900">
+                          {applicationDetail.company?.name || 'N/A'}
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-500">
+                      Failed to load application details
+                    </p>
+                  )}
+                </div>
+              )}
 
               {/* Event Time */}
               <div className="flex items-center gap-2 text-gray-600">
