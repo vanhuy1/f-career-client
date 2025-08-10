@@ -18,10 +18,11 @@ import {
   MousePointer,
   Route,
   ArrowDown,
+  LucideIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-const icons = {
+const icons: Record<string, LucideIcon> = {
   briefcase: Briefcase,
   book: Book,
   code: Code,
@@ -56,6 +57,7 @@ interface MindMapNodeProps {
     skillTitle?: string;
     progress?: number;
     order?: number;
+    skillId?: string;
   };
   isConnectable: boolean;
 }
@@ -65,9 +67,7 @@ function MindMapNode({ data, isConnectable }: MindMapNodeProps) {
   const [expanded, setExpanded] = useState(data.isMainNode || false);
 
   const IconComponent =
-    data.icon && icons[data.icon as keyof typeof icons]
-      ? icons[data.icon as keyof typeof icons]
-      : icons.default;
+    data.icon && icons[data.icon] ? icons[data.icon] : icons.default;
 
   const getStatusIcon = () => {
     switch (data.status) {
@@ -126,7 +126,7 @@ function MindMapNode({ data, isConnectable }: MindMapNodeProps) {
         </div>
       )}
 
-      {data.isSkillNode && (
+      {data.isSkillNode && data.order && (
         <div className="absolute top-1/2 -left-8 flex h-6 w-6 -translate-y-1/2 transform items-center justify-center rounded-full bg-blue-500 text-xs font-bold text-white">
           {data.order}
         </div>
