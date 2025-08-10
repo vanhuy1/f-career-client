@@ -17,13 +17,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import {
-  Filter,
-  MoreHorizontal,
-  Search,
-  ChevronUp,
-  ChevronDown,
-} from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { MoreHorizontal, Search, ChevronUp, ChevronDown } from 'lucide-react';
 import { JobByCompanyId } from '@/types/Job';
 import { formatDate } from '@/utils/helpers';
 
@@ -114,27 +109,23 @@ export default function JobListTable({
         <div className="flex items-center gap-4">
           <div className="relative">
             <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform text-gray-400" />
-            <input
+            <Input
               placeholder="Search Jobs"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-80 rounded-md border border-gray-300 py-2 pl-10 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              className="w-80 pl-10"
             />
           </div>
-          <Button variant="outline" className="flex items-center gap-2">
-            <Filter className="h-4 w-4" />
-            Filter
-          </Button>
         </div>
       </div>
 
       {/* Table */}
-      <div className="overflow-hidden rounded-xl border">
+      <div className="overflow-hidden rounded-xl border shadow-sm">
         <Table>
           <TableHeader>
-            <TableRow className="bg-gray-50">
+            <TableRow className="bg-gray-800 hover:bg-gray-800">
               <TableHead
-                className="cursor-pointer font-medium text-gray-600 select-none"
+                className="cursor-pointer px-6 py-4 font-medium text-white select-none"
                 onClick={() => handleSort('title')}
               >
                 Job Title
@@ -146,7 +137,7 @@ export default function JobListTable({
                   ))}
               </TableHead>
               <TableHead
-                className="cursor-pointer font-medium text-gray-600 select-none"
+                className="cursor-pointer px-6 py-4 font-medium text-white select-none"
                 onClick={() => handleSort('status')}
               >
                 Status
@@ -158,7 +149,7 @@ export default function JobListTable({
                   ))}
               </TableHead>
               <TableHead
-                className="cursor-pointer font-medium text-gray-600 select-none"
+                className="cursor-pointer px-6 py-4 font-medium text-white select-none"
                 onClick={() => handleSort('date')}
               >
                 Posted Date
@@ -169,16 +160,16 @@ export default function JobListTable({
                     <ChevronDown className="ml-1 inline h-4 w-4" />
                   ))}
               </TableHead>
-              <TableHead className="font-medium text-gray-600">
+              <TableHead className="px-6 py-4 font-medium text-white select-none">
                 Due Date
               </TableHead>
-              <TableHead className="font-medium text-gray-600">
+              <TableHead className="px-6 py-4 font-medium text-white select-none">
                 Job Type
               </TableHead>
-              <TableHead className="font-medium text-gray-600">
+              <TableHead className="px-6 py-4 font-medium text-white select-none">
                 Applicants
               </TableHead>
-              <TableHead className="font-medium text-gray-600">
+              <TableHead className="px-6 py-4 font-medium text-white select-none">
                 Action
               </TableHead>
             </TableRow>
@@ -192,9 +183,14 @@ export default function JobListTable({
               </TableRow>
             ) : (
               filteredJobs.map((job) => (
-                <TableRow key={job.jobId} className="hover:bg-gray-50">
-                  <TableCell className="font-medium">{job.jobTitle}</TableCell>
-                  <TableCell>
+                <TableRow
+                  key={job.jobId}
+                  className="cursor-default transition-colors odd:bg-white even:bg-gray-50 hover:bg-gray-100"
+                >
+                  <TableCell className="px-6 py-4 font-medium text-gray-700">
+                    {job.jobTitle}
+                  </TableCell>
+                  <TableCell className="px-6 py-4">
                     <Badge
                       variant={getStatusBadgeVariant(job.status)}
                       className={
@@ -206,13 +202,13 @@ export default function JobListTable({
                       {job.status}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-gray-600">
+                  <TableCell className="px-6 py-4 text-gray-600">
                     {formatDate(job.postedDate)}
                   </TableCell>
-                  <TableCell className="text-gray-600">
+                  <TableCell className="px-6 py-4 text-gray-600">
                     {formatDate(job.endDate)}
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="px-6 py-4">
                     <Badge
                       variant={getJobTypeBadgeVariant(job.jobType)}
                       className={
@@ -224,10 +220,10 @@ export default function JobListTable({
                       {job.jobType}
                     </Badge>
                   </TableCell>
-                  <TableCell className="font-medium">
+                  <TableCell className="px-6 py-4 font-medium text-gray-700">
                     {job.totalApplications || 0}
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="px-6 py-4">
                     <div className="flex items-center gap-2">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>

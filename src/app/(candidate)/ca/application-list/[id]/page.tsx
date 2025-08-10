@@ -27,10 +27,8 @@ import InterviewScheduleDialog, {
 } from '@/app/(candidate)/_components/InterviewScheduleDialog';
 import { createSafeHtml } from '@/utils/html-sanitizer';
 import { applicationService } from '@/services/api/applications/application-api';
-import {
-  CandidateApplicationDetail,
-  ApplicationStatus,
-} from '@/types/Application';
+import { CandidateApplicationDetail } from '@/types/Application';
+import { ApplicationStatus as ApplicationStatusEnum } from '@/enums/applicationStatus';
 
 export default function ApplicationDetailPage() {
   const params = useParams();
@@ -141,7 +139,9 @@ export default function ApplicationDetailPage() {
                 <span className="text-gray-600">
                   {application.company.name}
                 </span>
-                <StatusBadge status={application.status as ApplicationStatus} />
+                <StatusBadge
+                  status={application.status as ApplicationStatusEnum}
+                />
               </div>
             </div>
           </div>
@@ -360,7 +360,7 @@ export default function ApplicationDetailPage() {
                   <h3 className="text-sm text-gray-500">Current Status</h3>
                   <div className="mt-1">
                     <StatusBadge
-                      status={application.status as ApplicationStatus}
+                      status={application.status as ApplicationStatusEnum}
                     />
                   </div>
                 </div>
