@@ -16,7 +16,6 @@ import { useRouter } from 'next/navigation';
 import { setSelectedApplication } from '@/services/state/applicationsSlice';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import StatusBadge from '@/app/(candidate)/_components/applications-list/StatusBadge';
 import { ApplicationStatus } from '@/enums/applicationStatus';
 import {
@@ -139,12 +138,9 @@ export default function ApplicationTable({
   }
 
   return (
-    <div className="p-6">
+    <>
       {/* Header */}
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-gray-900">
-          Total Applications: {filteredApplications.length}
-        </h1>
         <div className="flex items-center gap-4">
           <div className="relative">
             <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform text-gray-400" />
@@ -155,20 +151,16 @@ export default function ApplicationTable({
               className="w-80 pl-10"
             />
           </div>
-          {/* <Button variant="outline" className="flex items-center gap-2">
-            <Filter className="h-4 w-4" />
-            Filter
-          </Button> */}
         </div>
       </div>
 
       {/* Table */}
-      <div className="overflow-hidden rounded-xl border">
+      <div className="overflow-hidden rounded-xl border shadow-sm">
         <Table className="overflow-hidden">
           <TableHeader>
-            <TableRow className="bg-gray-50">
+            <TableRow className="bg-gray-800 hover:bg-gray-800">
               <TableHead
-                className="cursor-pointer font-medium text-gray-600 select-none"
+                className="cursor-pointer px-6 py-4 font-medium text-white select-none"
                 onClick={() => handleSort('company')}
               >
                 Company Name
@@ -180,7 +172,7 @@ export default function ApplicationTable({
                   ))}
               </TableHead>
               <TableHead
-                className="cursor-pointer font-medium text-gray-600 select-none"
+                className="cursor-pointer px-6 py-4 font-medium text-white select-none"
                 onClick={() => handleSort('role')}
               >
                 Roles
@@ -192,7 +184,7 @@ export default function ApplicationTable({
                   ))}
               </TableHead>
               <TableHead
-                className="cursor-pointer font-medium text-gray-600 select-none"
+                className="cursor-pointer px-6 py-4 font-medium text-white select-none"
                 onClick={() => handleSort('date')}
               >
                 Date Applied
@@ -204,7 +196,7 @@ export default function ApplicationTable({
                   ))}
               </TableHead>
               <TableHead
-                className="cursor-pointer font-medium text-gray-600 select-none"
+                className="cursor-pointer px-6 py-4 font-medium text-white select-none"
                 onClick={() => handleSort('status')}
               >
                 Status
@@ -215,7 +207,7 @@ export default function ApplicationTable({
                     <ChevronDown className="ml-1 inline h-4 w-4" />
                   ))}
               </TableHead>
-              <TableHead className="cursor-pointer font-medium text-gray-600 select-none">
+              <TableHead className="px-6 py-4 font-medium text-white select-none">
                 Actions
               </TableHead>
             </TableRow>
@@ -224,37 +216,24 @@ export default function ApplicationTable({
             {paginatedApplications.map((application) => (
               <TableRow
                 key={application.id}
-                className="cursor-pointer transition-colors hover:bg-gray-50"
+                className="cursor-pointer transition-colors odd:bg-white even:bg-gray-50 hover:bg-gray-100"
                 onClick={() => handleRowClick(application)}
               >
-                <TableCell>
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage
-                        src={application.company?.logoUrl || '/placeholder.svg'}
-                        alt={application.company?.companyName}
-                      />
-                      <AvatarFallback>
-                        {application.company?.companyName?.charAt(0) || 'C'}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className="font-medium">
-                      {application.company?.companyName}
-                    </span>
-                  </div>
+                <TableCell className="px-6 py-4 font-medium text-gray-700">
+                  {application.company?.companyName}
                 </TableCell>
-                <TableCell className="text-gray-600">
+                <TableCell className="px-6 py-4 text-gray-600">
                   {application.job?.title}
                 </TableCell>
-                <TableCell className="text-gray-600">
+                <TableCell className="px-6 py-4 text-gray-600">
                   {formatDate(application.applied_at)}
                 </TableCell>
-                <TableCell>
+                <TableCell className="px-6 py-4">
                   <StatusBadge
                     status={application.status as ApplicationStatus}
                   />
                 </TableCell>
-                <TableCell>
+                <TableCell className="px-6 py-4">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button
@@ -281,25 +260,6 @@ export default function ApplicationTable({
 
       {/* Pagination */}
       <div className="mt-6 flex items-center justify-between">
-        {/* <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-600">View</span>
-          <Select
-            value={itemsPerPage.toString()}
-            onValueChange={(value) => setItemsPerPage(Number(value))}
-          >
-            <SelectTrigger className="w-20">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="4">4</SelectItem>
-              <SelectItem value="10">10</SelectItem>
-              <SelectItem value="20">20</SelectItem>
-              <SelectItem value="50">50</SelectItem>
-            </SelectContent>
-          </Select>
-          <span className="text-sm text-gray-600">Applications per page</span>
-        </div> */}
-
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
@@ -336,6 +296,6 @@ export default function ApplicationTable({
           </Button>
         </div>
       </div>
-    </div>
+    </>
   );
 }

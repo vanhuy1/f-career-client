@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import type { ApplicationStatus } from '@/types/Application';
+import { ApplicationStatus } from '@/enums/applicationStatus';
 import StatusBadge from './StatusBadge';
 
 interface FilterableStatusBadgeProps {
