@@ -330,10 +330,7 @@ export default function ApplyDialog({
     } catch (error) {
       setSubmitMessage({
         type: 'error',
-        text:
-          error instanceof Error
-            ? error.message
-            : 'An unexpected error occurred',
+        text: error as string,
       });
     } finally {
       setIsSubmitting(false);

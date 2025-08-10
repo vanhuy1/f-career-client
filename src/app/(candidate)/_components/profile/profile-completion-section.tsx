@@ -30,20 +30,6 @@ export function ProfileCompletionSection({
         weight: 15,
       },
       {
-        name: 'Profile Picture',
-        isComplete: !!profile.avatar,
-        weight: 10,
-      },
-      {
-        name: 'Contact Information',
-        isComplete: !!(
-          profile.contact?.email &&
-          profile.contact?.phone &&
-          profile.contact?.languages?.length > 0
-        ),
-        weight: 15,
-      },
-      {
         name: 'Work Experience',
         isComplete: profile.experiences?.length > 0,
         weight: 20,
@@ -85,6 +71,14 @@ export function ProfileCompletionSection({
     return "Let's complete your profile to attract employers.";
   };
 
+  const getProgressBarColor = (percentage: number) => {
+    if (percentage === 100) return '[&>div]:bg-green-500'; // Gold for complete
+    if (percentage >= 80) return '[&>div]:bg-blue-500'; // Green for almost complete
+    if (percentage >= 60) return '[&>div]:bg-yellow-500'; // Blue for good progress
+    if (percentage >= 40) return '[&>div]:bg-orange-500'; // Orange for moderate progress
+    return '[&>div]:bg-red-500'; // Red for low completion
+  };
+
   return (
     <Card className="h-fit">
       <CardHeader>
@@ -103,7 +97,10 @@ export function ProfileCompletionSection({
               {completedSections.length}/{sections.length} sections
             </span>
           </div>
-          <Progress value={completionPercentage} className="h-2" />
+          <Progress
+            value={completionPercentage}
+            className={`h-2 ${getProgressBarColor(completionPercentage)}`}
+          />
           <p className="text-xs text-gray-600">
             {getCompletionMessage(completionPercentage)}
           </p>
