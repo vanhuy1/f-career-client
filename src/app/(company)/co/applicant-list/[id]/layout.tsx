@@ -379,7 +379,7 @@ export default function ApplicantLayout({
             )}
 
             {/* Schedule Interview Button */}
-            <Link href={`/applicants/${applicantId}/interview-schedule`}>
+            <Link href={`/co/applicant-list/${applicantId}/interview-schedule`}>
               <Button className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-md transition-all duration-200 hover:from-blue-700 hover:to-blue-800 hover:shadow-lg">
                 <MessageCircle className="mr-2 h-4 w-4" />
                 Schedule Interview
