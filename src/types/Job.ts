@@ -1,6 +1,7 @@
 // src/types/Job.ts
 
 import { Skill } from '@/services/api/skills/skill-api';
+import { ApplicationStatus } from '@/enums/applicationStatus';
 
 export interface Category {
   id: string;
@@ -228,4 +229,49 @@ export interface JobByCompanyIdResponse {
 export interface JobByCompanyIdParams {
   limit?: number;
   offset?: number;
+}
+
+// =============================
+// Job Stats
+// =============================
+
+export interface JobStatsCandidate {
+  applicationId: number;
+  userId: number;
+  name: string;
+  email: string;
+  gender: string;
+  ai_score: number;
+}
+
+export interface JobStatsDemographicsLocationItem {
+  location: string;
+  count: number;
+}
+
+export interface JobStatsDemographics {
+  gender: Record<string, number>;
+  age: Record<string, number>;
+  location: JobStatsDemographicsLocationItem[];
+}
+
+export interface JobStats {
+  jobId: string;
+  title: string;
+  createdAt: string;
+  deadline: string;
+  isExpired: boolean;
+  daysUntilDeadline: number;
+  totalApplications: number;
+  applicationsByStatus:
+    | Partial<Record<ApplicationStatus, number>>
+    | Record<string, number>;
+  averageAiScore: number;
+  topCandidatesByAiScore: JobStatsCandidate[];
+  demographics: JobStatsDemographics;
+}
+
+export interface JobStatsResponse {
+  data: JobStats;
+  meta: unknown;
 }
