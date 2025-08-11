@@ -1,6 +1,7 @@
 // src/types/Company.ts
 
 import { OpenPositionsJob } from './Job';
+import { ApplicationStatus } from '@/enums/applicationStatus';
 
 export interface Company {
   id: string;
@@ -144,3 +145,44 @@ export interface CompanyListResponse {
 
 /** Payload khi cập nhật company */
 export type UpdateCompanyReq = Partial<CreateCompanyReq>;
+
+// ----------------------
+// Company Stats Types
+// ----------------------
+
+export interface JobStatsByStatus {
+  open: number;
+  closed: number;
+  active: number;
+  expired: number;
+}
+
+export interface JobStatsByCategoryItem {
+  categoryId: string;
+  name: string;
+  count: number;
+}
+
+export interface JobStats {
+  byStatus: JobStatsByStatus;
+  lastMonth: number;
+  byCategory: JobStatsByCategoryItem[];
+}
+
+export interface ApplicationStatusCountItem {
+  status: ApplicationStatus; // e.g., INTERVIEW, HIRED, REJECTED, etc.
+  count: number;
+}
+
+export interface ApplicationsStats {
+  byStatus: ApplicationStatusCountItem[];
+  lastMonth: number;
+  today: number;
+}
+
+export interface CompanyStats {
+  totalJobs: number;
+  totalApplications: number;
+  jobs: JobStats;
+  applications: ApplicationsStats;
+}
