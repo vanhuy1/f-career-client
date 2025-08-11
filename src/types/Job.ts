@@ -19,7 +19,11 @@ export type EmploymentType =
   | 'FullTime'
   | 'PartTime'
   | 'Contract'
-  | 'Internship';
+  | 'Internship'
+  | 'FULL_TIME'
+  | 'PART_TIME'
+  | 'CONTRACT'
+  | 'INTERNSHIP';
 export type JobStatus = 'OPEN' | 'CLOSED' | 'DRAFT';
 
 export type PackageType = 'basic' | 'premium' | 'vip';
@@ -56,6 +60,8 @@ export interface Job {
   applicants: number;
   priorityPosition?: number;
   vip_expiration?: string;
+  isDeleted?: boolean;
+  topJob?: number;
 }
 
 export interface OpenPositionsJob {
@@ -68,6 +74,7 @@ export interface OpenPositionsJob {
   location: string;
   typeOfEmployment: string;
   status: string;
+  isDeleted: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -96,6 +103,7 @@ export interface CreateJobReq {
   deadline: string;
   typeOfEmployment: EmploymentType;
   benefit: string[];
+  topJob?: number;
 }
 
 /** payload khi cập nhật job */

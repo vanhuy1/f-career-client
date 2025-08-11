@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -20,12 +20,14 @@ import { format } from 'date-fns';
 import {
   Eye,
   Settings,
-  Clock,
   Users,
   MapPin,
   Layers,
   Building,
   ImageIcon,
+  Globe,
+  Calendar,
+  Loader2,
 } from 'lucide-react';
 import { Company } from '@/types/Company';
 import Image from 'next/image';
@@ -34,6 +36,128 @@ import { useRouter } from 'next/navigation';
 import FileUploader from '@/components/common/FileUploader';
 import { SupabaseBucket, SupabaseFolder } from '@/enums/supabase';
 import { uploadFile } from '@/lib/storage';
+import { Input } from '@/components/ui/input';
+import debounce from 'lodash/debounce';
+
+// Thêm interface cho Nominatim response
+interface NominatimResult {
+  display_name: string;
+  lat: string;
+  lon: string;
+  address: {
+    city?: string;
+    state?: string;
+    country?: string;
+    postcode?: string;
+  };
+}
+
+// Component riêng cho location input với suggestions
+function LocationInput({
+  value,
+  onChange,
+  placeholder,
+  className,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  className?: string;
+}) {
+  const [suggestions, setSuggestions] = useState<NominatimResult[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const fetchLocationSuggestions = async (q: string) => {
+    if (q.length < 3) {
+      setSuggestions([]);
+      return;
+    }
+    setIsLoading(true);
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=5&addressdetails=1`,
+      );
+      const data = await res.json();
+      setSuggestions(data);
+    } catch (error) {
+      console.error('Failed to fetch location suggestions:', error);
+      toast.error('Failed to fetch location suggestions');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const debouncedFetch = useCallback(
+    debounce(fetchLocationSuggestions, 300),
+    [],
+  );
+
+  // Handle click outside suggestions
+  useEffect(() => {
+    const handleClickOutside = () => setShowSuggestions(false);
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, []);
+
+  return (
+    <div className="relative">
+      <Input
+        value={value}
+        onChange={(e) => {
+          onChange(e.target.value);
+          debouncedFetch(e.target.value);
+          setShowSuggestions(true);
+        }}
+        onFocus={() => setShowSuggestions(true)}
+        placeholder={placeholder || 'Search for a location...'}
+        className={`pr-8 ${className || ''}`}
+      />
+      {isLoading && (
+        <div className="absolute top-1/2 right-2 -translate-y-1/2">
+          <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+        </div>
+      )}
+
+      {/* Location Suggestions Dropdown */}
+      {showSuggestions && suggestions.length > 0 && (
+        <div
+          className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md border border-gray-200 bg-white py-1 shadow-lg"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {suggestions.map((suggestion) => {
+            const addressParts = [
+              suggestion.address.city,
+              suggestion.address.state,
+              suggestion.address.country,
+            ].filter(Boolean);
+
+            return (
+              <div
+                key={`${suggestion.lat}-${suggestion.lon}`}
+                className="cursor-pointer px-4 py-2 hover:bg-gray-50"
+                onClick={() => {
+                  onChange(suggestion.display_name);
+                  setSuggestions([]);
+                  setShowSuggestions(false);
+                }}
+              >
+                <div className="text-sm font-medium">
+                  {suggestion.display_name}
+                </div>
+                {addressParts.length > 0 && (
+                  <div className="text-xs text-gray-500">
+                    {addressParts.join(', ')}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
 
 // Thêm hàm helper để lấy ngày hiện tại ở định dạng YYYY-MM-DD
 const getCurrentDate = () => {
@@ -41,23 +165,15 @@ const getCurrentDate = () => {
   return today.toISOString().split('T')[0];
 };
 
-// Thêm hàm helper để validate URL
-const isValidUrl = (url: string) => {
+// Thêm hàm helper để format date cho input
+const formatDateForInput = (dateString: string) => {
+  if (!dateString) return '';
   try {
-    new URL(url);
-    return true;
+    const date = new Date(dateString);
+    return date.toISOString().split('T')[0];
   } catch {
-    return false;
+    return '';
   }
-};
-
-// Thêm hàm helper để format URL
-const formatUrl = (url: string) => {
-  if (!url) return '';
-  if (!url.startsWith('http://') && !url.startsWith('https://')) {
-    return `https://${url}`;
-  }
-  return url;
 };
 
 interface CompanyHeaderSectionProps {
@@ -70,7 +186,7 @@ export default function CompanyHeaderSection({
   onUpdateCompany,
 }: CompanyHeaderSectionProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [websiteError, setWebsiteError] = useState('');
+  const [employeesError, setEmployeesError] = useState('');
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const router = useRouter();
@@ -87,23 +203,28 @@ export default function CompanyHeaderSection({
     handleSubmit,
     formState: { errors },
     reset,
+    setValue,
+    watch,
   } = useForm<CompanyDetailsInput>({
     resolver: zodResolver(companyDetailsSchemaInput),
     defaultValues: {
       name: company.companyName || '',
       website: company.website || '',
-      founded: company.foundedAt || '',
+      founded: formatDateForInput(company.foundedAt || ''),
       employees: company.employees?.toString() || '',
       location: company.address?.[0] || '',
       industry: company.industry || '',
     },
   });
 
+  // Watch location field for suggestions
+  const locationValue = watch('location');
+
   useEffect(() => {
     reset({
       name: company.companyName || '',
       website: company.website || '',
-      founded: company.foundedAt || '',
+      founded: formatDateForInput(company.foundedAt || ''),
       employees: company.employees?.toString() || '',
       location: company.address?.[0] || '',
       industry: company.industry || '',
@@ -121,14 +242,11 @@ export default function CompanyHeaderSection({
 
   const onSubmit: SubmitHandler<CompanyDetailsInput> = async (data) => {
     try {
-      // Validate website URL
-      if (data.website) {
-        const formattedUrl = formatUrl(data.website);
-        if (!isValidUrl(formattedUrl)) {
-          setWebsiteError('Please enter a valid website URL');
-          return;
-        }
-        data.website = formattedUrl;
+      // Validate employees number
+      const employeesNum = parseInt(data.employees, 10);
+      if (employeesNum < 10) {
+        setEmployeesError('Company must have at least 10 employees');
+        return;
       }
 
       let logoUrl = company.logoUrl;
@@ -157,7 +275,7 @@ export default function CompanyHeaderSection({
         companyName: data.name,
         website: data.website,
         foundedAt: data.founded,
-        employees: parseInt(data.employees, 10),
+        employees: employeesNum,
         address: newAddresses,
         industry: data.industry,
         logoUrl: logoUrl,
@@ -172,7 +290,7 @@ export default function CompanyHeaderSection({
         }
       }
 
-      toast.success('Company information updated successfully');
+      toast.success('Profile information updated successfully');
       setIsModalOpen(false);
     } catch (error) {
       console.error('Failed to update company details:', error);
@@ -196,95 +314,154 @@ export default function CompanyHeaderSection({
 
   return (
     <>
-      <div className="mb-8 flex items-start gap-6">
-        <div className="flex h-24 w-24 items-center justify-center rounded-lg bg-emerald-100">
-          {company.logoUrl ? (
-            <Image
-              src={company.logoUrl}
-              alt={company.companyName}
-              width={96}
-              height={96}
-              className="h-full w-full rounded-lg object-cover"
-            />
-          ) : (
-            <Building className="h-16 w-16 text-emerald-600" />
-          )}
-        </div>
-        <div className="flex-1">
-          <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold">{company.companyName}</h1>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="flex items-center gap-1.5 text-sm font-bold text-indigo-700"
-                onClick={handlePublicView}
-              >
-                <Eye className="h-4 w-4" />
-                Public View
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-sm text-indigo-700"
-                onClick={() => setIsModalOpen(true)}
-              >
-                <Settings className="mr-2 h-4 w-4" />
-                Edit Company Info
-              </Button>
+      <div className="relative overflow-hidden rounded-3xl border border-white/50 bg-gradient-to-r from-white via-blue-50 to-indigo-50 p-8 shadow-2xl backdrop-blur-sm">
+        {/* Background pattern */}
+        <div className="bg-grid-pattern absolute inset-0 opacity-5"></div>
+
+        {/* Content */}
+        <div className="relative flex flex-col gap-8 lg:flex-row lg:items-start">
+          {/* Company Logo */}
+          <div className="flex-shrink-0">
+            <div className="relative h-28 w-28 overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-100 to-blue-100 p-2 shadow-lg ring-4 ring-white/50">
+              {company.logoUrl ? (
+                <Image
+                  src={company.logoUrl}
+                  alt={company.companyName}
+                  width={112}
+                  height={112}
+                  className="h-full w-full rounded-xl object-cover"
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center rounded-xl bg-gradient-to-br from-emerald-200 to-blue-200">
+                  <Building className="h-16 w-16 text-emerald-700" />
+                </div>
+              )}
             </div>
           </div>
-          <a
-            href={company.website || '#'}
-            className="mt-1 block text-sm text-indigo-600 hover:underline"
-          >
-            {company.website || 'No website available'}
-          </a>
-          <div className="mt-6 grid grid-cols-4 gap-8">
-            <div className="flex items-center gap-3">
-              <div className="rounded-full bg-blue-50 p-2">
-                <Clock className="h-4 w-4 text-blue-600" />
-              </div>
+
+          {/* Company Info */}
+          <div className="min-w-0 flex-1">
+            <div className="mb-6 flex items-center justify-between">
               <div>
-                <div className="text-xs text-gray-500">Founded</div>
-                <div className="text-sm font-medium">
-                  {company.foundedAt
-                    ? format(new Date(company.foundedAt), 'MMMM d, yyyy')
-                    : 'N/A'}
-                </div>
+                <h1 className="mb-3 text-4xl font-bold tracking-tight text-gray-900">
+                  {company.companyName}
+                </h1>
+                {company.website && (
+                  <a
+                    href={company.website}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group inline-flex items-center gap-2 text-base text-indigo-600 transition-colors duration-200 hover:text-indigo-700"
+                  >
+                    <Globe className="h-4 w-4" />
+                    <span className="group-hover:underline">
+                      {company.website}
+                    </span>
+                  </a>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-1.5 text-sm font-bold text-indigo-700"
+                  onClick={handlePublicView}
+                >
+                  <Eye className="h-4 w-4" />
+                  Public View
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-sm text-indigo-700"
+                  onClick={() => setIsModalOpen(true)}
+                >
+                  <Settings className="mr-2 h-4 w-4" />
+                  Edit Company Info
+                </Button>
               </div>
             </div>
-            <div className="flex items-center gap-3">
-              <div className="rounded-full bg-blue-50 p-2">
-                <Users className="h-4 w-4 text-blue-600" />
-              </div>
-              <div>
-                <div className="text-xs text-gray-500">Employees</div>
-                <div className="text-sm font-medium">
-                  {company.employees || 'N/A'}
+
+            {/* Stats Grid */}
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {/* Founded Date */}
+              <div className="group relative overflow-hidden rounded-2xl border border-white/30 bg-white/70 p-5 shadow-lg backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
+                <div className="flex items-center gap-4">
+                  <div className="flex-shrink-0 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 p-3 shadow-lg">
+                    <Calendar className="h-5 w-5 text-white" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-xs font-medium tracking-wide text-gray-500 uppercase">
+                      Founded
+                    </div>
+                    <div className="mt-1 text-sm font-bold text-gray-900">
+                      {company.foundedAt
+                        ? format(new Date(company.foundedAt), 'MMM dd, yyyy')
+                        : 'N/A'}
+                    </div>
+                  </div>
                 </div>
+                <div className="absolute inset-0 -translate-x-full -skew-x-12 transform bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-full"></div>
               </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="rounded-full bg-blue-50 p-2">
-                <MapPin className="h-4 w-4 text-blue-600" />
-              </div>
-              <div>
-                <div className="text-xs text-gray-500">Location</div>
-                <div className="text-sm font-medium">
-                  {company.address?.[0] || 'N/A'}
+
+              {/* Employees */}
+              <div className="group relative overflow-hidden rounded-2xl border border-white/30 bg-white/70 p-5 shadow-lg backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
+                <div className="flex items-center gap-4">
+                  <div className="flex-shrink-0 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 p-3 shadow-lg">
+                    <Users className="h-5 w-5 text-white" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-xs font-medium tracking-wide text-gray-500 uppercase">
+                      Employees
+                    </div>
+                    <div className="mt-1 text-sm font-bold text-gray-900">
+                      {company.employees || 'N/A'}
+                    </div>
+                  </div>
                 </div>
+                <div className="absolute inset-0 -translate-x-full -skew-x-12 transform bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-full"></div>
               </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="rounded-full bg-blue-50 p-2">
-                <Layers className="h-4 w-4 text-blue-600" />
-              </div>
-              <div>
-                <div className="text-xs text-gray-500">Industry</div>
-                <div className="text-sm font-medium">
-                  {company.industry || 'N/A'}
+
+              {/* Location */}
+              <div className="group relative overflow-hidden rounded-2xl border border-white/30 bg-white/70 p-5 shadow-lg backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
+                <div className="flex items-center gap-4">
+                  <div className="flex-shrink-0 rounded-xl bg-gradient-to-br from-rose-500 to-pink-600 p-3 shadow-lg">
+                    <MapPin className="h-5 w-5 text-white" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-xs font-medium tracking-wide text-gray-500 uppercase">
+                      Location
+                    </div>
+                    <div
+                      className="mt-1 truncate text-sm font-bold text-gray-900"
+                      title={company.address?.[0] || 'N/A'}
+                    >
+                      {company.address?.[0] || 'N/A'}
+                    </div>
+                  </div>
                 </div>
+                <div className="absolute inset-0 -translate-x-full -skew-x-12 transform bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-full"></div>
+              </div>
+
+              {/* Industry */}
+              <div className="group relative overflow-hidden rounded-2xl border border-white/30 bg-white/70 p-5 shadow-lg backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
+                <div className="flex items-center gap-4">
+                  <div className="flex-shrink-0 rounded-xl bg-gradient-to-br from-purple-500 to-violet-600 p-3 shadow-lg">
+                    <Layers className="h-5 w-5 text-white" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-xs font-medium tracking-wide text-gray-500 uppercase">
+                      Industry
+                    </div>
+                    <div
+                      className="mt-1 truncate text-sm font-bold text-gray-900"
+                      title={company.industry || 'N/A'}
+                    >
+                      {company.industry || 'N/A'}
+                    </div>
+                  </div>
+                </div>
+                <div className="absolute inset-0 -translate-x-full -skew-x-12 transform bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-full"></div>
               </div>
             </div>
           </div>
@@ -348,23 +525,23 @@ export default function CompanyHeaderSection({
                     folder={SupabaseFolder.COMPANY_LOGOS}
                     onFileSelect={handleLogoSelect}
                     wrapperClassName="
-                      flex
-                      h-24
-                      w-48
-                      flex-col
-                      items-center
-                      justify-center
-                      rounded-lg
-                      border-2
-                      border-dashed
-                      border-indigo-300
-                      p-4
-                      text-center
-                      hover:border-indigo-400
-                      transition
-                      duration-150
-                      ease-in-out
-                    "
+                        flex
+                        h-24
+                        w-48
+                        flex-col
+                        items-center
+                        justify-center
+                        rounded-lg
+                        border-2
+                        border-dashed
+                        border-indigo-300
+                        p-4
+                        text-center
+                        hover:border-indigo-400
+                        transition
+                        duration-150
+                        ease-in-out
+                      "
                     buttonClassName="flex flex-col items-center"
                   >
                     <ImageIcon className="h-5 w-5 text-indigo-600" />
@@ -465,24 +642,12 @@ export default function CompanyHeaderSection({
                   </label>
                   <input
                     {...register('website')}
-                    className={`mt-1.5 block w-full rounded-lg border bg-white px-4 py-2.5 shadow-sm transition-colors hover:border-gray-300 focus:ring-2 focus:ring-indigo-500/20 ${
-                      websiteError
-                        ? 'border-red-500 focus:border-red-500'
-                        : 'border-gray-200 focus:border-indigo-500'
-                    }`}
-                    placeholder="e.g. www.company.com"
-                    onChange={(e) => {
-                      const { value } = e.target;
-                      if (value && !isValidUrl(formatUrl(value))) {
-                        setWebsiteError('Please enter a valid website URL');
-                      } else {
-                        setWebsiteError('');
-                      }
-                    }}
+                    className={`mt-1.5 block w-full rounded-lg border bg-white px-4 py-2.5 shadow-sm transition-colors hover:border-gray-300 focus:ring-2 focus:ring-indigo-500/20 ${errors.website ? 'border-red-500' : ''}`}
+                    placeholder="e.g. company.com"
                   />
-                  {websiteError && (
-                    <p className="mt-1.5 text-sm text-red-500">
-                      {websiteError}
+                  {errors.website && (
+                    <p className="mt-1 text-sm text-red-500">
+                      {errors.website.message}
                     </p>
                   )}
                   <p className="mt-1.5 text-xs text-gray-500">
@@ -495,12 +660,18 @@ export default function CompanyHeaderSection({
                 <div>
                   <label className="block text-sm font-medium text-gray-700">
                     Number of Employees
+                    <span className="ml-1 text-red-500">*</span>
                   </label>
                   <input
                     {...register('employees')}
-                    className="mt-1.5 block w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 shadow-sm transition-colors hover:border-gray-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
+                    className={`mt-1.5 block w-full rounded-lg border bg-white px-4 py-2.5 shadow-sm transition-colors hover:border-gray-300 focus:ring-2 focus:ring-indigo-500/20 ${
+                      employeesError
+                        ? 'border-red-500 focus:border-red-500'
+                        : 'border-gray-200 focus:border-indigo-500'
+                    }`}
                     type="number"
-                    min="0"
+                    min="10"
+                    required
                     placeholder="e.g. 100"
                     onKeyDown={(e) => {
                       if (e.key === '-') {
@@ -509,16 +680,23 @@ export default function CompanyHeaderSection({
                     }}
                     onChange={(e) => {
                       const value = parseInt(e.target.value);
-                      if (value < 0) {
-                        e.target.value = '0';
+                      if (value < 10) {
+                        setEmployeesError(
+                          'Company must have at least 10 employees',
+                        );
+                      } else {
+                        setEmployeesError('');
                       }
                     }}
                   />
-                  {errors.employees && (
+                  {employeesError && (
                     <p className="mt-1.5 text-sm text-red-500">
-                      {errors.employees.message}
+                      {employeesError}
                     </p>
                   )}
+                  <p className="mt-1.5 text-xs text-gray-500">
+                    Minimum 10 employees required
+                  </p>
                 </div>
 
                 {/* Location */}
@@ -527,17 +705,20 @@ export default function CompanyHeaderSection({
                     Location
                     <span className="ml-1 text-red-500">*</span>
                   </label>
-                  <input
-                    {...register('location')}
+                  <LocationInput
+                    value={locationValue}
+                    onChange={(value) => setValue('location', value)}
+                    placeholder="Search for a location..."
                     className="mt-1.5 block w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 shadow-sm transition-colors hover:border-gray-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
-                    required
-                    placeholder="e.g. Ho Chi Minh City, Vietnam"
                   />
                   {errors.location && (
                     <p className="mt-1.5 text-sm text-red-500">
                       {errors.location.message}
                     </p>
                   )}
+                  <p className="mt-1.5 text-xs text-gray-500">
+                    Use the search to find accurate addresses
+                  </p>
                 </div>
               </div>
             </div>

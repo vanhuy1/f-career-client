@@ -50,6 +50,7 @@ export interface Job {
   location: string;
   typeOfEmployment: string;
   status: string;
+  isDeleted: boolean;
   createdAt: string;
   updatedAt: string;
 }

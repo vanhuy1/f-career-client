@@ -5,7 +5,24 @@ const companyDetailsSchemaInput = z.object({
   website: z
     .string()
     .min(1, 'Website is required')
-    .regex(/^https?:\/\/.+/i, 'Invalid URL'),
+    .transform((url) =>
+      url.startsWith('http://') || url.startsWith('https://')
+        ? url
+        : `https://${url}`,
+    )
+    .refine(
+      (url) => {
+        try {
+          new URL(url);
+          return true;
+        } catch {
+          return false;
+        }
+      },
+      {
+        message: 'Invalid URL',
+      },
+    ),
   founded: z
     .string()
     .min(1, 'Founded date is required')
