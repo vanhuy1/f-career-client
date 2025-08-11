@@ -74,6 +74,11 @@ const ROUTES = {
         name: 'Message',
       },
 
+      NOTIFICATION: {
+        path: '/ca/notification',
+        name: 'Notification',
+      },
+
       PROFILE: {
         path: '/ca/profile',
         name: 'Profile',
@@ -110,9 +115,9 @@ const ROUTES = {
         path: '/co/job-list',
         name: 'Job List',
       },
-      MESSAGE: {
-        path: '/co/messages',
-        name: 'Message',
+      NOTIFICATION: {
+        path: '/co/notification',
+        name: 'Notification',
       },
       PROFILE: {
         path: '/co/profile',

@@ -42,3 +42,30 @@ export function formatSalaryRange(min: number, max: number): string {
   // Case 1: Both min and max
   return `${formatSalary(minValue)}$-${formatSalary(maxValue)}$`;
 }
+
+/**
+ * Format time as "X mins ago" if less than 1 hour ago, otherwise as "HH:MM AM/PM"
+ */
+export function formatTime(dateString: string): string {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+
+  if (diffMins < 0) {
+    // Future date, fallback to time
+    return date.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  }
+
+  if (diffMins < 60) {
+    return diffMins === 1 ? '1 min ago' : `${diffMins} mins ago`;
+  }
+
+  return date.toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
