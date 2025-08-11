@@ -116,20 +116,27 @@ export default function CompanyAnalyticsPage() {
     }, 100);
   };
 
-  const formatNumber = (num: number) => {
-    return new Intl.NumberFormat().format(num);
+  const safeNumber = (value: unknown, fallback = 0): number => {
+    const parsed = typeof value === 'number' ? value : Number(value);
+    return Number.isFinite(parsed) ? parsed : fallback;
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
+  const clampPercentage = (value: number) => {
+    if (!Number.isFinite(value)) return 0;
+    return Math.max(0, Math.min(100, value));
+  };
+
+  const formatNumber = (num: number) =>
+    new Intl.NumberFormat().format(safeNumber(num));
+
+  const formatCurrency = (amount: number) =>
+    new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
-    }).format(amount);
-  };
+    }).format(safeNumber(amount));
 
-  const formatPercentage = (value: number) => {
-    return `${value.toFixed(1)}%`;
-  };
+  const formatPercentage = (value: number) =>
+    `${clampPercentage(safeNumber(value)).toFixed(1)}%`;
 
   if (loading) {
     return (
@@ -168,6 +175,42 @@ export default function CompanyAnalyticsPage() {
   if (!analyticsData) {
     return null;
   }
+
+  // Derived highlights for a concise summary
+  const totalCompanies = safeNumber(analyticsData.growthMetrics.totalCompanies);
+  const activeCompanies = safeNumber(
+    analyticsData.growthMetrics.activeCompanies,
+  );
+  const growthRate = safeNumber(analyticsData.growthMetrics.growthRate);
+  const activeRate =
+    totalCompanies > 0 ? (activeCompanies / totalCompanies) * 100 : 0;
+
+  const bestHireRateCompany = (analyticsData.topHiringCompanies || []).reduce(
+    (best, curr) =>
+      curr.hireRate > (best?.hireRate ?? -Infinity) ? curr : best,
+    undefined as (typeof analyticsData.topHiringCompanies)[number] | undefined,
+  );
+
+  const avgTimeToHireAcrossTop = (() => {
+    const list = analyticsData.topHiringCompanies || [];
+    if (list.length === 0) return 0;
+    const total = list.reduce((sum, c) => sum + safeNumber(c.avgTimeToHire), 0);
+    return Math.round(total / list.length);
+  })();
+
+  const busiestLocation = (analyticsData.geographicDistribution || []).reduce(
+    (best, curr) =>
+      safeNumber(curr.count) > safeNumber(best?.count) ? curr : best,
+    undefined as
+      | (typeof analyticsData.geographicDistribution)[number]
+      | undefined,
+  );
+
+  const topIndustryByCompanies = (analyticsData.industryAnalysis || []).reduce(
+    (best, curr) =>
+      safeNumber(curr.count) > safeNumber(best?.count) ? curr : best,
+    undefined as (typeof analyticsData.industryAnalysis)[number] | undefined,
+  );
 
   return (
     <div className="container mx-auto space-y-6 p-6">
@@ -320,6 +363,94 @@ export default function CompanyAnalyticsPage() {
         </CardContent>
       </Card>
 
+      {/* Top Highlights */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <TrendingUp className="h-5 w-5" />
+            Top Highlights
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="rounded-md border p-4">
+              <div className="text-muted-foreground text-sm">
+                Total Companies
+              </div>
+              <div className="mt-1 text-2xl font-bold">
+                {formatNumber(totalCompanies)}
+              </div>
+              <div className="text-muted-foreground mt-1 text-xs">
+                Active: {formatNumber(activeCompanies)} (
+                {formatPercentage(activeRate)})
+              </div>
+            </div>
+            <div className="rounded-md border p-4">
+              <div className="text-muted-foreground text-sm">
+                Monthly Growth
+              </div>
+              <div
+                className={`mt-1 text-2xl font-bold ${growthRate >= 0 ? 'text-green-600' : 'text-red-600'}`}
+              >
+                {formatPercentage(growthRate)}
+              </div>
+              <div className="text-muted-foreground mt-1 text-xs">
+                vs last period
+              </div>
+            </div>
+            <div className="rounded-md border p-4">
+              <div className="text-muted-foreground text-sm">
+                Top Hiring Company
+              </div>
+              <div className="mt-1 text-xl font-semibold">
+                {bestHireRateCompany?.companyName ?? '—'}
+              </div>
+              <div className="text-muted-foreground mt-1 text-xs">
+                Hire rate:{' '}
+                {bestHireRateCompany
+                  ? formatPercentage(bestHireRateCompany.hireRate)
+                  : '—'}
+              </div>
+            </div>
+            <div className="rounded-md border p-4">
+              <div className="text-muted-foreground text-sm">
+                Busiest Location
+              </div>
+              <div className="mt-1 text-xl font-semibold">
+                {busiestLocation?.location ?? '—'}
+              </div>
+              <div className="text-muted-foreground mt-1 text-xs">
+                Companies:{' '}
+                {busiestLocation ? formatNumber(busiestLocation.count) : '—'}
+              </div>
+            </div>
+            <div className="rounded-md border p-4">
+              <div className="text-muted-foreground text-sm">Top Industry</div>
+              <div className="mt-1 text-xl font-semibold">
+                {topIndustryByCompanies?.industry ?? '—'}
+              </div>
+              <div className="text-muted-foreground mt-1 text-xs">
+                Companies:{' '}
+                {topIndustryByCompanies
+                  ? formatNumber(topIndustryByCompanies.count)
+                  : '—'}
+              </div>
+            </div>
+            <div className="rounded-md border p-4">
+              <div className="text-muted-foreground text-sm">
+                Avg Time to Hire (Top Cos)
+              </div>
+              <div className="mt-1 text-2xl font-bold">
+                {avgTimeToHireAcrossTop} days
+              </div>
+              <div className="text-muted-foreground mt-1 text-xs">
+                Across top hiring companies
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Growth Metrics Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Card>
@@ -348,7 +479,9 @@ export default function CompanyAnalyticsPage() {
             <TrendingUp className="text-muted-foreground h-4 w-4" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
+            <div
+              className={`text-2xl font-bold ${growthRate >= 0 ? 'text-green-600' : 'text-red-600'}`}
+            >
               {formatPercentage(analyticsData.growthMetrics.growthRate)}
             </div>
             <p className="text-muted-foreground text-xs">
@@ -396,16 +529,27 @@ export default function CompanyAnalyticsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {analyticsData.sizeDistribution.map((item, index) => (
-                <TableRow key={index}>
-                  <TableCell className="font-medium">
-                    {item.sizeRange}
+              {analyticsData.sizeDistribution.length === 0 ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={4}
+                    className="text-muted-foreground text-center text-sm"
+                  >
+                    No data available for the selected range
                   </TableCell>
-                  <TableCell>{formatNumber(item.count)}</TableCell>
-                  <TableCell>{formatPercentage(item.percentage)}</TableCell>
-                  <TableCell>{item.avgJobPostings}</TableCell>
                 </TableRow>
-              ))}
+              ) : (
+                analyticsData.sizeDistribution.map((item, index) => (
+                  <TableRow key={index}>
+                    <TableCell className="font-medium">
+                      {item.sizeRange}
+                    </TableCell>
+                    <TableCell>{formatNumber(item.count)}</TableCell>
+                    <TableCell>{formatPercentage(item.percentage)}</TableCell>
+                    <TableCell>{item.avgJobPostings}</TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </CardContent>
@@ -432,20 +576,35 @@ export default function CompanyAnalyticsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {analyticsData.industryAnalysis.map((item, index) => (
-                <TableRow key={index}>
-                  <TableCell className="font-medium">{item.industry}</TableCell>
-                  <TableCell>{formatNumber(item.count)}</TableCell>
-                  <TableCell>
-                    <Badge variant="secondary">
-                      {formatPercentage(item.percentage)}
-                    </Badge>
+              {analyticsData.industryAnalysis.length === 0 ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={6}
+                    className="text-muted-foreground text-center text-sm"
+                  >
+                    No data available for the selected range
                   </TableCell>
-                  <TableCell>{item.avgJobPostings}</TableCell>
-                  <TableCell>{formatNumber(item.totalApplications)}</TableCell>
-                  <TableCell>{formatPercentage(item.avgHireRate)}</TableCell>
                 </TableRow>
-              ))}
+              ) : (
+                analyticsData.industryAnalysis.map((item, index) => (
+                  <TableRow key={index}>
+                    <TableCell className="font-medium">
+                      {item.industry}
+                    </TableCell>
+                    <TableCell>{formatNumber(item.count)}</TableCell>
+                    <TableCell>
+                      <Badge variant="secondary">
+                        {formatPercentage(item.percentage)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{item.avgJobPostings}</TableCell>
+                    <TableCell>
+                      {formatNumber(item.totalApplications)}
+                    </TableCell>
+                    <TableCell>{formatPercentage(item.avgHireRate)}</TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </CardContent>
@@ -472,24 +631,35 @@ export default function CompanyAnalyticsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {analyticsData.topHiringCompanies.map((company) => (
-                <TableRow key={company.companyId}>
-                  <TableCell className="font-medium">
-                    {company.companyName}
+              {analyticsData.topHiringCompanies.length === 0 ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={6}
+                    className="text-muted-foreground text-center text-sm"
+                  >
+                    No data available for the selected range
                   </TableCell>
-                  <TableCell>{formatNumber(company.totalJobs)}</TableCell>
-                  <TableCell>
-                    {formatNumber(company.totalApplications)}
-                  </TableCell>
-                  <TableCell>{formatNumber(company.totalHires)}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline">
-                      {formatPercentage(company.hireRate)}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{company.avgTimeToHire} days</TableCell>
                 </TableRow>
-              ))}
+              ) : (
+                analyticsData.topHiringCompanies.map((company) => (
+                  <TableRow key={company.companyId}>
+                    <TableCell className="font-medium">
+                      {company.companyName}
+                    </TableCell>
+                    <TableCell>{formatNumber(company.totalJobs)}</TableCell>
+                    <TableCell>
+                      {formatNumber(company.totalApplications)}
+                    </TableCell>
+                    <TableCell>{formatNumber(company.totalHires)}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline">
+                        {formatPercentage(company.hireRate)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{company.avgTimeToHire} days</TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </CardContent>
@@ -515,23 +685,34 @@ export default function CompanyAnalyticsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {analyticsData.geographicDistribution.map((location, index) => (
-                <TableRow key={index}>
-                  <TableCell className="font-medium">
-                    {location.location}
-                  </TableCell>
-                  <TableCell>{formatNumber(location.count)}</TableCell>
-                  <TableCell>
-                    <Badge variant="secondary">
-                      {formatPercentage(location.percentage)}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{formatNumber(location.totalJobs)}</TableCell>
-                  <TableCell className="font-medium text-green-600">
-                    {formatCurrency(location.avgSalary)}
+              {analyticsData.geographicDistribution.length === 0 ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={5}
+                    className="text-muted-foreground text-center text-sm"
+                  >
+                    No data available for the selected range
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : (
+                analyticsData.geographicDistribution.map((location, index) => (
+                  <TableRow key={index}>
+                    <TableCell className="font-medium">
+                      {location.location}
+                    </TableCell>
+                    <TableCell>{formatNumber(location.count)}</TableCell>
+                    <TableCell>
+                      <Badge variant="secondary">
+                        {formatPercentage(location.percentage)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{formatNumber(location.totalJobs)}</TableCell>
+                    <TableCell className="font-medium text-green-600">
+                      {formatCurrency(location.avgSalary)}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </CardContent>
@@ -554,14 +735,25 @@ export default function CompanyAnalyticsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {analyticsData.registrationTrends.map((trend, index) => (
-                <TableRow key={index}>
-                  <TableCell className="font-medium">
-                    {new Date(trend.date).toLocaleDateString()}
+              {analyticsData.registrationTrends.length === 0 ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={2}
+                    className="text-muted-foreground text-center text-sm"
+                  >
+                    No data available for the selected range
                   </TableCell>
-                  <TableCell>{formatNumber(trend.newCompanies)}</TableCell>
                 </TableRow>
-              ))}
+              ) : (
+                analyticsData.registrationTrends.map((trend, index) => (
+                  <TableRow key={index}>
+                    <TableCell className="font-medium">
+                      {new Date(trend.date).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell>{formatNumber(trend.newCompanies)}</TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </CardContent>
