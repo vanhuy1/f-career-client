@@ -35,56 +35,61 @@ export default function ApplicantsPage() {
   const [applicants, setApplicants] = useState<Candidate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchApplicants = async () => {
-      if (!jobId) return;
+  const fetchApplicants = async () => {
+    if (!jobId) return;
 
-      try {
-        setIsLoading(true);
-        const response = await applicationService.getApplicationByJobId({
-          jobId: jobId as string,
-          offset: 0,
-          limit: 100,
-        });
+    try {
+      setIsLoading(true);
+      const response = await applicationService.getApplicationByJobId({
+        jobId: jobId as string,
+        offset: 0,
+        limit: 100,
+      });
 
-        if (response && response.applications) {
-          const transformedApplicants = response.applications.map(
-            (app: ApplicationByJobId, index: number) => ({
-              id: app.id,
-              name: app.applicantName,
-              status: Object.values(ApplicationStatus).includes(
-                app.applicationStatus as ApplicationStatus,
-              )
-                ? (app.applicationStatus as ApplicationStatus)
-                : ApplicationStatus.APPLIED,
-              appliedDate: app.appliedDate,
-              avatar: '',
-              score: app.ai_score ?? 0,
-              age: 22 + ((index * 7) % 40),
-              gender: (
-                ['male', 'female', 'other', 'prefer_not_to_say'] as const
-              )[index % 4],
-            }),
-          );
+      if (response && response.applications) {
+        const transformedApplicants = response.applications.map(
+          (app: ApplicationByJobId, index: number) => ({
+            id: app.id,
+            name: app.applicantName,
+            status: Object.values(ApplicationStatus).includes(
+              app.applicationStatus as ApplicationStatus,
+            )
+              ? (app.applicationStatus as ApplicationStatus)
+              : ApplicationStatus.APPLIED,
+            appliedDate: app.appliedDate,
+            avatar: '',
+            score: app.ai_score ?? 0,
+            age: 22 + ((index * 7) % 40),
+            gender: (['male', 'female', 'other', 'prefer_not_to_say'] as const)[
+              index % 4
+            ],
+            isRead: app.isRead,
+          }),
+        );
 
-          const sortedApplicants = transformedApplicants.sort(
-            (a, b) => b.score - a.score,
-          );
-          setApplicants(sortedApplicants);
-        } else {
-          setApplicants([]);
-        }
-      } catch (error) {
-        toast.error('Failed to fetch applicants for this job');
-        console.error('Error fetching applicants:', error);
+        const sortedApplicants = transformedApplicants.sort(
+          (a, b) => b.score - a.score,
+        );
+        setApplicants(sortedApplicants);
+      } else {
         setApplicants([]);
-      } finally {
-        setIsLoading(false);
       }
-    };
+    } catch (error) {
+      toast.error('Failed to fetch applicants for this job');
+      console.error('Error fetching applicants:', error);
+      setApplicants([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchApplicants();
   }, [jobId]);
+
+  const handleApplicationUpdate = () => {
+    fetchApplicants();
+  };
 
   if (isLoading) {
     return (
@@ -99,6 +104,7 @@ export default function ApplicantsPage() {
       applicants={applicants}
       getScoreColor={getScoreColor}
       getScoreBackgroundColor={getScoreBackgroundColor}
+      onApplicationUpdate={handleApplicationUpdate}
     />
   );
 }

@@ -13,6 +13,7 @@ import {
   UpdateApplicationStatusResponse,
   ApplicationByJobIdRequest,
   ApplicationByJobIdResponse,
+  MarkAsReadResponse,
 } from '@/types/Applicants';
 
 class ApplicationService {
@@ -193,6 +194,21 @@ class ApplicationService {
         return {
           success: true,
           data: data as CandidateApplicationDetail,
+        };
+      },
+    });
+    return response;
+  }
+
+  async markAsRead(applicationId: number): Promise<MarkAsReadResponse> {
+    const url = this.requestBuilder.buildUrl(`${applicationId}/read`);
+    const response = await httpClient.patch<MarkAsReadResponse, void>({
+      url,
+      body: undefined,
+      typeCheck: (data) => {
+        return {
+          success: true,
+          data: data as MarkAsReadResponse,
         };
       },
     });

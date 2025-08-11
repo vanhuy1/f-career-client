@@ -22,12 +22,14 @@ interface ApplicantsViewProps {
   applicants: Candidate[];
   getScoreColor: (score: number) => string;
   getScoreBackgroundColor: (score: number) => string;
+  onApplicationUpdate?: () => void;
 }
 
 export function ApplicantsView({
   applicants,
   getScoreColor,
   getScoreBackgroundColor,
+  onApplicationUpdate,
 }: ApplicantsViewProps) {
   const [viewMode, setViewMode] = useState<'pipeline' | 'table'>('table');
   const [searchQuery, setSearchQuery] = useState('');
@@ -36,6 +38,7 @@ export function ApplicantsView({
     ageRange: [18, 65],
     genderOptions: [],
     scoreRange: [0, 100],
+    readStatus: [],
   });
 
   const applyFilters = (candidate: Candidate): boolean => {
@@ -58,6 +61,13 @@ export function ApplicantsView({
       candidate.score > activeFilters.scoreRange[1]
     ) {
       return false;
+    }
+
+    if (activeFilters.readStatus.length > 0) {
+      const candidateReadStatus = candidate.isRead ? 'read' : 'unread';
+      if (!activeFilters.readStatus.includes(candidateReadStatus)) {
+        return false;
+      }
     }
 
     return true;
@@ -83,6 +93,7 @@ export function ApplicantsView({
       ageRange: [18, 65],
       genderOptions: [],
       scoreRange: [0, 100],
+      readStatus: [],
     });
     setIsFilterSidebarOpen(false);
   };
@@ -94,6 +105,7 @@ export function ApplicantsView({
     if (activeFilters.genderOptions.length > 0) count++;
     if (activeFilters.scoreRange[0] > 0 || activeFilters.scoreRange[1] < 100)
       count++;
+    if (activeFilters.readStatus.length > 0) count++;
     return count;
   };
 
@@ -181,12 +193,14 @@ export function ApplicantsView({
           applicants={filteredApplicants}
           getScoreColor={getScoreColor}
           getScoreBackgroundColor={getScoreBackgroundColor}
+          onApplicationUpdate={onApplicationUpdate}
         />
       ) : (
         <TableView
           applicants={filteredApplicants}
           getScoreColor={getScoreColor}
           getScoreBackgroundColor={getScoreBackgroundColor}
+          onApplicationUpdate={onApplicationUpdate}
         />
       )}
     </div>

@@ -5,11 +5,14 @@ import { Card, CardContent } from '@/components/ui/card';
 import type { Candidate } from '../_components/types/candidate';
 import { ApplicationStatus } from '@/enums/applicationStatus';
 import { useRouter } from 'next/navigation';
+import { ReadStatusLabel } from './read-status-label';
+import { applicationService } from '@/services/api/applications/application-api';
 
 interface CandidateCardProps {
   candidate: Candidate;
   getScoreColor: (score: number) => string;
   getScoreBackgroundColor: (score: number) => string;
+  onApplicationUpdate?: () => void;
 }
 
 const statusColors: Record<ApplicationStatus, string> = {
@@ -25,11 +28,23 @@ export function CandidateCard({
   candidate,
   getScoreColor,
   getScoreBackgroundColor,
+  onApplicationUpdate,
 }: CandidateCardProps) {
   const router = useRouter();
 
-  const handleViewProfile = (candidateId: string) => {
-    router.push(`/co/applicant-list/${candidateId}`);
+  const handleViewProfile = async (candidate: Candidate) => {
+    // Mark as read if not already read
+    if (!candidate.isRead) {
+      try {
+        await applicationService.markAsRead(Number(candidate.id));
+        onApplicationUpdate?.();
+      } catch (error) {
+        console.error('Error marking application as read:', error);
+        // Don't show error toast here to avoid interrupting navigation
+      }
+    }
+
+    router.push(`/co/applicant-list/${candidate.id}`);
   };
   return (
     <Card
@@ -38,24 +53,27 @@ export function CandidateCard({
     >
       <CardContent className="p-4">
         <div className="mb-3 flex items-center gap-3">
-          <Avatar className="h-12 w-12">
-            <AvatarImage
-              src={candidate.avatar || '/placeholder.svg'}
-              alt={candidate.name}
-            />
-            <AvatarFallback>
-              {candidate.name
-                .split(' ')
-                .map((n) => n[0])
-                .join('')}
-            </AvatarFallback>
-          </Avatar>
+          <div className="relative">
+            <Avatar className="h-12 w-12">
+              <AvatarImage
+                src={candidate.avatar || '/placeholder.svg'}
+                alt={candidate.name}
+              />
+              <AvatarFallback>
+                {candidate.name
+                  .split(' ')
+                  .map((n) => n[0])
+                  .join('')}
+              </AvatarFallback>
+            </Avatar>
+            <ReadStatusLabel isRead={candidate.isRead} />
+          </div>
           <div className="flex-1">
             <h3 className="font-semibold text-gray-900">{candidate.name}</h3>
             <Button
               variant="link"
               className="h-auto p-0 text-sm text-blue-600"
-              onClick={() => handleViewProfile(candidate.id)}
+              onClick={() => handleViewProfile(candidate)}
             >
               View Profile
             </Button>

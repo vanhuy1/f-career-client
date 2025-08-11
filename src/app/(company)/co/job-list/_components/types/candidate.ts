@@ -9,4 +9,5 @@ export interface Candidate {
   status: ApplicationStatus;
   age: number;
   gender: 'male' | 'female' | 'other' | 'prefer_not_to_say';
+  isRead: boolean;
 }

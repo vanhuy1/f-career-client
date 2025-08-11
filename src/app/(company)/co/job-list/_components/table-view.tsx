@@ -13,11 +13,14 @@ import { Star } from 'lucide-react';
 import type { Candidate } from '../_components/types/candidate';
 import { useRouter } from 'next/navigation';
 import { ApplicationStatus } from '@/enums/applicationStatus';
+import { ReadStatusLabel } from './read-status-label';
+import { applicationService } from '@/services/api/applications/application-api';
 
 interface TableViewProps {
   applicants: Candidate[];
   getScoreColor: (score: number) => string;
   getScoreBackgroundColor: (score: number) => string;
+  onApplicationUpdate?: () => void;
 }
 
 const statusConfig: Record<
@@ -60,11 +63,23 @@ export function TableView({
   applicants,
   getScoreColor,
   getScoreBackgroundColor,
+  onApplicationUpdate,
 }: TableViewProps) {
   const router = useRouter();
 
-  const handleViewProfile = (candidateId: string) => {
-    router.push(`/co/applicant-list/${candidateId}`);
+  const handleViewProfile = async (candidate: Candidate) => {
+    // Mark as read if not already read
+    if (!candidate.isRead) {
+      try {
+        await applicationService.markAsRead(Number(candidate.id));
+        onApplicationUpdate?.();
+      } catch (error) {
+        console.error('Error marking application as read:', error);
+        // Don't show error toast here to avoid interrupting navigation
+      }
+    }
+
+    router.push(`/co/applicant-list/${candidate.id}`);
   };
 
   return (
@@ -100,18 +115,21 @@ export function TableView({
               >
                 <TableCell className="px-6 py-4 font-medium text-gray-700">
                   <div className="flex items-center gap-3">
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage
-                        src={candidate.avatar || '/placeholder.svg'}
-                        alt={candidate.name}
-                      />
-                      <AvatarFallback>
-                        {candidate.name
-                          .split(' ')
-                          .map((n) => n[0])
-                          .join('')}
-                      </AvatarFallback>
-                    </Avatar>
+                    <div className="relative">
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage
+                          src={candidate.avatar || '/placeholder.svg'}
+                          alt={candidate.name}
+                        />
+                        <AvatarFallback>
+                          {candidate.name
+                            .split(' ')
+                            .map((n) => n[0])
+                            .join('')}
+                        </AvatarFallback>
+                      </Avatar>
+                      <ReadStatusLabel isRead={candidate.isRead} />
+                    </div>
                     <span className="font-medium">{candidate.name}</span>
                   </div>
                 </TableCell>
@@ -149,7 +167,7 @@ export function TableView({
                 <TableCell className="px-6 py-4">
                   <button
                     className="text-blue-600 hover:underline"
-                    onClick={() => handleViewProfile(candidate.id)}
+                    onClick={() => handleViewProfile(candidate)}
                   >
                     View Profile
                   </button>
