@@ -2,12 +2,13 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { Bell, ChevronDown, Plus, Menu } from 'lucide-react';
+import { ChevronDown, Plus, Menu } from 'lucide-react';
 import Link from 'next/link';
 import ROUTES from '@/constants/navigation';
 import { companyService } from '@/services/api/company/company-api';
 import { Company } from '@/types/Company';
 import { useUser } from '@/services/state/userSlice';
+import NotificationsBell from '@/components/landing/notifications-bell';
 
 // Interface for component props
 interface HeaderProps {
@@ -98,7 +99,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle, isSidebarOpen }) => {
 
         {/* Right-side Actions */}
         <div className="flex items-center gap-2 sm:gap-4">
-          <Bell className="h-5 w-5 text-gray-500" aria-label="Notifications" />
+          <NotificationsBell />
           <Button
             size="sm"
             className="bg-blue-600 text-xs text-white hover:bg-blue-700 sm:text-sm"

@@ -10,6 +10,7 @@ import {
   Settings,
   LogOut,
   X,
+  Bell,
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -17,7 +18,9 @@ import { usePathname } from 'next/navigation';
 import ROUTES from '@/constants/navigation';
 import { clearUser, useUser } from '@/services/state/userSlice';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { useAppDispatch } from '@/store/hooks';
+import { useNotifications } from '@/hooks/use-notifications';
 
 interface SidebarProps {
   onClose: () => void;
@@ -27,6 +30,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
   const pathname = usePathname();
   const user = useUser();
   const dispatch = useAppDispatch();
+  const { unreadCount } = useNotifications();
 
   const handleLogout = () => {
     // Clear localStorage and cookies manually
@@ -84,11 +88,19 @@ export default function Sidebar({ onClose }: SidebarProps) {
             onClick={onClose}
           />
           <NavItem
-            href={ROUTES.CO.HOME.MESSAGE.path}
+            href={ROUTES.CA.HOME.MESSAGE.path}
             icon={<MessageSquare />}
             label="Messages"
-            active={pathname === ROUTES.CO.HOME.MESSAGE.path}
+            active={pathname === ROUTES.CA.HOME.MESSAGE.path}
             onClick={onClose}
+          />
+          <NavItem
+            href={ROUTES.CO.HOME.NOTIFICATION.path}
+            icon={<Bell />}
+            label="Notification"
+            active={pathname === ROUTES.CO.HOME.NOTIFICATION.path}
+            onClick={onClose}
+            badge={unreadCount}
           />
           <NavItem
             href={ROUTES.CO.HOME.SCHEDULE.path}
@@ -160,9 +172,10 @@ interface NavItemProps {
   label: string;
   active?: boolean;
   onClick?: () => void;
+  badge?: number;
 }
 
-function NavItem({ href, icon, label, active, onClick }: NavItemProps) {
+function NavItem({ href, icon, label, active, onClick, badge }: NavItemProps) {
   return (
     <li>
       <Link
@@ -176,6 +189,11 @@ function NavItem({ href, icon, label, active, onClick }: NavItemProps) {
       >
         <span className="h-5 w-5">{icon}</span>
         <span className="flex-1">{label}</span>
+        {badge && badge > 0 && (
+          <Badge className="ml-auto h-5 min-w-5 bg-blue-600 px-1.5 text-xs text-white hover:bg-blue-700">
+            {badge > 99 ? '99+' : badge}
+          </Badge>
+        )}
       </Link>
     </li>
   );
