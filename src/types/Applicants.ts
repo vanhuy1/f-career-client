@@ -142,6 +142,11 @@ export interface UpdateApplicationStatusResponse {
   success: boolean;
 }
 
+export interface MarkAsReadResponse {
+  message: string;
+  success: boolean;
+}
+
 // Application By JobID
 export interface ApplicationByJobId {
   id: string;
@@ -151,6 +156,7 @@ export interface ApplicationByJobId {
   ai_score?: number; // Score from 0-100
   ai_analysis?: string; // Detailed text analysis
   ai_status?: string;
+  isRead: boolean;
 }
 
 export interface ApplicationByJobIdResponse {

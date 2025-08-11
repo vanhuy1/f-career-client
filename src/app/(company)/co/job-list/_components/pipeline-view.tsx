@@ -7,6 +7,7 @@ interface PipelineViewProps {
   applicants: Candidate[];
   getScoreColor: (score: number) => string;
   getScoreBackgroundColor: (score: number) => string;
+  onApplicationUpdate?: () => void;
 }
 
 const statusConfig: Record<
@@ -49,6 +50,7 @@ export function PipelineView({
   applicants,
   getScoreColor,
   getScoreBackgroundColor,
+  onApplicationUpdate,
 }: PipelineViewProps) {
   const applicantsByStatus = Object.values(ApplicationStatus).reduce<
     Record<string, Candidate[]>
@@ -90,6 +92,7 @@ export function PipelineView({
                   candidate={candidate}
                   getScoreColor={getScoreColor}
                   getScoreBackgroundColor={getScoreBackgroundColor}
+                  onApplicationUpdate={onApplicationUpdate}
                 />
               ))}
             </div>

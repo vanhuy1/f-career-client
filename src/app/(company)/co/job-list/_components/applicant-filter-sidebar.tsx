@@ -8,6 +8,7 @@ import {
   Users,
   Calendar,
   Award,
+  Mail,
 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
@@ -19,6 +20,7 @@ export interface ApplicantFilters {
   ageRange: [number, number];
   genderOptions: string[];
   scoreRange: [number, number];
+  readStatus: string[];
 }
 
 interface ApplicantFilterSidebarProps {
@@ -33,7 +35,9 @@ export function ApplicantFilterSidebar({
   const [ageRange, setAgeRange] = useState<[number, number]>([18, 65]);
   const [selectedGenders, setSelectedGenders] = useState<string[]>([]);
   const [scoreRange, setScoreRange] = useState<[number, number]>([0, 100]);
+  const [selectedReadStatus, setSelectedReadStatus] = useState<string[]>([]);
   const [expandedSections, setExpandedSections] = useState<boolean[]>([
+    true,
     true,
     true,
     true,
@@ -43,6 +47,11 @@ export function ApplicantFilterSidebar({
     { value: 'male', label: 'Male', icon: '👨' },
     { value: 'female', label: 'Female', icon: '👩' },
     { value: 'other', label: 'Other', icon: '👤' },
+  ];
+
+  const readStatusOptions = [
+    { value: 'read', label: 'Read', icon: '📖' },
+    { value: 'unread', label: 'Unread', icon: '📧' },
   ];
 
   const filters = [
@@ -67,6 +76,14 @@ export function ApplicantFilterSidebar({
       key: 'score',
       icon: Award,
       description: 'Filter by AI assessment score',
+    },
+    {
+      title: 'Read Status',
+      type: 'checkbox',
+      key: 'readStatus',
+      icon: Mail,
+      description: 'Filter by read/unread status',
+      options: readStatusOptions,
     },
   ];
 
@@ -118,6 +135,16 @@ export function ApplicantFilterSidebar({
     });
   };
 
+  const handleReadStatusChange = (readStatusValue: string) => {
+    setSelectedReadStatus((prev) => {
+      if (prev.includes(readStatusValue)) {
+        return prev.filter((r) => r !== readStatusValue);
+      } else {
+        return [...prev, readStatusValue];
+      }
+    });
+  };
+
   const toggleSection = (index: number) => {
     setExpandedSections((prev) =>
       prev.map((expanded, i) => (i === index ? !expanded : expanded)),
@@ -129,6 +156,7 @@ export function ApplicantFilterSidebar({
       ageRange,
       genderOptions: selectedGenders,
       scoreRange,
+      readStatus: selectedReadStatus,
     };
     onFiltersChange(appliedFilters);
   };
@@ -137,6 +165,7 @@ export function ApplicantFilterSidebar({
     setAgeRange([18, 65]);
     setSelectedGenders([]);
     setScoreRange([0, 100]);
+    setSelectedReadStatus([]);
     onClearFilters();
   };
 
@@ -145,6 +174,7 @@ export function ApplicantFilterSidebar({
     if (ageRange[0] > 18 || ageRange[1] < 65) count++;
     if (selectedGenders.length > 0) count++;
     if (scoreRange[0] > 0 || scoreRange[1] < 100) count++;
+    if (selectedReadStatus.length > 0) count++;
     return count;
   };
 
@@ -368,6 +398,42 @@ export function ApplicantFilterSidebar({
                       ))}
                     </div>
                   )}
+
+                  {filter.type === 'checkbox' &&
+                    filter.key === 'readStatus' && (
+                      <div className="space-y-3">
+                        {readStatusOptions.map((option) => (
+                          <div
+                            key={option.value}
+                            className={`flex items-center space-x-3 rounded-lg border p-3 transition-colors ${
+                              selectedReadStatus.includes(option.value)
+                                ? 'border-blue-200 bg-blue-50'
+                                : 'border-gray-200 hover:bg-gray-50'
+                            }`}
+                          >
+                            <Checkbox
+                              id={`readStatus-${option.value}`}
+                              checked={selectedReadStatus.includes(
+                                option.value,
+                              )}
+                              onCheckedChange={() =>
+                                handleReadStatusChange(option.value)
+                              }
+                              className="data-[state=checked]:bg-blue-600"
+                            />
+                            <div className="flex flex-1 items-center gap-3">
+                              <span className="text-lg">{option.icon}</span>
+                              <Label
+                                htmlFor={`readStatus-${option.value}`}
+                                className="flex-1 cursor-pointer text-sm font-medium text-gray-700"
+                              >
+                                {option.label}
+                              </Label>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                 </div>
               )}
             </div>
