@@ -3,9 +3,11 @@
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useRouter, useParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import { jobService } from '@/services/api/jobs/job-api';
-import { toast } from 'react-toastify';
+import {
+  useJobDetailById,
+  useJobDetailLoadingState,
+} from '@/services/state/jobSlice';
+import { LoadingState } from '@/store/store.model';
 
 export function JobHeader() {
   const router = useRouter();
@@ -16,32 +18,10 @@ export function JobHeader() {
       : params.id
     : undefined;
 
-  const [jobData, setJobData] = useState<{
-    title: string;
-    category: { name: string };
-    typeOfEmployment: string;
-    applicants: number;
-  } | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchJobDetails = async () => {
-      if (!jobId) return;
-
-      try {
-        setIsLoading(true);
-        const response = await jobService.findOne(jobId);
-        setJobData(response);
-      } catch (error) {
-        console.error('Error fetching job details:', error);
-        toast.error('Failed to load job details');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchJobDetails();
-  }, [jobId]);
+  // Use Redux state instead of local state
+  const jobData = useJobDetailById(jobId);
+  const loadingState = useJobDetailLoadingState();
+  const isLoading = loadingState === LoadingState.loading;
 
   return (
     <div className="mb-8 flex items-center justify-between">
@@ -63,8 +43,8 @@ export function JobHeader() {
               </h1>
               <p className="text-gray-600">
                 {jobData?.category?.name || 'N/A'} •{' '}
-                {jobData?.typeOfEmployment || 'N/A'} •{jobData?.applicants || 0}{' '}
-                Applications
+                {jobData?.typeOfEmployment || 'N/A'} •{' '}
+                {jobData?.applicants || 0} Applications
               </p>
             </>
           )}

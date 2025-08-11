@@ -38,6 +38,7 @@ const Map = ({ coordinates, address }: MapProps) => {
       style={{ height: '100%', width: '100%' }}
       ref={mapRef}
       key={`${coordinates[0]}-${coordinates[1]}`} // Force re-render on coordinate change
+      className="map-container"
     >
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'

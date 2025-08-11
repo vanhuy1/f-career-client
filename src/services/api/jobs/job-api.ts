@@ -59,7 +59,7 @@ class JobService {
     const url = this.rb.buildUrl(id);
     const response = await httpClient.get<{ data: Job; meta?: string }>({
       url,
-      typeCheck: (data) => ({ success: true, data }),
+      typeCheck: (data) => ({ success: true, data: data as Job }),
     });
     return response.data;
   }
@@ -71,6 +71,25 @@ class JobService {
       url,
       body: payload,
       typeCheck: (data) => ({ success: true, data: data as Job }),
+    });
+  }
+
+  /** GET /jobs/top */
+  async getTopJobs(): Promise<{
+    data: Job[];
+    meta: { count: number; page: number };
+  }> {
+    const url = this.rb.buildUrl('top');
+
+    return await httpClient.get<{
+      data: Job[];
+      meta: { count: number; page: number };
+    }>({
+      url,
+      typeCheck: (data) => ({
+        success: true,
+        data: data as { data: Job[]; meta: { count: number; page: number } },
+      }),
     });
   }
 

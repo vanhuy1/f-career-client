@@ -245,7 +245,7 @@ export default function JobListTable({
                           <DropdownMenuItem
                             onClick={() => onEditJob(job.jobId)}
                           >
-                            Edit Job
+                            Manage Subscription
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => onDeleteJob(job.jobId)}

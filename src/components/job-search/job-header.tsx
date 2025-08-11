@@ -31,7 +31,7 @@ export default function JobHeader({
         <div>
           <h1 className="mb-2 text-3xl font-bold text-gray-800">{jobTitle}</h1>
           <div className="text-gray-600">
-            {companyName} <span className="mx-2">•</span> {location}{' '}
+            {companyName} <span className="mx-2"> • </span> {location}{' '}
             <span className="mx-2">•</span> {jobType}
           </div>
         </div>

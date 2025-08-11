@@ -48,6 +48,8 @@ export interface Job {
   };
   relevanceScore: number;
   createdAt: string;
+  isDeleted: boolean;
+  topJob: number;
 }
 
 export interface Pagination {

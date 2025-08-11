@@ -72,5 +72,11 @@ export default function JobDetailsPage() {
   // Transform the Job data to JobDetails format for the UI
   const jobDetails = mapJobToJobDetails(job);
 
-  return <JobDetailsView job={jobDetails} />;
+  return (
+    <JobDetailsView
+      job={jobDetails}
+      originalJob={job}
+      onJobUpdate={fetchJobData}
+    />
+  );
 }

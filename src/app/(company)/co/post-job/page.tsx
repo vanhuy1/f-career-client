@@ -16,7 +16,7 @@ import {
 } from '@/types/Job';
 import { jobService } from '@/services/api/jobs/job-api';
 import { skillService, Skill } from '@/services/api/skills/skill-api';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
 import { JobStatus, EmploymentType } from '@/types/Job';
 import { useUser } from '@/services/state/userSlice';
@@ -80,7 +80,6 @@ interface JobFormData {
 
 export default function JobPostingForm() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [currentStep, setCurrentStep] = useState(1);
   const [skills, setSkills] = useState<string[]>([]);
   const [newSkill, setNewSkill] = useState('');
@@ -343,11 +342,13 @@ export default function JobPostingForm() {
         return;
       }
 
+      const companyId = String(user?.data?.companyId ?? '1');
+
       const jobData = {
         title: savedData?.title || jobTitle,
         description: savedData?.description || jobDescription,
         categoryId: savedData?.categoryId || categoryId || '1',
-        companyId: user?.data?.companyId as string,
+        companyId,
         skillIds: savedData?.skillIds || selectedSkillIds,
         benefit: (savedData?.benefits || benefits).map(
           (benefit) => benefit.description,
@@ -378,7 +379,7 @@ export default function JobPostingForm() {
       clearFormDataFromStorage();
 
       toast.success('Job posted successfully!');
-      router.push('/job');
+      router.push('/co/job-list');
     } catch (error) {
       console.error('Error creating job:', error);
 
@@ -415,34 +416,7 @@ export default function JobPostingForm() {
     }
   };
 
-  // Check for payment completion
-  useEffect(() => {
-    const orderCode = searchParams?.get('orderCode');
-    const status = searchParams?.get('status'); // PayOS trả về status=PAID
-    const cancel = searchParams?.get('cancel'); // PayOS trả về cancel=false khi thành công
-
-    const checkPayment = async () => {
-      if (!orderCode) return;
-
-      try {
-        await payosService.getPaymentStatus(orderCode);
-
-        // Kiểm tra: status từ PayOS là PAID và cancel=false
-        if (status === 'PAID' && cancel === 'false') {
-          // Chỉ tạo job khi thanh toán thành công
-          await handleCreateJob(orderCode);
-          toast.success('Payment successful and job posted!');
-        } else {
-          toast.error('Payment was not completed. Please try again.');
-        }
-      } catch (error) {
-        console.error('Error checking payment:', error);
-        toast.error('Failed to verify payment status');
-      }
-    };
-
-    checkPayment();
-  }, [searchParams, handleCreateJob]);
+  // No longer needed - payment cancellation is handled by payment-failed page
 
   const handleSubmit = async () => {
     if (packageInfo.type === 'basic') {
@@ -456,8 +430,8 @@ export default function JobPostingForm() {
     setIsProcessingPayment(true);
     try {
       const orderCode = Date.now();
-      const returnUrl = `${window.location.origin}/co/post-job`;
-      const cancelUrl = `${window.location.origin}/co/post-job?status=cancelled`;
+      const returnUrl = `${window.location.origin}/co/payment-success`;
+      const cancelUrl = `${window.location.origin}/co/payment-failed`;
 
       const response = await payosService.createPaymentLink({
         amount: Math.round(totalPrice * 24000),

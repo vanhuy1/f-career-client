@@ -10,7 +10,9 @@ export interface JobDetails {
   applyBefore: string;
   postedOn: string;
   type: string;
+  experienceYears: number;
   salary: string;
+  status: string;
   categories: string[];
   requiredSkills: string[];
 }

@@ -39,10 +39,12 @@ export function mapJobToJobDetails(job: Job): JobDetails {
     applyBefore: formatDate(job.deadline),
     postedOn: formatDate(job.createdAt),
     type: job.typeOfEmployment || 'Not specified',
+    experienceYears: job.experienceYears || 0,
     salary:
       job.salaryMin && job.salaryMax
         ? formatSalaryRange(job.salaryMin, job.salaryMax)
         : 'Salary to be discussed',
+    status: job.status || 'Not specified',
     categories: [job.category?.name || 'Uncategorized'],
     requiredSkills: job.skills?.map((skill) => skill.name) || [
       'Skills to be discussed',

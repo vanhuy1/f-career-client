@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, Camera, ImageIcon } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Camera } from 'lucide-react';
 
 interface WorkingAtSectionProps {
   workImageUrl?: string[];
@@ -155,19 +155,6 @@ export default function WorkingAtSection({
           </div>
         )}
       </div>
-
-      {/* No images state */}
-      {workImageUrl.length === 0 && (
-        <div className="mt-6 flex items-center justify-center rounded-2xl border border-gray-200 bg-gray-50 p-12">
-          <div className="text-center">
-            <ImageIcon className="mx-auto mb-4 h-12 w-12 text-gray-400" />
-            <p className="text-gray-600">No workplace images available</p>
-            <p className="mt-1 text-sm text-gray-500">
-              Check back later for photos of our work environment
-            </p>
-          </div>
-        </div>
-      )}
 
       {/* Decorative bottom accent */}
       <div className="absolute right-0 bottom-0 left-0 h-1 bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-500"></div>
