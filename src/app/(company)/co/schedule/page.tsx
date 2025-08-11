@@ -47,6 +47,7 @@ import {
 } from '@/types/Schedule';
 import { CandidateApplicationDetail } from '@/types/Application';
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { toast } from 'react-toastify';
 
 interface LoadingState {
@@ -88,6 +89,7 @@ const getEndOfWeek = (date: Date) => {
 
 export default function CompanySchedulePage() {
   const user = useUser();
+  const searchParams = useSearchParams();
   const [events, setEvents] = useState<ScheduleEventResponse[]>([]);
   const [loadingState, setLoadingState] = useState<LoadingState>({
     loading: true,
@@ -213,6 +215,17 @@ export default function CompanySchedulePage() {
       } as CalendarEvent;
     });
   }, [events]);
+
+  // If navigated with ?eventId=..., open that event's detail automatically once events are loaded
+  useEffect(() => {
+    const eventId = searchParams?.get('eventId');
+    if (!eventId || loadingState.loading) return;
+
+    const matched = calendarEvents.find((e) => e.id === eventId);
+    if (matched) {
+      handleEventClick(matched);
+    }
+  }, [searchParams, calendarEvents, loadingState.loading]);
 
   // Get events for a specific day
   const getEventsForDay = (day: Date) => {
@@ -348,7 +361,7 @@ export default function CompanySchedulePage() {
     );
   };
 
-  const fetchApplicationDetail = async (applicationId: number) => {
+  const fetchApplicationDetail = useCallback(async (applicationId: number) => {
     try {
       setIsLoadingApplication(true);
       const detail = await applicationService.getCandidateApplicationDetail(
@@ -361,20 +374,23 @@ export default function CompanySchedulePage() {
     } finally {
       setIsLoadingApplication(false);
     }
-  };
+  }, []);
 
-  const handleEventClick = (event: CalendarEvent) => {
-    setSelectedEvent(event);
-    setIsModalOpen(true);
+  const handleEventClick = useCallback(
+    (event: CalendarEvent) => {
+      setSelectedEvent(event);
+      setIsModalOpen(true);
 
-    // Reset previous application detail
-    setApplicationDetail(null);
+      // Reset previous application detail
+      setApplicationDetail(null);
 
-    // Fetch application detail if applicationId exists
-    if (event.applicationId) {
-      fetchApplicationDetail(event.applicationId);
-    }
-  };
+      // Fetch application detail if applicationId exists
+      if (event.applicationId) {
+        fetchApplicationDetail(event.applicationId);
+      }
+    },
+    [fetchApplicationDetail],
+  );
 
   const handleConfirmEvent = async () => {
     if (!selectedEvent) return;

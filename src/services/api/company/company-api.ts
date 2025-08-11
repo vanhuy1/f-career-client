@@ -5,6 +5,7 @@ import {
   CompanyListResponse,
   CreateCompanyReq,
   UpdateCompanyReq,
+  CompanyStats,
 } from '@/types/Company';
 import {
   CreateScheduleEventRequest,
@@ -98,6 +99,21 @@ class CompanyService {
       typeCheck: (data) => ({
         success: true,
         data: data as { message: string },
+      }),
+    });
+    return response;
+  }
+
+  /**
+   * Get company statistics
+   */
+  async getStats(companyId: number): Promise<CompanyStats> {
+    const url = this.requestBuilder.buildUrl(`${companyId}/stats`);
+    const response = await httpClient.get<CompanyStats>({
+      url,
+      typeCheck: (data) => ({
+        success: true,
+        data: data as CompanyStats,
       }),
     });
     return response;
