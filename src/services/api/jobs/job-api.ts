@@ -4,6 +4,8 @@ import {
   CreateJobReq,
   UpdateJobReq,
   JobByCompanyIdResponse,
+  JobStatsResponse,
+  JobStats,
 } from '@/types/Job';
 import { httpClient } from '@/utils/axios';
 import { RequestBuilder } from '@/utils/axios/request-builder';
@@ -118,6 +120,16 @@ class JobService {
       console.error('Error fetching jobs by company ID:', error);
       throw error;
     }
+  }
+
+  /** GET /jobs/:id/stats */
+  async getJobStats(id: string): Promise<JobStats> {
+    const url = this.rb.buildUrl(`${id}/stats`);
+    const response = await httpClient.get<JobStatsResponse>({
+      url,
+      typeCheck: (data) => ({ success: true, data: data as JobStatsResponse }),
+    });
+    return response.data;
   }
 }
 

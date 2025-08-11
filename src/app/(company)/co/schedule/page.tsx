@@ -216,6 +216,37 @@ export default function CompanySchedulePage() {
     });
   }, [events]);
 
+  const fetchApplicationDetail = useCallback(async (applicationId: number) => {
+    try {
+      setIsLoadingApplication(true);
+      const detail = await applicationService.getCandidateApplicationDetail(
+        applicationId.toString(),
+      );
+      setApplicationDetail(detail);
+    } catch (error) {
+      console.error('Failed to fetch application detail:', error);
+      setApplicationDetail(null);
+    } finally {
+      setIsLoadingApplication(false);
+    }
+  }, []);
+
+  const handleEventClick = useCallback(
+    (event: CalendarEvent) => {
+      setSelectedEvent(event);
+      setIsModalOpen(true);
+
+      // Reset previous application detail
+      setApplicationDetail(null);
+
+      // Fetch application detail if applicationId exists
+      if (event.applicationId) {
+        fetchApplicationDetail(event.applicationId);
+      }
+    },
+    [fetchApplicationDetail],
+  );
+
   // If navigated with ?eventId=..., open that event's detail automatically once events are loaded
   useEffect(() => {
     const eventId = searchParams?.get('eventId');
@@ -225,7 +256,7 @@ export default function CompanySchedulePage() {
     if (matched) {
       handleEventClick(matched);
     }
-  }, [searchParams, calendarEvents, loadingState.loading]);
+  }, [searchParams, calendarEvents, loadingState.loading, handleEventClick]);
 
   // Get events for a specific day
   const getEventsForDay = (day: Date) => {
@@ -360,37 +391,6 @@ export default function CompanySchedulePage() {
       dateFilter.status
     );
   };
-
-  const fetchApplicationDetail = useCallback(async (applicationId: number) => {
-    try {
-      setIsLoadingApplication(true);
-      const detail = await applicationService.getCandidateApplicationDetail(
-        applicationId.toString(),
-      );
-      setApplicationDetail(detail);
-    } catch (error) {
-      console.error('Failed to fetch application detail:', error);
-      setApplicationDetail(null);
-    } finally {
-      setIsLoadingApplication(false);
-    }
-  }, []);
-
-  const handleEventClick = useCallback(
-    (event: CalendarEvent) => {
-      setSelectedEvent(event);
-      setIsModalOpen(true);
-
-      // Reset previous application detail
-      setApplicationDetail(null);
-
-      // Fetch application detail if applicationId exists
-      if (event.applicationId) {
-        fetchApplicationDetail(event.applicationId);
-      }
-    },
-    [fetchApplicationDetail],
-  );
 
   const handleConfirmEvent = async () => {
     if (!selectedEvent) return;

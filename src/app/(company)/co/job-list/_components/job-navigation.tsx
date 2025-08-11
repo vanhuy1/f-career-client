@@ -6,7 +6,7 @@ import Link from 'next/link';
 const tabs = [
   { key: 'applicants', label: 'Applicants', href: 'applicants' },
   { key: 'job-details', label: 'Job Details', href: 'job-details' },
-  { key: 'settings', label: 'Settings', href: 'settings' },
+  { key: 'settings', label: 'Statistics', href: 'settings' },
 ];
 
 export function JobNavigation() {
