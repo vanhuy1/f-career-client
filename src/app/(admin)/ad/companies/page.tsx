@@ -1,8 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -29,65 +28,88 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Search,
-  Mail,
-  MoreHorizontal,
-  Eye,
-  Filter,
-  ArrowUpDown,
-} from 'lucide-react';
+import { Search, Mail, MoreHorizontal, Eye, ArrowUpDown } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { mockCompanies, CompanyDetail } from '@/data/mockUsers';
+import { companyManagementService } from '@/services/api/admin/company-mgm.api';
+import { Company } from '@/types/admin/CompanyManagement';
 
 export default function CompaniesPage() {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCompany, setSelectedCompany] = useState<CompanyDetail | null>(
-    null,
-  );
+  const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
   const [profileDialogOpen, setProfileDialogOpen] = useState(false);
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [verifiedFilter, setVerifiedFilter] = useState<
+    'all' | 'verified' | 'unverified'
+  >('all');
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'accepted':
-        return (
-          <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
-            Accepted
-          </Badge>
-        );
-      case 'pending':
-        return (
-          <Badge className="bg-orange-100 text-orange-800 hover:bg-orange-100">
-            Pending
-          </Badge>
-        );
-      case 'denied':
-        return (
-          <Badge className="bg-red-100 text-red-800 hover:bg-red-100">
-            Denied
-          </Badge>
-        );
-      default:
-        return <Badge variant="secondary">{status}</Badge>;
+  useEffect(() => {
+    const fetchCompanies = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const response = await companyManagementService.getCompanies({
+          limit: 100,
+          offset: 0,
+          isVerified:
+            verifiedFilter === 'all'
+              ? undefined
+              : verifiedFilter === 'verified'
+                ? true
+                : false,
+        });
+        setCompanies(response.data.companies || []);
+      } catch (err) {
+        setError(typeof err === 'string' ? err : 'Failed to load companies');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchCompanies();
+  }, [verifiedFilter]);
+
+  const getVerifiedBadge = (verified: boolean) => {
+    if (verified) {
+      return (
+        <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
+          Verified
+        </Badge>
+      );
     }
-  };
-
-  const filterCompaniesByStatus = (status: CompanyDetail['status']) => {
-    return mockCompanies.filter(
-      (company) =>
-        company.status === status &&
-        (company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          company.email.toLowerCase().includes(searchTerm.toLowerCase())),
+    return (
+      <Badge className="bg-red-100 text-red-800 hover:bg-red-100">
+        Unverified
+      </Badge>
     );
   };
 
-  const handleStatusChange = (
-    companyId: number,
-    newStatus: CompanyDetail['status'],
-  ) => {
-    console.log('status change', companyId, newStatus);
+  const filteredCompanies = useMemo(() => {
+    const term = searchTerm.toLowerCase();
+    return companies.filter(
+      (c) =>
+        c.companyName.toLowerCase().includes(term) ||
+        c.email.toLowerCase().includes(term) ||
+        c.taxCode.toLowerCase().includes(term),
+    );
+  }, [companies, searchTerm]);
+
+  const handleVerifyToggle = async (companyId: string, current: boolean) => {
+    if (current) return; // No unverify API provided; skip when already verified
+    try {
+      setIsLoading(true);
+      const res = await companyManagementService.verifyCompany(companyId);
+      const updated = res.data;
+      setCompanies((prev) =>
+        prev.map((c) => (c.id === updated.id ? { ...c, ...updated } : c)),
+      );
+    } catch (err) {
+      setError(typeof err === 'string' ? err : 'Failed to verify company');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleSendEmail = () => {
@@ -95,11 +117,11 @@ export default function CompaniesPage() {
     setEmailDialogOpen(false);
   };
 
-  const handleViewProfile = (companyId: number) => {
+  const handleViewProfile = (companyId: string) => {
     router.push(`/ad/companies/${companyId}`);
   };
 
-  const CompanyTable = ({ companies }: { companies: CompanyDetail[] }) => (
+  const CompanyTable = ({ companies }: { companies: Company[] }) => (
     <Table>
       <TableHeader>
         <TableRow>
@@ -108,31 +130,23 @@ export default function CompaniesPage() {
               Company Name <ArrowUpDown className="ml-2 h-4 w-4" />
             </Button>
           </TableHead>
+          <TableHead>Tax Code</TableHead>
           <TableHead>Contact Email</TableHead>
-          <TableHead>Industry</TableHead>
-          <TableHead>Employees</TableHead>
-          <TableHead>Location</TableHead>
-          <TableHead>
-            <Button variant="ghost" className="h-auto p-0 font-semibold">
-              Submission Date <ArrowUpDown className="ml-2 h-4 w-4" />
-            </Button>
-          </TableHead>
-          <TableHead>Status</TableHead>
+          <TableHead>Created At</TableHead>
+          <TableHead>Verified</TableHead>
           <TableHead className="text-right">Actions</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {companies.map((company) => (
           <TableRow key={company.id}>
-            <TableCell className="font-medium">{company.name}</TableCell>
+            <TableCell className="font-medium">{company.companyName}</TableCell>
+            <TableCell>{company.taxCode}</TableCell>
             <TableCell>{company.email}</TableCell>
-            <TableCell>{company.industry}</TableCell>
-            <TableCell>{company.employees}</TableCell>
-            <TableCell>{company.location}</TableCell>
             <TableCell>
-              {new Date(company.submissionDate).toLocaleDateString()}
+              {new Date(company.createdAt).toLocaleDateString()}
             </TableCell>
-            <TableCell>{getStatusBadge(company.status)}</TableCell>
+            <TableCell>{getVerifiedBadge(company.isVerified)}</TableCell>
             <TableCell className="text-right">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -157,19 +171,11 @@ export default function CompaniesPage() {
                     Send Email
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    onClick={() => handleStatusChange(company.id, 'accepted')}
+                    onClick={() =>
+                      handleVerifyToggle(company.id, company.isVerified)
+                    }
                   >
-                    Set as Accepted
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => handleStatusChange(company.id, 'pending')}
-                  >
-                    Set as Pending
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => handleStatusChange(company.id, 'denied')}
-                  >
-                    Set as Denied
+                    {company.isVerified ? 'Mark Unverified' : 'Mark Verified'}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -195,48 +201,58 @@ export default function CompaniesPage() {
             <CardTitle className="text-xl font-semibold text-gray-900">
               Company Applications
             </CardTitle>
-            <div className="flex w-full gap-2 sm:w-auto">
+            <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
+              <div className="grid grid-cols-3 gap-2">
+                <Button
+                  variant={verifiedFilter === 'all' ? 'default' : 'outline'}
+                  onClick={() => setVerifiedFilter('all')}
+                  className="h-9"
+                >
+                  All
+                </Button>
+                <Button
+                  variant={
+                    verifiedFilter === 'verified' ? 'default' : 'outline'
+                  }
+                  onClick={() => setVerifiedFilter('verified')}
+                  className="h-9"
+                >
+                  Verified
+                </Button>
+                <Button
+                  variant={
+                    verifiedFilter === 'unverified' ? 'default' : 'outline'
+                  }
+                  onClick={() => setVerifiedFilter('unverified')}
+                  className="h-9"
+                >
+                  Unverified
+                </Button>
+              </div>
               <div className="relative flex-1 sm:flex-initial">
                 <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform text-gray-400" />
                 <Input
-                  placeholder="Search companies..."
+                  placeholder="Search by name, email, or tax code..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-10 sm:w-[300px]"
                 />
               </div>
-              <Button variant="outline" size="icon">
-                <Filter className="h-4 w-4" />
-              </Button>
             </div>
           </div>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="accepted" className="w-full">
-            <TabsList className="mb-6 grid w-full grid-cols-3">
-              <TabsTrigger value="accepted" className="flex items-center gap-2">
-                Accepted ({filterCompaniesByStatus('accepted').length})
-              </TabsTrigger>
-              <TabsTrigger value="pending" className="flex items-center gap-2">
-                Pending ({filterCompaniesByStatus('pending').length})
-              </TabsTrigger>
-              <TabsTrigger value="denied" className="flex items-center gap-2">
-                Denied ({filterCompaniesByStatus('denied').length})
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="accepted">
-              <CompanyTable companies={filterCompaniesByStatus('accepted')} />
-            </TabsContent>
-
-            <TabsContent value="pending">
-              <CompanyTable companies={filterCompaniesByStatus('pending')} />
-            </TabsContent>
-
-            <TabsContent value="denied">
-              <CompanyTable companies={filterCompaniesByStatus('denied')} />
-            </TabsContent>
-          </Tabs>
+          <div className="w-full">
+            {isLoading && (
+              <div className="py-6 text-sm text-gray-500">
+                Loading companies...
+              </div>
+            )}
+            {error && <div className="py-6 text-sm text-red-600">{error}</div>}
+            {!isLoading && !error && (
+              <CompanyTable companies={filteredCompanies} />
+            )}
+          </div>
         </CardContent>
       </Card>
 
@@ -246,7 +262,7 @@ export default function CompaniesPage() {
           <DialogHeader>
             <DialogTitle>Send Email</DialogTitle>
             <DialogDescription>
-              Send an email to {selectedCompany?.name}
+              Send an email to {selectedCompany?.companyName}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
@@ -282,7 +298,7 @@ export default function CompaniesPage() {
           <DialogHeader>
             <DialogTitle>Company Profile</DialogTitle>
             <DialogDescription>
-              Detailed information about {selectedCompany?.name}
+              Detailed information about {selectedCompany?.companyName}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
@@ -291,14 +307,17 @@ export default function CompaniesPage() {
                 <Label className="text-sm font-medium text-gray-500">
                   Company Name
                 </Label>
-                <p className="text-sm font-medium">{selectedCompany?.name}</p>
+                <p className="text-sm font-medium">
+                  {selectedCompany?.companyName}
+                </p>
               </div>
               <div>
                 <Label className="text-sm font-medium text-gray-500">
                   Status
                 </Label>
                 <div className="mt-1">
-                  {selectedCompany && getStatusBadge(selectedCompany.status)}
+                  {selectedCompany &&
+                    getVerifiedBadge(selectedCompany.isVerified)}
                 </div>
               </div>
             </div>
@@ -311,52 +330,48 @@ export default function CompaniesPage() {
               </div>
               <div>
                 <Label className="text-sm font-medium text-gray-500">
-                  Industry
+                  Tax Code
                 </Label>
-                <p className="text-sm">{selectedCompany?.industry}</p>
+                <p className="text-sm">{selectedCompany?.taxCode}</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label className="text-sm font-medium text-gray-500">ID</Label>
+                <p className="text-sm">{selectedCompany?.id}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-gray-500">
+                  Created At
+                </Label>
+                <p className="text-sm">
+                  {selectedCompany?.createdAt &&
+                    new Date(selectedCompany.createdAt).toLocaleDateString()}
+                </p>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label className="text-sm font-medium text-gray-500">
-                  Employees
-                </Label>
-                <p className="text-sm">{selectedCompany?.employees}</p>
-              </div>
-              <div>
-                <Label className="text-sm font-medium text-gray-500">
-                  Location
-                </Label>
-                <p className="text-sm">{selectedCompany?.location}</p>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label className="text-sm font-medium text-gray-500">
-                  Submission Date
+                  Created At
                 </Label>
                 <p className="text-sm">
                   {selectedCompany &&
-                    new Date(
-                      selectedCompany.submissionDate,
-                    ).toLocaleDateString()}
+                    selectedCompany.createdAt &&
+                    new Date(selectedCompany.createdAt).toLocaleDateString()}
                 </p>
               </div>
               <div>
                 <Label className="text-sm font-medium text-gray-500">
-                  Founded
+                  Updated At
                 </Label>
-                <p className="text-sm">{selectedCompany?.foundedYear}</p>
+                <p className="text-sm">
+                  {selectedCompany?.updatedAt &&
+                    new Date(selectedCompany.updatedAt).toLocaleDateString()}
+                </p>
               </div>
             </div>
-            <div>
-              <Label className="text-sm font-medium text-gray-500">
-                Description
-              </Label>
-              <p className="text-sm text-gray-600">
-                {selectedCompany?.description}
-              </p>
-            </div>
+            {/* No description in API; keeping layout simple */}
           </div>
           <div className="flex justify-end gap-2">
             <Button
