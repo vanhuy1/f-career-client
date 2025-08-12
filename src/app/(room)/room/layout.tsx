@@ -3,6 +3,7 @@
 import ReduxProvider from '@/providers/ReduxProvider';
 import './styles.css';
 import { CandidatePermission } from '@/providers/authorization/CandidatePermission';
+import { AuthProvider } from '@/providers/AuthProvider';
 
 export default function RoomLayout({
   children,
@@ -11,7 +12,9 @@ export default function RoomLayout({
 }) {
   return (
     <CandidatePermission>
-      <ReduxProvider>{children}</ReduxProvider>
+      <ReduxProvider>
+        <AuthProvider>{children}</AuthProvider>
+      </ReduxProvider>
     </CandidatePermission>
   );
 }

@@ -24,12 +24,15 @@ import {
   GraduationCap,
   AlertCircle,
   Loader2,
+  History,
+  Trophy,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Checkbox } from '@/components/ui/checkbox';
 import MindMapVisualization from './MindMapVisualization';
+import QuizModal from './QuizModal';
 import { useRouter } from 'next/navigation';
 import 'reactflow/dist/style.css';
 import { roadmapService } from '@/services/api/roadmap/roadmap-api';
@@ -53,6 +56,13 @@ interface CombinedSkillForMindMap extends Omit<RoadmapSkill, 'tasks'> {
       skillTitle: string;
     }
   >;
+}
+
+// Extended Roadmap interface for quiz features
+interface ExtendedRoadmap extends Roadmap {
+  testPassed?: boolean;
+  quizBestScore?: number;
+  quizAttempts?: number;
 }
 
 // Task type icons mapping
@@ -112,7 +122,7 @@ export default function RoadmapModal({
   cvId,
   jobTitle,
 }: RoadmapModalProps) {
-  const [roadmaps, setRoadmaps] = useState<Roadmap[]>([]);
+  const [roadmaps, setRoadmaps] = useState<ExtendedRoadmap[]>([]);
   const [expandedRoadmap, setExpandedRoadmap] = useState<string | null>(null);
   const [expandedSkill, setExpandedSkill] = useState<string | null>(null);
   const [expandedTask, setExpandedTask] = useState<string | null>(null);
@@ -126,6 +136,10 @@ export default function RoadmapModal({
     useState<{ roadmapId: string; skill: RoadmapSkill } | null>(null);
   const [showFullRoadmapVisualization, setShowFullRoadmapVisualization] =
     useState<string | null>(null);
+  const [showQuizModal, setShowQuizModal] = useState<{
+    roadmapId: string;
+    roadmapTitle: string;
+  } | null>(null);
   const router = useRouter();
 
   // Load roadmaps from backend
@@ -364,11 +378,10 @@ export default function RoadmapModal({
     return roadmaps.filter((roadmap) => {
       if (tab === 'completed') {
         // Only show roadmaps that have been completed AND passed practice test
-        // For now, we'll show completed roadmaps here
-        return roadmap.progress === 100;
+        return roadmap.progress === 100 && roadmap.testPassed === true;
       } else if (tab === 'practice-test') {
         // Show roadmaps that are 100% complete and ready for practice test
-        return roadmap.progress === 100;
+        return roadmap.progress === 100 && !roadmap.testPassed;
       }
       // In progress (0% <= progress < 100%)
       return roadmap.progress < 100;
@@ -415,7 +428,6 @@ export default function RoadmapModal({
         progress: roadmap.progress,
         tasks: allTasks,
         skills: roadmap.skills,
-        // Thêm các thuộc tính còn thiếu từ RoadmapSkill nếu cần
         order: 1,
         category: 'core',
         difficulty: 'intermediate',
@@ -426,6 +438,21 @@ export default function RoadmapModal({
         reason: '',
       };
     }, [getCurrentRoadmap]);
+
+  // Handle quiz modal close and refresh
+  const handleQuizModalClose = useCallback(() => {
+    setShowQuizModal(null);
+    // Refresh roadmaps to update test status
+    fetchRoadmaps();
+  }, [fetchRoadmaps]);
+
+  // Open quiz modal
+  const handleOpenQuiz = useCallback(
+    (roadmapId: string, roadmapTitle: string) => {
+      setShowQuizModal({ roadmapId, roadmapTitle });
+    },
+    [],
+  );
 
   // Render CV Analysis section
   const renderCVAnalysis = useCallback(
@@ -565,7 +592,8 @@ export default function RoadmapModal({
                     )}
                     onClick={() => setTab('completed')}
                   >
-                    Done
+                    <Trophy className="mr-1 inline h-3 w-3" />
+                    Completed
                   </button>
                 </div>
               </div>
@@ -575,7 +603,7 @@ export default function RoadmapModal({
                 <div className="rounded-lg bg-stone-800/60 p-6 text-center">
                   <p className="text-stone-300">
                     {tab === 'completed'
-                      ? 'No completed roadmaps yet. Complete practice tests to move roadmaps here.'
+                      ? 'No completed roadmaps yet. Pass practice tests to move roadmaps here.'
                       : tab === 'practice-test'
                         ? 'Complete all tasks (100%) to unlock practice tests.'
                         : 'No roadmaps in progress. Generate one from a job listing!'}
@@ -630,8 +658,8 @@ export default function RoadmapModal({
                                 )}
                                 {tab === 'completed' && (
                                   <Badge className="border-green-500 bg-green-500/20 text-green-300">
-                                    <CheckCircle2 className="mr-1 h-3 w-3" />
-                                    Completed
+                                    <Trophy className="mr-1 h-3 w-3" />
+                                    Test Passed
                                   </Badge>
                                 )}
                               </div>
@@ -703,9 +731,9 @@ export default function RoadmapModal({
                                       <CheckCircle2 className="h-4 w-4" />
                                       Congratulations! Learning Completed
                                     </h4>
-                                    <p className="text-stone-300">
-                                      You&apos;ve completed all tasks! Move to
-                                      Practice Test tab to test your knowledge.
+                                    <p className="mt-1 text-xs text-stone-300">
+                                      You&apos;ve completed all tasks! Take the
+                                      practice test to validate your knowledge.
                                     </p>
                                   </div>
                                   <Button
@@ -728,343 +756,406 @@ export default function RoadmapModal({
                                 <div>
                                   <h4 className="flex items-center gap-2 text-sm font-medium text-orange-300">
                                     <FlaskConical className="h-4 w-4" />
-                                    Practice Test Available
+                                    AI Practice Test Available
                                   </h4>
                                   <p className="mt-1 text-xs text-stone-300">
-                                    You&apos;ve completed 100% of the learning
-                                    materials! Test your knowledge with our
-                                    practice assessment.
+                                    Test your knowledge with AI-generated
+                                    questions based on your learning path.
                                   </p>
+                                  <div className="mt-2 flex items-center gap-4 text-xs text-stone-400">
+                                    <span className="flex items-center gap-1">
+                                      <Target className="h-3 w-3" />
+                                      50 questions
+                                    </span>
+                                    <span className="flex items-center gap-1">
+                                      <Clock className="h-3 w-3" />
+                                      60 minutes
+                                    </span>
+                                    <span className="flex items-center gap-1">
+                                      <Trophy className="h-3 w-3" />
+                                      70% to pass
+                                    </span>
+                                  </div>
+                                </div>
+                                <div className="flex flex-col gap-2">
+                                  <Button
+                                    size="sm"
+                                    className="bg-orange-600 text-white hover:bg-orange-700"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleOpenQuiz(roadmap.id, roadmap.title);
+                                    }}
+                                  >
+                                    <FlaskConical className="mr-2 h-3 w-3" />
+                                    Start Test
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="text-xs text-stone-400 hover:text-white"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleOpenQuiz(roadmap.id, roadmap.title);
+                                    }}
+                                  >
+                                    <History className="mr-1 h-3 w-3" />
+                                    View History
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Completed Section */}
+                          {tab === 'completed' && roadmap.quizBestScore && (
+                            <div className="mb-4 rounded-lg border border-green-500/30 bg-gradient-to-r from-green-500/10 to-emerald-500/10 p-4">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <h4 className="flex items-center gap-2 text-sm font-medium text-green-300">
+                                    <Trophy className="h-4 w-4" />
+                                    Test Completed Successfully
+                                  </h4>
+                                  <p className="mt-1 text-xs text-stone-300">
+                                    You&apos;ve passed the practice test with a
+                                    score of {roadmap.quizBestScore}%
+                                  </p>
+                                  {roadmap.quizAttempts && (
+                                    <p className="mt-1 text-xs text-stone-400">
+                                      Total attempts: {roadmap.quizAttempts}
+                                    </p>
+                                  )}
                                 </div>
                                 <Button
                                   size="sm"
-                                  className="bg-orange-600 text-white hover:bg-orange-700"
-                                  onClick={() => {
-                                    toast.success(
-                                      'Practice test feature coming soon!',
-                                    );
+                                  variant="ghost"
+                                  className="text-green-400 hover:bg-green-500/20"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleOpenQuiz(roadmap.id, roadmap.title);
                                   }}
                                 >
-                                  <FlaskConical className="mr-2 h-3 w-3" />
-                                  Start Test
+                                  <History className="mr-2 h-3 w-3" />
+                                  View Results
                                 </Button>
                               </div>
                             </div>
                           )}
 
-                          {/* Skills List */}
-                          <div className="space-y-4">
-                            {roadmap.skills.map((skill) => (
-                              <div
-                                key={skill.id}
-                                className="overflow-hidden rounded-lg bg-stone-700/30"
-                              >
+                          {/* Skills List - Keep all existing code */}
+                          {tab === 'in-progress' && (
+                            <div className="space-y-4">
+                              {roadmap.skills.map((skill) => (
                                 <div
-                                  className="flex cursor-pointer items-center justify-between p-3 hover:bg-stone-700/50"
-                                  onClick={() =>
-                                    setExpandedSkill(
-                                      expandedSkill === skill.id
-                                        ? null
-                                        : skill.id,
-                                    )
-                                  }
+                                  key={skill.id}
+                                  className="overflow-hidden rounded-lg bg-stone-700/30"
                                 >
-                                  <div className="flex items-center gap-2">
-                                    <div
-                                      className={cn(
-                                        'h-2 w-2 rounded-full',
-                                        skill.progress === 100
-                                          ? 'bg-green-500'
-                                          : skill.progress > 0
-                                            ? 'bg-yellow-500'
-                                            : 'bg-stone-500',
+                                  <div
+                                    className="flex cursor-pointer items-center justify-between p-3 hover:bg-stone-700/50"
+                                    onClick={() =>
+                                      setExpandedSkill(
+                                        expandedSkill === skill.id
+                                          ? null
+                                          : skill.id,
+                                      )
+                                    }
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      <div
+                                        className={cn(
+                                          'h-2 w-2 rounded-full',
+                                          skill.progress === 100
+                                            ? 'bg-green-500'
+                                            : skill.progress > 0
+                                              ? 'bg-yellow-500'
+                                              : 'bg-stone-500',
+                                        )}
+                                      />
+                                      <h4 className="font-medium text-white">
+                                        {skill.order}. {skill.title}
+                                      </h4>
+                                      <Badge
+                                        className={cn(
+                                          'text-xs',
+                                          getCategoryColor(skill.category),
+                                        )}
+                                      >
+                                        {skill.category}
+                                      </Badge>
+                                      <Badge
+                                        className={cn(
+                                          'text-xs',
+                                          getDifficultyColor(skill.difficulty),
+                                        )}
+                                      >
+                                        {skill.difficulty}
+                                      </Badge>
+                                      <span className="text-xs text-stone-400">
+                                        ({skill.progress}% •{' '}
+                                        {skill.estimatedHours}h)
+                                      </span>
+                                    </div>
+
+                                    <div className="flex items-center gap-2">
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-7 w-7 rounded-full p-0 text-green-400 hover:bg-green-500/20"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setSelectedSkillForVisualization({
+                                            roadmapId: roadmap.id,
+                                            skill,
+                                          });
+                                        }}
+                                      >
+                                        <MapPin className="h-4 w-4" />
+                                      </Button>
+                                      {expandedSkill === skill.id ? (
+                                        <ChevronDown className="h-4 w-4 text-stone-400" />
+                                      ) : (
+                                        <ChevronRight className="h-4 w-4 text-stone-400" />
                                       )}
-                                    />
-                                    <h4 className="font-medium text-white">
-                                      {skill.order}. {skill.title}
-                                    </h4>
-                                    <Badge
-                                      className={cn(
-                                        'text-xs',
-                                        getCategoryColor(skill.category),
-                                      )}
-                                    >
-                                      {skill.category}
-                                    </Badge>
-                                    <Badge
-                                      className={cn(
-                                        'text-xs',
-                                        getDifficultyColor(skill.difficulty),
-                                      )}
-                                    >
-                                      {skill.difficulty}
-                                    </Badge>
-                                    <span className="text-xs text-stone-400">
-                                      ({skill.progress}% •{' '}
-                                      {skill.estimatedHours}h)
-                                    </span>
-                                  </div>
-
-                                  <div className="flex items-center gap-2">
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      className="h-7 w-7 rounded-full p-0 text-green-400 hover:bg-green-500/20"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setSelectedSkillForVisualization({
-                                          roadmapId: roadmap.id,
-                                          skill,
-                                        });
-                                      }}
-                                    >
-                                      <MapPin className="h-4 w-4" />
-                                    </Button>
-                                    {expandedSkill === skill.id ? (
-                                      <ChevronDown className="h-4 w-4 text-stone-400" />
-                                    ) : (
-                                      <ChevronRight className="h-4 w-4 text-stone-400" />
-                                    )}
-                                  </div>
-                                </div>
-
-                                {/* Expanded Skill Content */}
-                                {expandedSkill === skill.id && (
-                                  <div className="p-3">
-                                    <p className="mb-3 text-sm text-stone-300">
-                                      {skill.description}
-                                    </p>
-                                    <p className="mb-4 text-xs text-green-400">
-                                      Why: {skill.reason}
-                                    </p>
-
-                                    {/* Tasks */}
-                                    <div className="space-y-2">
-                                      <h5 className="flex items-center gap-1.5 text-sm font-medium text-stone-200">
-                                        <Target className="h-3.5 w-3.5" />
-                                        Tasks (
-                                        {
-                                          skill.tasks.filter((t) => t.completed)
-                                            .length
-                                        }
-                                        /{skill.tasks.length})
-                                      </h5>
-                                      {skill.tasks.map((task) => {
-                                        const TaskIcon = getTaskTypeIcon(
-                                          task.type,
-                                        );
-                                        const isUpdating = isTaskUpdating(
-                                          roadmap.id,
-                                          skill.id,
-                                          task.id,
-                                        );
-
-                                        return (
-                                          <div
-                                            key={task.id}
-                                            className="rounded-md bg-stone-800/50 p-2"
-                                          >
-                                            <div className="flex items-start gap-2">
-                                              <div className="mt-1">
-                                                {isUpdating ? (
-                                                  <Loader2 className="h-4 w-4 animate-spin text-green-400" />
-                                                ) : (
-                                                  <Checkbox
-                                                    id={`task-${task.id}`}
-                                                    checked={task.completed}
-                                                    onCheckedChange={() =>
-                                                      toggleTask(
-                                                        roadmap.id,
-                                                        skill.id,
-                                                        task.id,
-                                                      )
-                                                    }
-                                                    disabled={
-                                                      tab === 'completed'
-                                                    }
-                                                  />
-                                                )}
-                                              </div>
-                                              <div className="flex-1">
-                                                <div
-                                                  className="flex cursor-pointer items-center gap-2"
-                                                  onClick={() =>
-                                                    setExpandedTask(
-                                                      expandedTask === task.id
-                                                        ? null
-                                                        : task.id,
-                                                    )
-                                                  }
-                                                >
-                                                  <TaskIcon className="h-3.5 w-3.5 text-stone-400" />
-                                                  <label
-                                                    htmlFor={`task-${task.id}`}
-                                                    className={cn(
-                                                      'cursor-pointer text-sm leading-none font-medium',
-                                                      task.completed
-                                                        ? 'text-gray-400 line-through'
-                                                        : 'text-gray-200',
-                                                    )}
-                                                  >
-                                                    {task.title}
-                                                  </label>
-                                                  <Badge
-                                                    className={cn(
-                                                      'text-xs',
-                                                      getPriorityColor(
-                                                        task.priority,
-                                                      ),
-                                                    )}
-                                                  >
-                                                    {task.priority}
-                                                  </Badge>
-                                                  {task.estimatedHours && (
-                                                    <span className="text-xs text-stone-500">
-                                                      <Clock className="inline h-3 w-3" />{' '}
-                                                      {task.estimatedHours}h
-                                                    </span>
-                                                  )}
-                                                  {task.subTasks &&
-                                                    task.subTasks.length > 0 &&
-                                                    (expandedTask ===
-                                                    task.id ? (
-                                                      <ChevronDown className="h-3 w-3 text-stone-400" />
-                                                    ) : (
-                                                      <ChevronRight className="h-3 w-3 text-stone-400" />
-                                                    ))}
-                                                </div>
-
-                                                {/* Expanded Task Content */}
-                                                {expandedTask === task.id && (
-                                                  <>
-                                                    <p className="mt-2 text-xs text-stone-400">
-                                                      {task.description}
-                                                    </p>
-
-                                                    {/* Tips */}
-                                                    {task.tips &&
-                                                      task.tips.length > 0 && (
-                                                        <div className="mt-2">
-                                                          <p className="text-xs font-medium text-green-400">
-                                                            Tips:
-                                                          </p>
-                                                          <ul className="mt-1 space-y-0.5">
-                                                            {task.tips.map(
-                                                              (tip, i) => (
-                                                                <li
-                                                                  key={i}
-                                                                  className="text-xs text-stone-300"
-                                                                >
-                                                                  • {tip}
-                                                                </li>
-                                                              ),
-                                                            )}
-                                                          </ul>
-                                                        </div>
-                                                      )}
-
-                                                    {/* Subtasks */}
-                                                    {task.subTasks &&
-                                                      task.subTasks.length >
-                                                        0 && (
-                                                        <div className="mt-3 ml-4 space-y-2">
-                                                          {task.subTasks.map(
-                                                            (subTask) => {
-                                                              const isSubUpdating =
-                                                                isTaskUpdating(
-                                                                  roadmap.id,
-                                                                  skill.id,
-                                                                  task.id,
-                                                                  subTask.id,
-                                                                );
-
-                                                              return (
-                                                                <div
-                                                                  key={
-                                                                    subTask.id
-                                                                  }
-                                                                  className="flex items-start gap-2"
-                                                                >
-                                                                  <div className="mt-0.5">
-                                                                    {isSubUpdating ? (
-                                                                      <Loader2 className="h-3 w-3 animate-spin text-green-400" />
-                                                                    ) : (
-                                                                      <Checkbox
-                                                                        id={`subtask-${subTask.id}`}
-                                                                        checked={
-                                                                          subTask.completed
-                                                                        }
-                                                                        onCheckedChange={() =>
-                                                                          toggleSubTask(
-                                                                            roadmap.id,
-                                                                            skill.id,
-                                                                            task.id,
-                                                                            subTask.id,
-                                                                          )
-                                                                        }
-                                                                        className="h-3 w-3"
-                                                                        disabled={
-                                                                          tab ===
-                                                                          'completed'
-                                                                        }
-                                                                      />
-                                                                    )}
-                                                                  </div>
-                                                                  <div className="flex-1">
-                                                                    <label
-                                                                      htmlFor={`subtask-${subTask.id}`}
-                                                                      className={cn(
-                                                                        'cursor-pointer text-xs leading-none',
-                                                                        subTask.completed
-                                                                          ? 'text-gray-500 line-through'
-                                                                          : 'text-gray-300',
-                                                                      )}
-                                                                    >
-                                                                      {
-                                                                        subTask.order
-                                                                      }
-                                                                      .{' '}
-                                                                      {
-                                                                        subTask.title
-                                                                      }
-                                                                    </label>
-                                                                    {subTask.estimatedMinutes && (
-                                                                      <p className="mt-0.5 text-xs text-stone-500">
-                                                                        ~
-                                                                        {
-                                                                          subTask.estimatedMinutes
-                                                                        }{' '}
-                                                                        mins
-                                                                      </p>
-                                                                    )}
-                                                                    {subTask.checkCriteria && (
-                                                                      <p className="mt-1 text-xs text-green-400/60">
-                                                                        ✓{' '}
-                                                                        {
-                                                                          subTask.checkCriteria
-                                                                        }
-                                                                      </p>
-                                                                    )}
-                                                                  </div>
-                                                                </div>
-                                                              );
-                                                            },
-                                                          )}
-                                                        </div>
-                                                      )}
-                                                  </>
-                                                )}
-                                              </div>
-                                            </div>
-                                          </div>
-                                        );
-                                      })}
                                     </div>
                                   </div>
-                                )}
-                              </div>
-                            ))}
-                          </div>
+
+                                  {/* Expanded Skill Content */}
+                                  {expandedSkill === skill.id && (
+                                    <div className="p-3">
+                                      <p className="mb-3 text-sm text-stone-300">
+                                        {skill.description}
+                                      </p>
+                                      <p className="mb-4 text-xs text-green-400">
+                                        Why: {skill.reason}
+                                      </p>
+
+                                      {/* Tasks */}
+                                      <div className="space-y-2">
+                                        <h5 className="flex items-center gap-1.5 text-sm font-medium text-stone-200">
+                                          <Target className="h-3.5 w-3.5" />
+                                          Tasks (
+                                          {
+                                            skill.tasks.filter(
+                                              (t) => t.completed,
+                                            ).length
+                                          }
+                                          /{skill.tasks.length})
+                                        </h5>
+                                        {skill.tasks.map((task) => {
+                                          const TaskIcon = getTaskTypeIcon(
+                                            task.type,
+                                          );
+                                          const isUpdating = isTaskUpdating(
+                                            roadmap.id,
+                                            skill.id,
+                                            task.id,
+                                          );
+
+                                          return (
+                                            <div
+                                              key={task.id}
+                                              className="rounded-md bg-stone-800/50 p-2"
+                                            >
+                                              <div className="flex items-start gap-2">
+                                                <div className="mt-1">
+                                                  {isUpdating ? (
+                                                    <Loader2 className="h-4 w-4 animate-spin text-green-400" />
+                                                  ) : (
+                                                    <Checkbox
+                                                      id={`task-${task.id}`}
+                                                      checked={task.completed}
+                                                      onCheckedChange={() =>
+                                                        toggleTask(
+                                                          roadmap.id,
+                                                          skill.id,
+                                                          task.id,
+                                                        )
+                                                      }
+                                                      disabled={false}
+                                                    />
+                                                  )}
+                                                </div>
+                                                <div className="flex-1">
+                                                  <div
+                                                    className="flex cursor-pointer items-center gap-2"
+                                                    onClick={() =>
+                                                      setExpandedTask(
+                                                        expandedTask === task.id
+                                                          ? null
+                                                          : task.id,
+                                                      )
+                                                    }
+                                                  >
+                                                    <TaskIcon className="h-3.5 w-3.5 text-stone-400" />
+                                                    <label
+                                                      htmlFor={`task-${task.id}`}
+                                                      className={cn(
+                                                        'cursor-pointer text-sm leading-none font-medium',
+                                                        task.completed
+                                                          ? 'text-gray-400 line-through'
+                                                          : 'text-gray-200',
+                                                      )}
+                                                    >
+                                                      {task.title}
+                                                    </label>
+                                                    <Badge
+                                                      className={cn(
+                                                        'text-xs',
+                                                        getPriorityColor(
+                                                          task.priority,
+                                                        ),
+                                                      )}
+                                                    >
+                                                      {task.priority}
+                                                    </Badge>
+                                                    {task.estimatedHours && (
+                                                      <span className="text-xs text-stone-500">
+                                                        <Clock className="inline h-3 w-3" />{' '}
+                                                        {task.estimatedHours}h
+                                                      </span>
+                                                    )}
+                                                    {task.subTasks &&
+                                                      task.subTasks.length >
+                                                        0 &&
+                                                      (expandedTask ===
+                                                      task.id ? (
+                                                        <ChevronDown className="h-3 w-3 text-stone-400" />
+                                                      ) : (
+                                                        <ChevronRight className="h-3 w-3 text-stone-400" />
+                                                      ))}
+                                                  </div>
+
+                                                  {/* Expanded Task Content */}
+                                                  {expandedTask === task.id && (
+                                                    <>
+                                                      <p className="mt-2 text-xs text-stone-400">
+                                                        {task.description}
+                                                      </p>
+
+                                                      {/* Tips */}
+                                                      {task.tips &&
+                                                        task.tips.length >
+                                                          0 && (
+                                                          <div className="mt-2">
+                                                            <p className="text-xs font-medium text-green-400">
+                                                              Tips:
+                                                            </p>
+                                                            <ul className="mt-1 space-y-0.5">
+                                                              {task.tips.map(
+                                                                (tip, i) => (
+                                                                  <li
+                                                                    key={i}
+                                                                    className="text-xs text-stone-300"
+                                                                  >
+                                                                    • {tip}
+                                                                  </li>
+                                                                ),
+                                                              )}
+                                                            </ul>
+                                                          </div>
+                                                        )}
+
+                                                      {/* Subtasks */}
+                                                      {task.subTasks &&
+                                                        task.subTasks.length >
+                                                          0 && (
+                                                          <div className="mt-3 ml-4 space-y-2">
+                                                            {task.subTasks.map(
+                                                              (subTask) => {
+                                                                const isSubUpdating =
+                                                                  isTaskUpdating(
+                                                                    roadmap.id,
+                                                                    skill.id,
+                                                                    task.id,
+                                                                    subTask.id,
+                                                                  );
+
+                                                                return (
+                                                                  <div
+                                                                    key={
+                                                                      subTask.id
+                                                                    }
+                                                                    className="flex items-start gap-2"
+                                                                  >
+                                                                    <div className="mt-0.5">
+                                                                      {isSubUpdating ? (
+                                                                        <Loader2 className="h-3 w-3 animate-spin text-green-400" />
+                                                                      ) : (
+                                                                        <Checkbox
+                                                                          id={`subtask-${subTask.id}`}
+                                                                          checked={
+                                                                            subTask.completed
+                                                                          }
+                                                                          onCheckedChange={() =>
+                                                                            toggleSubTask(
+                                                                              roadmap.id,
+                                                                              skill.id,
+                                                                              task.id,
+                                                                              subTask.id,
+                                                                            )
+                                                                          }
+                                                                          className="h-3 w-3"
+                                                                          disabled={
+                                                                            false
+                                                                          }
+                                                                        />
+                                                                      )}
+                                                                    </div>
+                                                                    <div className="flex-1">
+                                                                      <label
+                                                                        htmlFor={`subtask-${subTask.id}`}
+                                                                        className={cn(
+                                                                          'cursor-pointer text-xs leading-none',
+                                                                          subTask.completed
+                                                                            ? 'text-gray-500 line-through'
+                                                                            : 'text-gray-300',
+                                                                        )}
+                                                                      >
+                                                                        {
+                                                                          subTask.order
+                                                                        }
+                                                                        .{' '}
+                                                                        {
+                                                                          subTask.title
+                                                                        }
+                                                                      </label>
+                                                                      {subTask.estimatedMinutes && (
+                                                                        <p className="mt-0.5 text-xs text-stone-500">
+                                                                          ~
+                                                                          {
+                                                                            subTask.estimatedMinutes
+                                                                          }{' '}
+                                                                          mins
+                                                                        </p>
+                                                                      )}
+                                                                      {subTask.checkCriteria && (
+                                                                        <p className="mt-1 text-xs text-green-400/60">
+                                                                          ✓{' '}
+                                                                          {
+                                                                            subTask.checkCriteria
+                                                                          }
+                                                                        </p>
+                                                                      )}
+                                                                    </div>
+                                                                  </div>
+                                                                );
+                                                              },
+                                                            )}
+                                                          </div>
+                                                        )}
+                                                    </>
+                                                  )}
+                                                </div>
+                                              </div>
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
@@ -1097,6 +1188,16 @@ export default function RoadmapModal({
           </div>
         )}
       </Modal>
+
+      {/* Quiz Modal */}
+      {showQuizModal && (
+        <QuizModal
+          isOpen={true}
+          onClose={handleQuizModalClose}
+          roadmapId={showQuizModal.roadmapId}
+          roadmapTitle={showQuizModal.roadmapTitle}
+        />
+      )}
 
       {/* Mind Map Visualization Modals */}
       {selectedSkillForVisualization && (

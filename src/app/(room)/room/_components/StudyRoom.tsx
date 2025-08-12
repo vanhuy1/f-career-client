@@ -40,7 +40,7 @@ export default function StudyRoom({
   const [isTaskBoardOpen, setIsTaskBoardOpen] = useState<boolean>(false);
   const [showPomodoro, setShowPomodoro] = useState<boolean>(false);
   const user = useUser();
-  const userId = Number(user?.data?.id) || 1;
+  const userId = Number(user?.data?.id);
   const [roadmapsInitialized, setRoadmapsInitialized] = useState(false);
 
   // Initialize room state
