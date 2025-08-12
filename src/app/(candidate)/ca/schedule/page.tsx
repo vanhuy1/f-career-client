@@ -932,35 +932,49 @@ export default function SchedulePage() {
                 )}
 
               {/* Action Buttons */}
-              {selectedEvent.status === EventStatus.PENDING && (
-                <div className="flex gap-3 pt-4">
-                  <Button
-                    onClick={handleConfirmEvent}
-                    disabled={isActionLoading}
-                    className="flex-1 bg-green-600 hover:bg-green-700"
-                  >
-                    {isActionLoading ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Check className="mr-2 h-4 w-4" />
-                    )}
-                    Confirm
-                  </Button>
-                  <Button
-                    onClick={handleDeclineEvent}
-                    disabled={isActionLoading}
-                    variant="outline"
-                    className="flex-1 border-red-300 text-red-700 hover:bg-red-50"
-                  >
-                    {isActionLoading ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <XCircle className="mr-2 h-4 w-4" />
-                    )}
-                    Decline
-                  </Button>
-                </div>
-              )}
+              {selectedEvent.status === EventStatus.PENDING &&
+                (new Date(selectedEvent.endsAt) <= new Date() ? (
+                  <div className="pt-4">
+                    <div className="rounded-md bg-gray-50 p-3 text-center text-sm text-gray-600">
+                      The event has passed
+                    </div>
+                    <Button
+                      onClick={closeModal}
+                      className="mt-3 w-full"
+                      variant="outline"
+                    >
+                      Close
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex gap-3 pt-4">
+                    <Button
+                      onClick={handleConfirmEvent}
+                      disabled={isActionLoading}
+                      className="flex-1 bg-green-600 hover:bg-green-700"
+                    >
+                      {isActionLoading ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Check className="mr-2 h-4 w-4" />
+                      )}
+                      Confirm
+                    </Button>
+                    <Button
+                      onClick={handleDeclineEvent}
+                      disabled={isActionLoading}
+                      variant="outline"
+                      className="flex-1 border-red-300 text-red-700 hover:bg-red-50"
+                    >
+                      {isActionLoading ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <XCircle className="mr-2 h-4 w-4" />
+                      )}
+                      Decline
+                    </Button>
+                  </div>
+                ))}
 
               {/* Close button for non-pending events */}
               {selectedEvent.status !== EventStatus.PENDING && (
