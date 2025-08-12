@@ -119,6 +119,10 @@ const ROUTES = {
         path: '/co/notification',
         name: 'Notification',
       },
+      MESSAGE: {
+        path: '/co/messages',
+        name: 'Message',
+      },
       PROFILE: {
         path: '/co/profile',
         name: 'Profile',

@@ -88,10 +88,10 @@ export default function Sidebar({ onClose }: SidebarProps) {
             onClick={onClose}
           />
           <NavItem
-            href={ROUTES.CA.HOME.MESSAGE.path}
+            href={ROUTES.CO.HOME.MESSAGE.path}
             icon={<MessageSquare />}
             label="Messages"
-            active={pathname === ROUTES.CA.HOME.MESSAGE.path}
+            active={pathname === ROUTES.CO.HOME.MESSAGE.path}
             onClick={onClose}
           />
           <NavItem
