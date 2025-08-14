@@ -55,11 +55,11 @@ const MessagesPage = () => {
     } | null,
   });
 
-  // Refs - Không trigger re-render
+  // Refs
   const socketRef = useRef<Socket | null>(null);
   const messagesLoadedRef = useRef<Set<string>>(new Set());
   const pendingMessagesRef = useRef<Map<string, Message[]>>(new Map());
-  const conversationsRef = useRef<FrontendConversation[]>([]); // Store conversations in ref
+  const conversationsRef = useRef<FrontendConversation[]>([]);
 
   // User data
   const user = useUser();
@@ -86,7 +86,7 @@ const MessagesPage = () => {
     [],
   );
 
-  // Initialize socket connection - FIX: use ref instead of state
+  // Initialize socket connection
   useEffect(() => {
     if (!currentUserId || socketRef.current?.connected) return;
 
@@ -102,10 +102,8 @@ const MessagesPage = () => {
     const handleConnect = () => {
       console.log('Socket connected:', socket.id);
 
-      // Use ref to get current conversations
       const convIds = conversationsRef.current.map((c) => c.id);
       if (convIds.length > 0) {
-        // Join each conversation individually for better compatibility
         convIds.forEach((id) => {
           socket.emit('joinConversation', id);
         });
@@ -140,9 +138,9 @@ const MessagesPage = () => {
       }
       socketRef.current = null;
     };
-  }, [currentUserId, socketConfig]); // Remove conversations dependency
+  }, [currentUserId, socketConfig]);
 
-  // Separate effect to join conversations when they change
+  // Join conversations when they change
   useEffect(() => {
     if (!socketRef.current?.connected || conversations.length === 0) return;
 
@@ -151,7 +149,7 @@ const MessagesPage = () => {
     });
   }, [conversations]);
 
-  // Optimized message fetching - NO DELAY
+  // Fetch messages
   const fetchMessages = useCallback(
     async (conversationId: string, force = false) => {
       if (!force && messagesLoadedRef.current.has(conversationId)) {
@@ -161,7 +159,6 @@ const MessagesPage = () => {
       try {
         const messages = await messengerService.getMessages(conversationId);
 
-        // Update conversations
         setConversations((prev) => {
           const updated = [...prev];
           const convIndex = updated.findIndex((c) => c.id === conversationId);
@@ -184,7 +181,6 @@ const MessagesPage = () => {
           return updated;
         });
 
-        // Update selected conversation
         setSelectedConversation((prev) => {
           if (prev?.id === conversationId) {
             const lastMsg = messages[messages.length - 1];
@@ -203,7 +199,6 @@ const MessagesPage = () => {
 
         messagesLoadedRef.current.add(conversationId);
 
-        // Mark as read in background
         messengerService
           .markMessagesAsRead(conversationId, currentUserId)
           .catch(console.error);
@@ -214,7 +209,7 @@ const MessagesPage = () => {
     [currentUserId],
   );
 
-  // Optimized conversation selection - use ref instead of state
+  // Select conversation
   const handleSelectConversation = useCallback(
     async (id: string) => {
       const conv = conversationsRef.current.find((c) => c.id === id);
@@ -228,13 +223,12 @@ const MessagesPage = () => {
 
       socketRef.current?.emit('focusConversation', id);
     },
-    [fetchMessages], // Only depend on fetchMessages
+    [fetchMessages],
   );
 
-  // Socket event handlers
+  // New message handler
   const handleNewMessage = useCallback(
     (message: Message & { sender: User }) => {
-      // Add company name if exists
       if (
         message.sender.company &&
         typeof message.sender.company === 'object' &&
@@ -252,9 +246,7 @@ const MessagesPage = () => {
         if (convIndex !== -1) {
           const conv = updated[convIndex];
 
-          // Check for duplicate
           if (!conv.messages.some((m) => m.id === message.id)) {
-            // Move conversation to top
             const [updatedConv] = updated.splice(convIndex, 1);
 
             updatedConv.messages.push({
@@ -274,7 +266,6 @@ const MessagesPage = () => {
               updatedConv.unreadCount++;
             }
 
-            // Add to beginning for most recent
             updated.unshift(updatedConv);
           }
         }
@@ -282,7 +273,6 @@ const MessagesPage = () => {
         return updated;
       });
 
-      // Auto mark as read if viewing this conversation
       if (
         selectedConversation?.id === message.conversationId &&
         message.sender.id !== currentUserId &&
@@ -296,6 +286,7 @@ const MessagesPage = () => {
     [currentUserId, selectedConversation?.id],
   );
 
+  // User status handler
   const handleUserStatus = useCallback(
     ({ userId, isOnline }: { userId: string; isOnline: boolean }) => {
       setOnlineUsers((prev) => ({ ...prev, [userId]: isOnline }));
@@ -303,7 +294,7 @@ const MessagesPage = () => {
     [],
   );
 
-  // Use ref for incoming call handler to avoid dependency issues
+  // Incoming call handler
   const handleIncomingCall = useCallback(
     ({
       from,
@@ -314,11 +305,14 @@ const MessagesPage = () => {
       signal: SimplePeer.SignalData;
       conversationId: string;
     }) => {
+      console.log('Receiving incoming call from:', from);
+
       const conversation = conversationsRef.current.find(
         (c) => c.id === conversationId,
       );
 
       if (conversation) {
+        // Hiển thị notification trước
         setVideoCallState({
           isOpen: false,
           isIncoming: true,
@@ -326,53 +320,130 @@ const MessagesPage = () => {
           incomingData: { from, signal, conversationId },
         });
 
-        // Auto select conversation
-        setSelectedConversation((prev) => {
-          if (prev?.id !== conversationId) {
-            return conversation;
+        // Auto select conversation nếu chưa được chọn
+        if (selectedConversation?.id !== conversationId) {
+          setSelectedConversation(conversation);
+          if (!messagesLoadedRef.current.has(conversationId)) {
+            fetchMessages(conversationId);
           }
-          return prev;
-        });
-
-        // Fetch messages if needed
-        if (!messagesLoadedRef.current.has(conversationId)) {
-          fetchMessages(conversationId);
         }
       }
     },
-    [fetchMessages], // Only depend on fetchMessages
+    [selectedConversation?.id, fetchMessages],
   );
 
-  // Setup socket listeners
+  // Accept incoming call
+  const handleAcceptIncomingCall = useCallback(() => {
+    console.log('Accepting incoming call');
+
+    // Đóng notification và mở video modal với incoming data
+    setVideoCallState((prev) => ({
+      ...prev,
+      isOpen: true,
+      showNotification: false,
+      // Giữ nguyên isIncoming và incomingData để VideoCallModal xử lý
+    }));
+  }, []);
+
+  // Decline incoming call
+  const handleDeclineIncomingCall = useCallback(() => {
+    console.log('Declining incoming call');
+
+    if (socketRef.current && videoCallState.incomingData) {
+      socketRef.current.emit('video-call-decline', {
+        conversationId: videoCallState.incomingData.conversationId,
+        to: videoCallState.incomingData.from,
+        from: currentUserId,
+      });
+    }
+
+    // Reset state
+    setVideoCallState({
+      isOpen: false,
+      isIncoming: false,
+      showNotification: false,
+      incomingData: null,
+    });
+  }, [currentUserId, videoCallState.incomingData]);
+
+  // Close video call
+  const handleCloseVideoCall = useCallback(() => {
+    console.log('Closing video call');
+
+    // Reset all video call state
+    setVideoCallState({
+      isOpen: false,
+      isIncoming: false,
+      showNotification: false,
+      incomingData: null,
+    });
+  }, []);
+
+  // Start video call
+  const handleStartVideoCall = useCallback(() => {
+    if (selectedConversation) {
+      console.log('Starting video call with:', selectedConversation.contact.id);
+
+      setVideoCallState({
+        isOpen: true,
+        isIncoming: false,
+        showNotification: false,
+        incomingData: null,
+      });
+    }
+  }, [selectedConversation]);
+
+  // Setup socket listeners for video call
+  useEffect(() => {
+    const socket = socketRef.current;
+    if (!socket) return;
+
+    // Video call events
+    socket.on('video-call-offer', handleIncomingCall);
+
+    socket.on('video-call-end', ({ from }: { from: string }) => {
+      console.log('Remote ended call:', from);
+      if (
+        from === selectedConversation?.contact.id ||
+        from === videoCallState.incomingData?.from
+      ) {
+        handleCloseVideoCall();
+      }
+    });
+
+    socket.on('video-call-declined', ({ from }: { from: string }) => {
+      console.log('Call declined by:', from);
+      if (from === selectedConversation?.contact.id) {
+        handleCloseVideoCall();
+      }
+    });
+
+    // Cleanup
+    return () => {
+      socket.off('video-call-offer');
+      socket.off('video-call-end');
+      socket.off('video-call-declined');
+    };
+  }, [
+    handleIncomingCall,
+    handleCloseVideoCall,
+    selectedConversation?.contact.id,
+    videoCallState.incomingData?.from,
+  ]);
+
+  // Setup other socket listeners
   useEffect(() => {
     const socket = socketRef.current;
     if (!socket) return;
 
     socket.on('newMessage', handleNewMessage);
     socket.on('userStatus', handleUserStatus);
-    socket.on('video-call-offer', handleIncomingCall);
-    socket.on('video-call-end', ({ from }: { from: string }) => {
-      if (from === selectedConversation?.contact.id) {
-        setVideoCallState((prev) => ({
-          ...prev,
-          isOpen: false,
-          isIncoming: false,
-        }));
-      }
-    });
 
     return () => {
       socket.off('newMessage');
       socket.off('userStatus');
-      socket.off('video-call-offer');
-      socket.off('video-call-end');
     };
-  }, [
-    handleNewMessage,
-    handleUserStatus,
-    handleIncomingCall,
-    selectedConversation?.contact.id,
-  ]);
+  }, [handleNewMessage, handleUserStatus]);
 
   // Initial conversations fetch
   useEffect(() => {
@@ -387,7 +458,6 @@ const MessagesPage = () => {
             const contact =
               conv.user1.id === currentUserId ? conv.user2 : conv.user1;
 
-            // Type-safe company name check
             if (
               contact.company &&
               typeof contact.company === 'object' &&
@@ -409,13 +479,11 @@ const MessagesPage = () => {
 
         setConversations(initializedConversations);
 
-        // Auto-select from query param
         const convId = searchParams?.get('conversationId');
         if (convId) {
           const conv = initializedConversations.find((c) => c.id === convId);
           if (conv) {
             setSelectedConversation(conv);
-            // Fetch messages for the selected conversation
             if (!messagesLoadedRef.current.has(convId)) {
               fetchMessages(convId);
             }
@@ -429,7 +497,7 @@ const MessagesPage = () => {
     loadConversations();
   }, [currentUserId, searchParams, fetchMessages]);
 
-  // Message sending with offline queue
+  // Send message
   const handleSendMessage = useCallback(
     (content: string) => {
       if (!selectedConversation || !currentUserId) return;
@@ -443,7 +511,6 @@ const MessagesPage = () => {
       if (socketRef.current?.connected) {
         socketRef.current.emit('sendMessage', messageData);
       } else {
-        // Queue message for when reconnected
         const pending =
           pendingMessagesRef.current.get(selectedConversation.id) || [];
         pending.push(messageData as Message);
@@ -454,51 +521,6 @@ const MessagesPage = () => {
     },
     [selectedConversation, currentUserId],
   );
-
-  // Video call handlers
-  const handleStartVideoCall = useCallback(() => {
-    if (selectedConversation) {
-      setVideoCallState((prev) => ({
-        ...prev,
-        isOpen: true,
-        isIncoming: false,
-      }));
-    }
-  }, [selectedConversation]);
-
-  const handleAcceptIncomingCall = useCallback(() => {
-    setVideoCallState((prev) => ({
-      ...prev,
-      isOpen: true,
-      showNotification: false,
-    }));
-  }, []);
-
-  const handleDeclineIncomingCall = useCallback(() => {
-    if (socketRef.current && videoCallState.incomingData) {
-      socketRef.current.emit('video-call-decline', {
-        conversationId: videoCallState.incomingData.conversationId,
-        to: videoCallState.incomingData.from,
-        from: currentUserId,
-      });
-    }
-
-    setVideoCallState({
-      isOpen: false,
-      isIncoming: false,
-      showNotification: false,
-      incomingData: null,
-    });
-  }, [currentUserId, videoCallState.incomingData]);
-
-  const handleCloseVideoCall = useCallback(() => {
-    setVideoCallState({
-      isOpen: false,
-      isIncoming: false,
-      showNotification: false,
-      incomingData: null,
-    });
-  }, []);
 
   return (
     <div className="flex h-screen">
@@ -524,30 +546,32 @@ const MessagesPage = () => {
         )}
       </div>
 
+      {/* Incoming Call Notification */}
       {selectedConversation && (
-        <>
-          <IncomingCallNotification
-            isVisible={videoCallState.showNotification}
-            callerName={selectedConversation.contact.name}
-            callerAvatar={selectedConversation.contact.avatar}
-            onAccept={handleAcceptIncomingCall}
-            onDecline={handleDeclineIncomingCall}
-            isVideoCall={true}
-          />
+        <IncomingCallNotification
+          isVisible={videoCallState.showNotification}
+          callerName={selectedConversation.contact.name}
+          callerAvatar={selectedConversation.contact.avatar}
+          onAccept={handleAcceptIncomingCall}
+          onDecline={handleDeclineIncomingCall}
+          isVideoCall={true}
+        />
+      )}
 
-          <VideoCallModal
-            isOpen={videoCallState.isOpen}
-            onClose={handleCloseVideoCall}
-            socket={socketRef.current}
-            currentUserId={currentUserId}
-            contactId={selectedConversation.contact.id.toString()}
-            contactName={selectedConversation.contact.name}
-            contactAvatar={selectedConversation.contact.avatar}
-            conversationId={selectedConversation.id}
-            isIncoming={videoCallState.isIncoming}
-            incomingCallData={videoCallState.incomingData}
-          />
-        </>
+      {/* Video Call Modal */}
+      {selectedConversation && videoCallState.isOpen && (
+        <VideoCallModal
+          isOpen={videoCallState.isOpen}
+          onClose={handleCloseVideoCall}
+          socket={socketRef.current}
+          currentUserId={currentUserId}
+          contactId={selectedConversation.contact.id.toString()}
+          contactName={selectedConversation.contact.name}
+          contactAvatar={selectedConversation.contact.avatar}
+          conversationId={selectedConversation.id}
+          isIncoming={videoCallState.isIncoming}
+          incomingCallData={videoCallState.incomingData}
+        />
       )}
     </div>
   );
