@@ -7,6 +7,34 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import SimplePeer from 'simple-peer';
 import { Socket } from 'socket.io-client';
 
+// Type definitions for video call events
+interface VideoCallAnswerPayload {
+  from: string | number;
+  signal: SimplePeer.SignalData;
+  conversationId?: string;
+}
+
+interface VideoCallEndPayload {
+  from: string | number;
+  reason?: string;
+  conversationId?: string;
+}
+
+interface VideoCallDeclinedPayload {
+  from: string | number;
+  conversationId?: string;
+}
+
+interface VideoCallTogglePayload {
+  from: string | number;
+  enabled: boolean;
+  conversationId?: string;
+}
+
+interface VideoCallUserOfflinePayload {
+  userId: string | number;
+}
+
 interface VideoCallModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -45,6 +73,8 @@ const VideoCallModal: React.FC<VideoCallModalProps> = ({
   const callTimerRef = useRef<NodeJS.Timeout | null>(null);
   const isInitializingRef = useRef(false);
   const hasAnsweredRef = useRef(false);
+  const socketListenersRef = useRef(false);
+  const callStatusRef = useRef<string>('idle'); // Add ref for call status
 
   const [isVideoEnabled, setIsVideoEnabled] = useState(true);
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
@@ -54,6 +84,7 @@ const VideoCallModal: React.FC<VideoCallModalProps> = ({
     | 'idle'
     | 'calling'
     | 'incoming'
+    | 'connecting'
     | 'connected'
     | 'ended'
     | 'timeout'
@@ -62,17 +93,22 @@ const VideoCallModal: React.FC<VideoCallModalProps> = ({
   >('idle');
   const [remoteVideoEnabled, setRemoteVideoEnabled] = useState(true);
 
+  // Update ref when status changes
+  useEffect(() => {
+    callStatusRef.current = callStatus;
+  }, [callStatus]);
+
   // Get or create media stream
   const getLocalStream = useCallback(async (forceNew = false) => {
     // If we already have a stream and don't need a new one, return it
     if (globalStream && !forceNew) {
-      console.log('Reusing existing stream');
+      console.log('[VideoCall] Reusing existing stream');
       return globalStream;
     }
 
     // Clean up old stream if forcing new
     if (globalStream && forceNew) {
-      console.log('Stopping old stream before creating new one');
+      console.log('[VideoCall] Stopping old stream before creating new one');
       globalStream.getTracks().forEach((track) => {
         track.stop();
       });
@@ -80,7 +116,7 @@ const VideoCallModal: React.FC<VideoCallModalProps> = ({
     }
 
     try {
-      console.log('Getting new media stream');
+      console.log('[VideoCall] Getting new media stream');
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
           width: { ideal: 1280 },
@@ -89,19 +125,20 @@ const VideoCallModal: React.FC<VideoCallModalProps> = ({
         audio: {
           echoCancellation: true,
           noiseSuppression: true,
+          autoGainControl: true,
         },
       });
 
       globalStream = stream;
       return stream;
     } catch (error) {
-      console.error('Failed to get media stream:', error);
+      console.error('[VideoCall] Failed to get media stream:', error);
 
       // Try audio only if video fails
       const err = error as Error & { name?: string };
       if (err.name === 'NotReadableError' || err.name === 'NotFoundError') {
         try {
-          console.log('Trying audio-only stream');
+          console.log('[VideoCall] Trying audio-only stream');
           const audioStream = await navigator.mediaDevices.getUserMedia({
             video: false,
             audio: true,
@@ -110,7 +147,7 @@ const VideoCallModal: React.FC<VideoCallModalProps> = ({
           setIsVideoEnabled(false);
           return audioStream;
         } catch (audioError) {
-          console.error('Audio-only also failed:', audioError);
+          console.error('[VideoCall] Audio-only also failed:', audioError);
           throw audioError;
         }
       }
@@ -120,7 +157,7 @@ const VideoCallModal: React.FC<VideoCallModalProps> = ({
 
   // Cleanup function
   const cleanup = useCallback(() => {
-    console.log('Cleaning up call resources');
+    console.log('[VideoCall] Cleaning up call resources');
 
     // Clear timer
     if (callTimerRef.current) {
@@ -138,7 +175,11 @@ const VideoCallModal: React.FC<VideoCallModalProps> = ({
 
     // Destroy peer connection
     if (peerRef.current) {
-      peerRef.current.destroy();
+      try {
+        peerRef.current.destroy();
+      } catch (e) {
+        console.error('[VideoCall] Error destroying peer:', e);
+      }
       peerRef.current = null;
     }
 
@@ -158,7 +199,7 @@ const VideoCallModal: React.FC<VideoCallModalProps> = ({
 
     // Stop global stream
     if (globalStream) {
-      console.log('Stopping global stream');
+      console.log('[VideoCall] Stopping global stream');
       globalStream.getTracks().forEach((track) => {
         track.stop();
       });
@@ -178,113 +219,145 @@ const VideoCallModal: React.FC<VideoCallModalProps> = ({
       }
       return stream;
     } catch (error) {
-      console.error('Failed to initialize local video:', error);
+      console.error('[VideoCall] Failed to initialize local video:', error);
       throw error;
     }
   }, [getLocalStream]);
 
+  // Create peer connection
+  const createPeer = useCallback((initiator: boolean, stream: MediaStream) => {
+    console.log(`[VideoCall] Creating peer, initiator: ${initiator}`);
+
+    const peer = new SimplePeer({
+      initiator,
+      trickle: false,
+      stream,
+      config: {
+        iceServers: [
+          { urls: 'stun:stun.l.google.com:19302' },
+          { urls: 'stun:stun1.l.google.com:19302' },
+          { urls: 'stun:stun2.l.google.com:19302' },
+          { urls: 'stun:stun3.l.google.com:19302' },
+          { urls: 'stun:stun4.l.google.com:19302' },
+        ],
+      },
+    });
+
+    peer.on('stream', (remoteStream) => {
+      console.log('[VideoCall] Got remote stream');
+      if (remoteVideoRef.current) {
+        remoteVideoRef.current.srcObject = remoteStream;
+      }
+      setIsConnected(true);
+      setCallStatus('connected');
+      setIsConnecting(false);
+
+      // Clear any remaining timeout
+      if (callTimerRef.current) {
+        console.log('[VideoCall] Clearing timeout on stream received');
+        clearTimeout(callTimerRef.current);
+        callTimerRef.current = null;
+      }
+    });
+
+    peer.on('connect', () => {
+      console.log('[VideoCall] Peer connected');
+      setCallStatus('connected');
+      setIsConnected(true);
+      setIsConnecting(false);
+
+      // Clear any remaining timeout
+      if (callTimerRef.current) {
+        console.log('[VideoCall] Clearing timeout on peer connect');
+        clearTimeout(callTimerRef.current);
+        callTimerRef.current = null;
+      }
+    });
+
+    peer.on('error', (err) => {
+      console.error('[VideoCall] Peer error:', err);
+      setCallStatus('error');
+      setIsConnecting(false);
+
+      // Clear timeout on error
+      if (callTimerRef.current) {
+        clearTimeout(callTimerRef.current);
+        callTimerRef.current = null;
+      }
+    });
+
+    peer.on('close', () => {
+      console.log('[VideoCall] Peer closed');
+    });
+
+    return peer;
+  }, []);
+
   // Start outgoing call
   const startCall = useCallback(async () => {
     if (!socket || isInitializingRef.current) {
-      console.log('Already initializing or no socket');
+      console.log('[VideoCall] Already initializing or no socket');
       return;
     }
 
     isInitializingRef.current = true;
-    console.log('Starting outgoing call');
+    console.log('[VideoCall] Starting outgoing call');
     setCallStatus('calling');
     setIsConnecting(true);
 
-    // Set timeout
-    callTimerRef.current = setTimeout(() => {
-      console.log('Call timeout');
-      if (socket && (isConnected || isConnecting)) {
-        socket.emit('video-call-end', {
-          conversationId,
-          to: contactId,
-          from: currentUserId,
-          reason: 'timeout',
-        });
-      }
-      cleanup();
-      setCallStatus('timeout');
-      setTimeout(() => {
-        completeCleanup();
-        onClose();
-      }, 2000);
-    }, 60000);
-
     try {
       const stream = await initializeLocalVideo();
+      const peer = createPeer(true, stream);
 
-      const peer = new SimplePeer({
-        initiator: true,
-        trickle: false,
-        stream,
-        config: {
-          iceServers: [
-            { urls: 'stun:stun.l.google.com:19302' },
-            { urls: 'stun:stun1.l.google.com:19302' },
-          ],
-        },
-      });
+      // Set timeout AFTER peer is created
+      callTimerRef.current = setTimeout(() => {
+        console.log(
+          '[VideoCall] Timeout check - current status:',
+          callStatusRef.current,
+        );
+        console.log('[VideoCall] Peer connected:', peerRef.current?.connected);
+
+        // Only timeout if still in calling state (not connecting or connected)
+        if (
+          callStatusRef.current === 'calling' &&
+          !peerRef.current?.connected
+        ) {
+          console.log('[VideoCall] Call timeout - no answer');
+          if (socket) {
+            socket.emit('video-call-end', {
+              conversationId,
+              to: contactId,
+              from: currentUserId,
+              reason: 'timeout',
+            });
+          }
+          cleanup();
+          setCallStatus('timeout');
+          setTimeout(() => {
+            completeCleanup();
+            onClose();
+          }, 2000);
+        } else {
+          console.log(
+            '[VideoCall] Timeout cancelled - status changed or peer connected',
+          );
+        }
+      }, 30000); // 30 seconds timeout
 
       peer.on('signal', (signal) => {
-        console.log('Sending offer');
+        console.log('[VideoCall] Sending offer signal');
+        // Ensure IDs are strings for consistency
         socket.emit('video-call-offer', {
           conversationId,
-          to: contactId,
-          from: currentUserId,
+          to: String(contactId),
+          from: String(currentUserId),
           signal,
         });
       });
 
-      peer.on('stream', (remoteStream) => {
-        console.log('Got remote stream');
-        if (remoteVideoRef.current) {
-          remoteVideoRef.current.srcObject = remoteStream;
-        }
-        setIsConnected(true);
-        setCallStatus('connected');
-        setIsConnecting(false);
-
-        if (callTimerRef.current) {
-          clearTimeout(callTimerRef.current);
-          callTimerRef.current = null;
-        }
-      });
-
-      peer.on('connect', () => {
-        console.log('Peer connected');
-        setCallStatus('connected');
-        setIsConnected(true);
-      });
-
-      peer.on('error', (err) => {
-        console.error('Peer error:', err);
-        if (socket) {
-          socket.emit('video-call-end', {
-            conversationId,
-            to: contactId,
-            from: currentUserId,
-            reason: 'error',
-          });
-        }
-        cleanup();
-        setCallStatus('error');
-        setTimeout(() => {
-          completeCleanup();
-          onClose();
-        }, 2000);
-      });
-
-      peer.on('close', () => {
-        console.log('Peer closed');
-      });
-
       peerRef.current = peer;
     } catch (error) {
-      console.error('Failed to start call:', error);
+      console.error('[VideoCall] Failed to start call:', error);
       setCallStatus('error');
       setIsConnecting(false);
       isInitializingRef.current = false;
@@ -300,8 +373,7 @@ const VideoCallModal: React.FC<VideoCallModalProps> = ({
     contactId,
     currentUserId,
     initializeLocalVideo,
-    isConnected,
-    isConnecting,
+    createPeer,
     cleanup,
     completeCleanup,
     onClose,
@@ -311,83 +383,38 @@ const VideoCallModal: React.FC<VideoCallModalProps> = ({
   const answerCall = useCallback(
     async (signal: SimplePeer.SignalData) => {
       if (!socket || hasAnsweredRef.current || isInitializingRef.current) {
-        console.log('Already answered or initializing');
+        console.log('[VideoCall] Already answered or initializing');
         return;
       }
 
       hasAnsweredRef.current = true;
       isInitializingRef.current = true;
-      console.log('Answering call');
-      setCallStatus('connected');
+      console.log('[VideoCall] Answering incoming call');
+      setCallStatus('connecting');
       setIsConnecting(true);
 
       try {
         const stream = await initializeLocalVideo();
-
-        const peer = new SimplePeer({
-          initiator: false,
-          trickle: false,
-          stream,
-          config: {
-            iceServers: [
-              { urls: 'stun:stun.l.google.com:19302' },
-              { urls: 'stun:stun1.l.google.com:19302' },
-            ],
-          },
-        });
+        const peer = createPeer(false, stream);
 
         peer.on('signal', (answerSignal) => {
-          console.log('Sending answer');
+          console.log('[VideoCall] Sending answer signal back to caller');
+          // Ensure IDs are strings for consistency
           socket.emit('video-call-answer', {
             conversationId,
-            to: contactId,
-            from: currentUserId,
+            to: String(contactId),
+            from: String(currentUserId),
             signal: answerSignal,
           });
         });
 
-        peer.on('stream', (remoteStream) => {
-          console.log('Got remote stream on answer');
-          if (remoteVideoRef.current) {
-            remoteVideoRef.current.srcObject = remoteStream;
-          }
-          setIsConnected(true);
-          setIsConnecting(false);
-        });
-
-        peer.on('connect', () => {
-          console.log('Peer connected after answer');
-          setCallStatus('connected');
-          setIsConnected(true);
-        });
-
-        peer.on('error', (err) => {
-          console.error('Peer error on answer:', err);
-          if (socket) {
-            socket.emit('video-call-end', {
-              conversationId,
-              to: contactId,
-              from: currentUserId,
-              reason: 'error',
-            });
-          }
-          cleanup();
-          setCallStatus('error');
-          setTimeout(() => {
-            completeCleanup();
-            onClose();
-          }, 2000);
-        });
-
-        peer.on('close', () => {
-          console.log('Peer closed on answer');
-        });
-
-        // Signal the offer
+        // Process the incoming offer signal
+        console.log('[VideoCall] Processing incoming offer signal');
         peer.signal(signal);
+
         peerRef.current = peer;
       } catch (error) {
-        console.error('Failed to answer call:', error);
+        console.error('[VideoCall] Failed to answer call:', error);
         setCallStatus('error');
         setIsConnecting(false);
         hasAnsweredRef.current = false;
@@ -400,22 +427,20 @@ const VideoCallModal: React.FC<VideoCallModalProps> = ({
       contactId,
       currentUserId,
       initializeLocalVideo,
-      cleanup,
-      completeCleanup,
-      onClose,
+      createPeer,
     ],
   );
 
   // End call
   const endCall = useCallback(
     (reason: 'normal' | 'timeout' | 'error' | 'busy' = 'normal') => {
-      console.log('Ending call, reason:', reason);
+      console.log(`[VideoCall] Ending call, reason: ${reason}`);
 
-      if (socket && (isConnected || isConnecting)) {
+      if (socket && (isConnected || isConnecting || callStatus === 'calling')) {
         socket.emit('video-call-end', {
           conversationId,
-          to: contactId,
-          from: currentUserId,
+          to: String(contactId),
+          from: String(currentUserId),
           reason,
         });
       }
@@ -448,6 +473,7 @@ const VideoCallModal: React.FC<VideoCallModalProps> = ({
       socket,
       isConnected,
       isConnecting,
+      callStatus,
       conversationId,
       contactId,
       currentUserId,
@@ -465,17 +491,17 @@ const VideoCallModal: React.FC<VideoCallModalProps> = ({
         videoTrack.enabled = !videoTrack.enabled;
         setIsVideoEnabled(videoTrack.enabled);
 
-        if (socket) {
+        if (socket && isConnected) {
           socket.emit('video-call-toggle-video', {
             conversationId,
-            to: contactId,
-            from: currentUserId,
+            to: String(contactId),
+            from: String(currentUserId),
             enabled: videoTrack.enabled,
           });
         }
       }
     }
-  }, [socket, conversationId, contactId, currentUserId]);
+  }, [socket, isConnected, conversationId, contactId, currentUserId]);
 
   // Toggle audio
   const toggleAudio = useCallback(() => {
@@ -485,121 +511,205 @@ const VideoCallModal: React.FC<VideoCallModalProps> = ({
         audioTrack.enabled = !audioTrack.enabled;
         setIsAudioEnabled(audioTrack.enabled);
 
-        if (socket) {
+        if (socket && isConnected) {
           socket.emit('video-call-toggle-audio', {
             conversationId,
-            to: contactId,
-            from: currentUserId,
+            to: String(contactId),
+            from: String(currentUserId),
             enabled: audioTrack.enabled,
           });
         }
       }
     }
-  }, [socket, conversationId, contactId, currentUserId]);
+  }, [socket, isConnected, conversationId, contactId, currentUserId]);
 
-  // Socket handlers
+  // Socket handlers - Setup once when modal opens
   useEffect(() => {
-    if (!socket || !isOpen) return;
+    if (!socket || !isOpen || socketListenersRef.current) return;
 
-    interface VideoCallAnswerPayload {
-      from: string;
-      signal: SimplePeer.SignalData;
-    }
+    console.log('[VideoCall] Setting up socket listeners');
+    socketListenersRef.current = true;
 
-    interface VideoCallEndPayload {
-      from: string;
-      reason?: string;
-    }
+    const handleVideoCallAnswer = ({
+      from,
+      signal,
+    }: VideoCallAnswerPayload) => {
+      console.log(`[VideoCall] Received answer signal from ${from}`);
+      console.log(
+        '[VideoCall] Current status when answer received:',
+        callStatusRef.current,
+      );
+      console.log(
+        '[VideoCall] ContactId:',
+        contactId,
+        'Type:',
+        typeof contactId,
+      );
+      console.log('[VideoCall] From:', from, 'Type:', typeof from);
+      console.log('[VideoCall] PeerRef exists:', !!peerRef.current);
 
-    interface VideoCallDeclinedPayload {
-      from: string;
-    }
+      // Convert both to string for comparison
+      const fromStr = String(from);
+      const contactStr = String(contactId);
 
-    interface VideoCallTogglePayload {
-      from: string;
-      enabled: boolean;
-    }
-
-    const handlers = {
-      'video-call-answer': ({ from, signal }: VideoCallAnswerPayload) => {
-        if (from === contactId && peerRef.current) {
-          console.log('Received answer');
-          try {
-            peerRef.current.signal(signal);
-          } catch (err) {
-            console.error('Error processing answer:', err);
+      if (fromStr === contactStr && peerRef.current) {
+        try {
+          // Clear timeout immediately when answer is received
+          if (callTimerRef.current) {
+            console.log('[VideoCall] Clearing timeout after receiving answer');
+            clearTimeout(callTimerRef.current);
+            callTimerRef.current = null;
           }
+
+          // Update status before processing signal
+          setCallStatus('connecting');
+          setIsConnecting(true);
+
+          console.log('[VideoCall] Processing answer signal');
+          peerRef.current.signal(signal);
+          console.log('[VideoCall] Answer signal processed successfully');
+        } catch (err) {
+          console.error('[VideoCall] Error processing answer signal:', err);
+          setCallStatus('error');
         }
-      },
-      'video-call-end': ({ from }: VideoCallEndPayload) => {
-        if (from === contactId) {
-          console.log('Remote ended call');
-          cleanup();
-          setCallStatus('ended');
-          setTimeout(() => {
-            completeCleanup();
-            onClose();
-          }, 1000);
-        }
-      },
-      'video-call-declined': ({ from }: VideoCallDeclinedPayload) => {
-        if (from === contactId) {
-          endCall('busy');
-        }
-      },
-      'video-call-toggle-video': ({
-        from,
-        enabled,
-      }: VideoCallTogglePayload) => {
-        if (from === contactId) {
-          setRemoteVideoEnabled(enabled);
-        }
-      },
-      'video-call-toggle-audio': ({
-        from,
-        enabled: _enabled,
-      }: VideoCallTogglePayload) => {
-        if (from === contactId) {
-          // Handle remote audio toggle if needed
-        }
-      },
+      } else {
+        console.log('[VideoCall] Answer ignored - Comparison failed');
+        console.log(
+          `[VideoCall] fromStr (${fromStr}) !== contactStr (${contactStr}):`,
+          fromStr !== contactStr,
+        );
+        console.log('[VideoCall] No peer:', !peerRef.current);
+      }
+    };
+
+    const handleVideoCallEnd = ({ from, reason }: VideoCallEndPayload) => {
+      console.log(
+        `[VideoCall] Remote ended call from ${from}, reason: ${reason}`,
+      );
+      const fromStr = String(from);
+      const contactStr = String(contactId);
+
+      if (fromStr === contactStr) {
+        cleanup();
+        setCallStatus('ended');
+        setTimeout(() => {
+          completeCleanup();
+          onClose();
+        }, 1000);
+      }
+    };
+
+    const handleVideoCallDeclined = ({ from }: VideoCallDeclinedPayload) => {
+      console.log(`[VideoCall] Call declined by ${from}`);
+      const fromStr = String(from);
+      const contactStr = String(contactId);
+
+      if (fromStr === contactStr) {
+        endCall('busy');
+      }
+    };
+
+    const handleVideoCallToggleVideo = ({
+      from,
+      enabled,
+    }: VideoCallTogglePayload) => {
+      const fromStr = String(from);
+      const contactStr = String(contactId);
+
+      if (fromStr === contactStr) {
+        console.log(`[VideoCall] Remote video toggled: ${enabled}`);
+        setRemoteVideoEnabled(enabled);
+      }
+    };
+
+    const handleVideoCallToggleAudio = ({
+      from,
+      enabled,
+    }: VideoCallTogglePayload) => {
+      const fromStr = String(from);
+      const contactStr = String(contactId);
+
+      if (fromStr === contactStr) {
+        console.log(`[VideoCall] Remote audio toggled: ${enabled}`);
+        // Handle remote audio toggle if needed
+      }
+    };
+
+    const handleVideoCallUserOffline = ({
+      userId,
+    }: VideoCallUserOfflinePayload) => {
+      console.log(`[VideoCall] User ${userId} is offline`);
+      const userStr = String(userId);
+      const contactStr = String(contactId);
+
+      if (userStr === contactStr) {
+        setCallStatus('error');
+        setTimeout(() => {
+          endCall('error');
+        }, 2000);
+      }
     };
 
     // Add listeners
-    Object.entries(handlers).forEach(([event, handler]) => {
-      socket.on(event, handler);
-    });
+    socket.on('video-call-answer', handleVideoCallAnswer);
+    socket.on('video-call-end', handleVideoCallEnd);
+    socket.on('video-call-declined', handleVideoCallDeclined);
+    socket.on('video-call-toggle-video', handleVideoCallToggleVideo);
+    socket.on('video-call-toggle-audio', handleVideoCallToggleAudio);
+    socket.on('video-call-user-offline', handleVideoCallUserOffline);
 
     // Cleanup
     return () => {
-      Object.entries(handlers).forEach(([event, handler]) => {
-        socket.off(event, handler);
-      });
+      console.log('[VideoCall] Removing socket listeners');
+      socket.off('video-call-answer', handleVideoCallAnswer);
+      socket.off('video-call-end', handleVideoCallEnd);
+      socket.off('video-call-declined', handleVideoCallDeclined);
+      socket.off('video-call-toggle-video', handleVideoCallToggleVideo);
+      socket.off('video-call-toggle-audio', handleVideoCallToggleAudio);
+      socket.off('video-call-user-offline', handleVideoCallUserOffline);
+      socketListenersRef.current = false;
     };
   }, [socket, isOpen, contactId, cleanup, completeCleanup, onClose, endCall]);
 
   // Initialize call when modal opens
   useEffect(() => {
     if (isOpen && callStatus === 'idle') {
+      // Reset initialization flag when modal opens
+      isInitializingRef.current = false;
+      hasAnsweredRef.current = false;
+
       if (isIncoming && incomingCallData?.signal && !hasAnsweredRef.current) {
-        answerCall(incomingCallData.signal);
+        console.log('[VideoCall] Modal opened for incoming call, answering...');
+        setCallStatus('incoming');
+        // Small delay to ensure everything is ready
+        setTimeout(() => {
+          answerCall(incomingCallData.signal);
+        }, 100);
       } else if (!isIncoming && !isInitializingRef.current) {
-        startCall();
+        console.log('[VideoCall] Modal opened for outgoing call, starting...');
+        // Small delay to prevent double initialization
+        setTimeout(() => {
+          if (!isInitializingRef.current) {
+            startCall();
+          }
+        }, 100);
       }
     }
   }, [isOpen, isIncoming, incomingCallData, callStatus, answerCall, startCall]);
 
   // Cleanup when modal closes
   useEffect(() => {
-    if (!isOpen) {
+    if (!isOpen && callStatus !== 'idle') {
+      console.log('[VideoCall] Modal closed, cleaning up');
       cleanup();
       setCallStatus('idle');
     }
-  }, [isOpen, cleanup]);
+  }, [isOpen, callStatus, cleanup]);
 
   // Complete cleanup on unmount
   useEffect(() => {
     return () => {
+      console.log('[VideoCall] Component unmounting, complete cleanup');
       completeCleanup();
     };
   }, [completeCleanup]);
@@ -613,6 +723,29 @@ const VideoCallModal: React.FC<VideoCallModalProps> = ({
       .join('')
       .toUpperCase()
       .slice(0, 2);
+  };
+
+  const getStatusText = () => {
+    switch (callStatus) {
+      case 'calling':
+        return 'Đang gọi...';
+      case 'incoming':
+        return 'Cuộc gọi đến...';
+      case 'connecting':
+        return 'Đang kết nối...';
+      case 'connected':
+        return 'Đã kết nối';
+      case 'ended':
+        return 'Cuộc gọi đã kết thúc';
+      case 'timeout':
+        return 'Không có phản hồi';
+      case 'busy':
+        return 'Người dùng bận';
+      case 'error':
+        return 'Lỗi kết nối';
+      default:
+        return '';
+    }
   };
 
   return (
@@ -629,15 +762,7 @@ const VideoCallModal: React.FC<VideoCallModalProps> = ({
             </Avatar>
             <div>
               <h3 className="font-semibold text-white">{contactName}</h3>
-              <p className="text-sm text-gray-300">
-                {callStatus === 'calling' && 'Đang gọi...'}
-                {callStatus === 'incoming' && 'Cuộc gọi đến...'}
-                {callStatus === 'connected' && 'Đã kết nối'}
-                {callStatus === 'ended' && 'Cuộc gọi đã kết thúc'}
-                {callStatus === 'timeout' && 'Không có phản hồi'}
-                {callStatus === 'busy' && 'Người dùng bận'}
-                {callStatus === 'error' && 'Lỗi kết nối'}
-              </p>
+              <p className="text-sm text-gray-300">{getStatusText()}</p>
             </div>
           </div>
 
@@ -662,7 +787,7 @@ const VideoCallModal: React.FC<VideoCallModalProps> = ({
               className="h-full w-full object-contain"
             />
 
-            {/* Remote placeholder */}
+            {/* Remote placeholder when not connected or video disabled */}
             {(!isConnected || !remoteVideoEnabled) && (
               <div className="absolute inset-0 flex items-center justify-center bg-gray-800">
                 <Avatar className="h-32 w-32">
@@ -674,14 +799,15 @@ const VideoCallModal: React.FC<VideoCallModalProps> = ({
               </div>
             )}
 
-            {/* Local Video */}
+            {/* Local Video - Picture in Picture */}
             <div className="absolute right-4 bottom-4 h-36 w-48 overflow-hidden rounded-lg bg-gray-800 shadow-lg">
               <video
                 ref={localVideoRef}
                 autoPlay
                 playsInline
                 muted
-                className="mirror h-full w-full object-cover"
+                className="h-full w-full object-cover"
+                style={{ transform: 'scaleX(-1)' }}
               />
               {!isVideoEnabled && (
                 <div className="absolute inset-0 flex items-center justify-center bg-gray-700">
@@ -700,7 +826,7 @@ const VideoCallModal: React.FC<VideoCallModalProps> = ({
         <div className="absolute bottom-8 left-1/2 flex -translate-x-1/2 transform items-center space-x-4">
           <Button
             onClick={toggleAudio}
-            disabled={!isConnected}
+            disabled={!isConnected && callStatus !== 'calling'}
             className={`rounded-full p-4 ${
               isAudioEnabled
                 ? 'bg-gray-700 hover:bg-gray-600'
@@ -716,7 +842,7 @@ const VideoCallModal: React.FC<VideoCallModalProps> = ({
 
           <Button
             onClick={toggleVideo}
-            disabled={!isConnected}
+            disabled={!isConnected && callStatus !== 'calling'}
             className={`rounded-full p-4 ${
               isVideoEnabled
                 ? 'bg-gray-700 hover:bg-gray-600'
@@ -737,6 +863,17 @@ const VideoCallModal: React.FC<VideoCallModalProps> = ({
             <PhoneOff className="h-6 w-6" />
           </Button>
         </div>
+
+        {/* Status Messages */}
+        {(callStatus === 'timeout' ||
+          callStatus === 'busy' ||
+          callStatus === 'error') && (
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 transform text-center">
+            <p className="text-xl font-semibold text-white">
+              {getStatusText()}
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
