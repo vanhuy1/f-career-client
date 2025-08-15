@@ -171,6 +171,9 @@ export interface StepProps {
   availableSkills: Skill[];
   totalPrice?: number;
   setTotalPrice?: (price: number) => void;
+  refreshSkills?: () => Promise<void>;
+  selectedSkillIds?: string[];
+  setSelectedSkillIds?: (ids: string[]) => void;
 }
 
 export interface JobCategory {

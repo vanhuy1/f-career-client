@@ -6,6 +6,10 @@ export interface Skill {
   name: string;
 }
 
+export interface CreateSkillRequest {
+  name: string;
+}
+
 class SkillService {
   private requestBuilder: RequestBuilder;
 
@@ -25,6 +29,21 @@ class SkillService {
       },
       config: {
         withCredentials: false,
+      },
+    });
+    return response;
+  }
+
+  async create(payload: CreateSkillRequest): Promise<Skill> {
+    const url = this.requestBuilder.buildUrl();
+    const response = await httpClient.post<Skill, CreateSkillRequest>({
+      url,
+      body: payload,
+      typeCheck: (data) => {
+        return {
+          success: true,
+          data: data as Skill,
+        };
       },
     });
     return response;

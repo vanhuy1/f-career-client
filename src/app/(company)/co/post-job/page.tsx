@@ -272,6 +272,16 @@ export default function JobPostingForm() {
     }
   };
 
+  const refreshSkills = async () => {
+    try {
+      const skills = await skillService.findAll();
+      setAvailableSkills(skills);
+    } catch (error) {
+      console.error('Error refreshing skills:', error);
+      toast.error('Failed to refresh skills');
+    }
+  };
+
   const nextStep = () => {
     if (currentStep < 3) {
       setCurrentStep(currentStep + 1);
@@ -489,6 +499,9 @@ export default function JobPostingForm() {
     availableSkills,
     totalPrice,
     setTotalPrice,
+    refreshSkills,
+    selectedSkillIds,
+    setSelectedSkillIds,
   };
 
   return (

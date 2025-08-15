@@ -36,23 +36,11 @@ import { employmentType } from '@/enums/employmentType';
 
 // Helper function to convert between frontend and backend employment type formats
 const convertEmploymentTypeToBackend = (frontendType: string): string => {
-  const mapping: Record<string, string> = {
-    FullTime: 'FULL_TIME',
-    PartTime: 'PART_TIME',
-    Contract: 'CONTRACT',
-    Internship: 'INTERN',
-  };
-  return mapping[frontendType] || 'FULL_TIME';
+  return frontendType; // No conversion needed, use the enum key directly
 };
 
 const convertEmploymentTypeToFrontend = (backendType: string): string => {
-  const mapping: Record<string, string> = {
-    FULL_TIME: 'FullTime',
-    PART_TIME: 'PartTime',
-    CONTRACT: 'Contract',
-    INTERN: 'Internship',
-  };
-  return mapping[backendType] || 'FullTime';
+  return backendType; // No conversion needed, use the enum key directly
 };
 
 // Form validation schema
@@ -65,10 +53,18 @@ const editJobSchema = z
     experienceYears: z.number().min(0, 'Experience years must be positive'),
     deadline: z.string().min(1, 'Deadline is required'),
     typeOfEmployment: z.enum([
-      'FullTime',
-      'PartTime',
-      'Contract',
-      'Internship',
+      'FULL_TIME',
+      'PART_TIME',
+      'CONTRACT',
+      'INTERN',
+      'FREELANCE',
+      'TEMPORARY',
+      'VOLUNTEER',
+      'APPRENTICESHIP',
+      'CO_OP',
+      'SEASONAL',
+      'REMOTE',
+      'HYBRID',
     ] as const),
     categoryId: z.string().min(1, 'Category is required'),
     status: z.enum(['OPEN', 'CLOSED'] as const),
@@ -153,7 +149,7 @@ export function EditJobDialog({
         : '',
       typeOfEmployment: convertEmploymentTypeToFrontend(
         job.typeOfEmployment,
-      ) as 'FullTime' | 'PartTime' | 'Contract' | 'Internship',
+      ) as 'FULL_TIME' | 'PART_TIME' | 'CONTRACT' | 'INTERN' | 'FREELANCE' | 'TEMPORARY' | 'VOLUNTEER' | 'APPRENTICESHIP' | 'CO_OP' | 'SEASONAL' | 'REMOTE' | 'HYBRID',
       categoryId: job.category?.id || '',
       status: job.status as 'OPEN' | 'CLOSED',
       benefit: job.benefit || [],
@@ -461,10 +457,18 @@ export function EditJobDialog({
                   setValue(
                     'typeOfEmployment',
                     value as
-                      | 'FullTime'
-                      | 'PartTime'
-                      | 'Contract'
-                      | 'Internship',
+                      | 'FULL_TIME'
+                      | 'PART_TIME'
+                      | 'CONTRACT'
+                      | 'INTERN'
+                      | 'FREELANCE'
+                      | 'TEMPORARY'
+                      | 'VOLUNTEER'
+                      | 'APPRENTICESHIP'
+                      | 'CO_OP'
+                      | 'SEASONAL'
+                      | 'REMOTE'
+                      | 'HYBRID',
                   )
                 }
               >
@@ -472,18 +476,11 @@ export function EditJobDialog({
                   <SelectValue placeholder="Select employment type" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="FullTime">
-                    {employmentType.FULL_TIME}
-                  </SelectItem>
-                  <SelectItem value="PartTime">
-                    {employmentType.PART_TIME}
-                  </SelectItem>
-                  <SelectItem value="Contract">
-                    {employmentType.CONTRACT}
-                  </SelectItem>
-                  <SelectItem value="Internship">
-                    {employmentType.INTERN}
-                  </SelectItem>
+                  {Object.entries(employmentType).map(([key, value]) => (
+                    <SelectItem key={key} value={key}>
+                      {value}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               {errors.typeOfEmployment && (

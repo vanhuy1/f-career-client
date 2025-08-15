@@ -132,6 +132,12 @@ export default function TopJobPage() {
   const handlePaymentSubmit = async () => {
     if (!job) return;
 
+    // Check if job status is CLOSED
+    if (job.status === 'CLOSED') {
+      toast.error('Cannot purchase Top Job package. Please renew this job to OPEN status first.');
+      return;
+    }
+
     // Save data to localStorage before payment
     saveTopJobDataToStorage();
 
@@ -259,7 +265,20 @@ export default function TopJobPage() {
                 </div>
               ) : (
                 <div className="space-y-6">
-                  {isInTopJobs ? (
+                  {/* Check if job is CLOSED */}
+                  {job.status === 'CLOSED' ? (
+                    <div className="space-y-4">
+                      <div className="flex items-start gap-3 rounded-lg bg-red-50 p-4">
+                        <AlertTriangle className="mt-0.5 h-5 w-5 flex-shrink-0 text-red-600" />
+                        <div className="text-red-800">
+                          <p className="font-medium">Cannot Purchase Top Job Package</p>
+                          <p>
+                            This job is currently CLOSED. You need to renew this job to OPEN status before purchasing a Top Job package.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ) : isInTopJobs ? (
                     <div className="space-y-4">
                       <div className="flex items-start gap-3 rounded-lg bg-yellow-50 p-4">
                         <AlertTriangle className="mt-0.5 h-5 w-5 flex-shrink-0 text-yellow-600" />
