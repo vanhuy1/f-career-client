@@ -3,7 +3,11 @@ import {
   CandidateScheduleResponse,
   GetCandidateScheduleRequest,
 } from '@/types/Schedule';
-import { UpdatePasswordRequest, UserProfile } from '@/types/User';
+import {
+  UpdatePasswordRequest,
+  UserProfile,
+  AiPointsResponse,
+} from '@/types/User';
 import { httpClient } from '@/utils/axios';
 import { RequestBuilder } from '@/utils/axios/request-builder';
 
@@ -82,6 +86,20 @@ class UserService {
         return {
           success: true,
           data: data as CandidateScheduleResponse,
+        };
+      },
+    });
+    return response;
+  }
+
+  async getAiPoints(): Promise<AiPointsResponse> {
+    const url = this.requestBuilder.buildUrl('ai-points');
+    const response = await httpClient.get<AiPointsResponse>({
+      url,
+      typeCheck: (data) => {
+        return {
+          success: true,
+          data: data as AiPointsResponse,
         };
       },
     });

@@ -33,6 +33,9 @@ import { toast } from 'react-hot-toast';
 import { quizService } from '@/services/api/quiz/quiz-api';
 import { Quiz, QuizAttempt } from '@/types/Quiz';
 import QuizAttemptDetailModal from './QuizAttemptDetailModal';
+import { useAiPoints } from '@/services/state/userSlice';
+import { useRouter } from 'next/navigation';
+import { AiLimitModal } from '@/components/AiLimitModal';
 
 interface QuizModalProps {
   isOpen: boolean;
@@ -70,6 +73,11 @@ export default function QuizModal({
     useState<QuizAttempt | null>(null);
   const [_, setIsLoading] = useState(false);
 
+  // Thêm state cho AI limit
+  const [showLimitModal, setShowLimitModal] = useState(false);
+  const points = useAiPoints();
+  const router = useRouter();
+
   // Quiz state
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState<
@@ -95,6 +103,13 @@ export default function QuizModal({
     }
     onClose();
   }, [canCloseModal, onClose]);
+
+  // Handle upgrade action cho AI limit modal
+  const handleUpgrade = () => {
+    router.push('/pricing'); // Điều chỉnh theo route của bạn
+    setShowLimitModal(false);
+    onClose(); // Đóng cả quiz modal
+  };
 
   // Load quiz data when modal opens
   const loadQuizData = useCallback(async () => {
@@ -216,6 +231,12 @@ export default function QuizModal({
   // Generate new quiz or retry existing
   const handleStartQuiz = async (forceNew: boolean = false) => {
     try {
+      // KIỂM TRA AI POINTS KHI TẠO QUIZ MỚI
+      if (forceNew && points <= 0) {
+        setShowLimitModal(true);
+        return;
+      }
+
       setView('generating');
 
       console.log(
@@ -662,9 +683,35 @@ export default function QuizModal({
                           </div>
                         </div>
 
-                        {/* Tips */}
+                        {/* AI Points Display */}
                         <div className="mb-6 rounded-lg border border-blue-500/30 bg-blue-500/10 p-4">
-                          <h4 className="mb-2 flex items-center gap-2 text-sm font-medium text-blue-400">
+                          <div className="mb-2 flex items-center justify-between">
+                            <h4 className="flex items-center gap-2 text-sm font-medium text-blue-400">
+                              <Sparkles className="h-4 w-4" />
+                              AI Credits
+                            </h4>
+                            <Badge
+                              variant="outline"
+                              className={cn(
+                                'border',
+                                points > 0
+                                  ? 'border-green-500 text-green-400'
+                                  : 'border-red-500 text-red-400',
+                              )}
+                            >
+                              {points} points remaining
+                            </Badge>
+                          </div>
+                          {points <= 0 && (
+                            <p className="mt-1 text-xs text-red-400">
+                              ⚠️ You need AI credits to generate new quizzes
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Tips */}
+                        <div className="mb-6 rounded-lg border border-stone-700 bg-stone-800/30 p-4">
+                          <h4 className="mb-2 flex items-center gap-2 text-sm font-medium text-stone-300">
                             <BookOpen className="h-4 w-4" />
                             Quick Tips
                           </h4>
@@ -676,6 +723,9 @@ export default function QuizModal({
                             <li>• You need 80% (40/50 correct) to pass</li>
                             <li>
                               • AI provides detailed feedback after submission
+                            </li>
+                            <li className="text-yellow-400">
+                              • Retry attempts don&apos;t cost AI credits
                             </li>
                           </ul>
                         </div>
@@ -1255,6 +1305,13 @@ export default function QuizModal({
           quizTitle={roadmapTitle}
         />
       )}
+
+      {/* AI Limit Modal */}
+      <AiLimitModal
+        isOpen={showLimitModal}
+        onClose={() => setShowLimitModal(false)}
+        onUpgrade={handleUpgrade}
+      />
     </>
   );
 }

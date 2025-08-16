@@ -4,12 +4,15 @@ import JobCategories from '@/components/job-search/job-categories';
 import JobSkills from '@/components/job-search/job-skill';
 import { formatDate, formatSalaryRange } from '../utils/formatters';
 import GenerateRoadmapButton from './GenerateRoadmapButton';
+import { useUser } from '@/services/state/userSlice';
+import { ROLES } from '@/enums/roles.enum';
 
 interface JobDetailSidebarProps {
   job: Job;
 }
 
 export default function JobDetailSidebar({ job }: JobDetailSidebarProps) {
+  const user = useUser();
   return (
     <div className="lg:col-span-1">
       <div className="space-y-8 rounded-lg border p-6">
@@ -25,10 +28,12 @@ export default function JobDetailSidebar({ job }: JobDetailSidebarProps) {
         <JobSkills skills={job.skills.map((skill) => skill.name)} />
 
         <div className="border-t pt-4">
-          <GenerateRoadmapButton
-            jobId={job.id?.toString() || ''}
-            jobTitle={job.title}
-          />
+          {(user?.data.roles[0] === ROLES.USER || !user) && (
+            <GenerateRoadmapButton
+              jobId={job.id?.toString() || ''}
+              jobTitle={job.title}
+            />
+          )}
         </div>
       </div>
     </div>

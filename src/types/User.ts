@@ -25,6 +25,7 @@ export interface UserProfile {
     gender: string;
     dob: string;
     avatar: string;
+    point: number;
   };
   meta: {
     message: string;
@@ -34,4 +35,9 @@ export interface UserProfile {
 
 export interface UpdatePasswordRequest {
   password: string;
+}
+
+export interface AiPointsResponse {
+  point: number;
+  userId: number;
 }
