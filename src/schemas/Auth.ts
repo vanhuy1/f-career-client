@@ -46,6 +46,45 @@ export const companyRegistrationSchema = signUpRequestSchema.extend({
   business_license_url: z.string().optional(),
 });
 
+export const forgotPasswordRequestSchema = z.object({
+  email: z.string().min(1, 'Email is required').email('Invalid email address'),
+});
+
+export const resetPasswordFormSchema = z
+  .object({
+    newPassword: z
+      .string()
+      .min(1, 'Password is required')
+      .min(8, 'Password must be at least 8 characters')
+      .regex(
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/,
+        'Password must contain at least one lowercase letter, one uppercase letter, one number, and one special character',
+      ),
+    confirmPassword: z.string().min(1, 'Please confirm your password'),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ['confirmPassword'],
+  });
+
+export const resetPasswordRequestSchema = z
+  .object({
+    token: z.string().min(1, 'Reset token is required'),
+    newPassword: z
+      .string()
+      .min(1, 'Password is required')
+      .min(8, 'Password must be at least 8 characters')
+      .regex(
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/,
+        'Password must contain at least one lowercase letter, one uppercase letter, one number, and one special character',
+      ),
+    confirmPassword: z.string().min(1, 'Please confirm your password'),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ['confirmPassword'],
+  });
+
 // Types
 export type SignUpRequest = z.infer<typeof signUpRequestSchema>;
 export type SignInRequest = z.infer<typeof signInRequestSchema>;
@@ -53,3 +92,6 @@ export type CompanyInfoFormValues = z.infer<typeof companyInfoSchema>;
 export type CompanyRegistrationRequest = z.infer<
   typeof companyRegistrationSchema
 >;
+export type ForgotPasswordRequest = z.infer<typeof forgotPasswordRequestSchema>;
+export type ResetPasswordFormData = z.infer<typeof resetPasswordFormSchema>;
+export type ResetPasswordRequest = z.infer<typeof resetPasswordRequestSchema>;

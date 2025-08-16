@@ -177,7 +177,7 @@ export const SignInForm = () => {
             {/* Forgot Password Link */}
             <div className="flex justify-end">
               <Link
-                href="#"
+                href={ROUTES.AUTH.FORGOT_PASSWORD.path}
                 className="text-sm font-medium text-blue-600 transition-colors duration-200 hover:text-blue-500"
               >
                 Forgot Password?
