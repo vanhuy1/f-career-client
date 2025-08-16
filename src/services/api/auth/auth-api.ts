@@ -1,5 +1,7 @@
 import {
   CompanyRegistrationRequest,
+  ForgotPasswordRequest,
+  ResetPasswordRequest,
   SignInRequest,
   SignUpRequest,
 } from '@/schemas/Auth';
@@ -146,6 +148,48 @@ class AuthService {
         success: true,
         data: data as { message: string },
       }),
+    });
+    return response;
+  }
+
+  async forgotPassword(
+    data: ForgotPasswordRequest,
+  ): Promise<{ message: string }> {
+    const url = this.requestBuilder.buildUrl('forgot-password');
+    const response = await httpClient.post<
+      { message: string },
+      ForgotPasswordRequest
+    >({
+      url,
+      body: data,
+      typeCheck: (data) => ({
+        success: true,
+        data: data as { message: string },
+      }),
+      config: {
+        withCredentials: false,
+      },
+    });
+    return response;
+  }
+
+  async resetPassword(
+    data: ResetPasswordRequest,
+  ): Promise<{ message: string }> {
+    const url = this.requestBuilder.buildUrl('reset-password');
+    const response = await httpClient.post<
+      { message: string },
+      ResetPasswordRequest
+    >({
+      url,
+      body: data,
+      typeCheck: (data) => ({
+        success: true,
+        data: data as { message: string },
+      }),
+      config: {
+        withCredentials: false,
+      },
     });
     return response;
   }

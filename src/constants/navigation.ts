@@ -38,6 +38,16 @@ const ROUTES = {
       path: '/success',
       name: 'Auth Success',
     },
+
+    FORGOT_PASSWORD: {
+      path: '/forgot-password',
+      name: 'Forgot Password',
+    },
+
+    RESET_PASSWORD: {
+      path: '/reset-password',
+      name: 'Reset Password',
+    },
   },
 
   //Admin

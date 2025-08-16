@@ -26,6 +26,7 @@ export interface UserProfile {
     dob: string;
     avatar: string;
     point: number;
+    provider?: string;
   };
   meta: {
     message: string;
@@ -34,7 +35,9 @@ export interface UserProfile {
 }
 
 export interface UpdatePasswordRequest {
-  password: string;
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
 }
 
 export interface AiPointsResponse {

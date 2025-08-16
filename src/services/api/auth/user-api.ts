@@ -53,14 +53,24 @@ class UserService {
     return response;
   }
 
-  async updatePassword(data: UpdatePasswordRequest): Promise<UserProfile> {
-    const url = this.requestBuilder.buildUrl('');
-    const response = await httpClient.patch<UserProfile, UpdatePasswordRequest>(
-      {
-        url,
-        body: data,
+  async updatePassword(
+    data: UpdatePasswordRequest,
+  ): Promise<{ message: string }> {
+    const url = this.requestBuilder.buildUrl('change-password');
+    const response = await httpClient.post<
+      { message: string },
+      UpdatePasswordRequest
+    >({
+      url,
+      body: data,
+      typeCheck: (data) => ({
+        success: true,
+        data: data as { message: string },
+      }),
+      config: {
+        withCredentials: false,
       },
-    );
+    });
     return response;
   }
 
