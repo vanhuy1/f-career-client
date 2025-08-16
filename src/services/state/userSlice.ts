@@ -4,7 +4,6 @@ import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { AppStoreState, LoadingState } from '../../store/store.model';
 import { UserProfile } from '@/types/User';
 
-//temporary
 const initialState: AppStoreState<UserProfile> = {
   data: null,
   loadingState: LoadingState.init,
@@ -43,6 +42,17 @@ const userSlice = createSlice({
       state.loadingState = LoadingState.loaded;
       state.errors = action.payload;
     },
+    // Thêm action mới để update points
+    updateAiPoints(state, action: PayloadAction<number>) {
+      if (state.data && state.data.data) {
+        state.data.data.point = action.payload;
+      }
+    },
+    decrementAiPoints(state) {
+      if (state.data && state.data.data && state.data.data.point > 0) {
+        state.data.data.point -= 1;
+      }
+    },
     deleteUserStart(state) {
       state.loadingState = LoadingState.loading;
       state.errors = null;
@@ -76,6 +86,8 @@ export const {
   setUserSuccess,
   setUserFailure,
   clearUser,
+  updateAiPoints,
+  decrementAiPoints,
 } = userSlice.actions;
 
 // Export reducer
@@ -83,13 +95,18 @@ export default userSlice.reducer;
 
 // Selector functions
 export const selectUser = (state: RootState) => state.user.data;
+export const selectUserData = (state: RootState) => state.user.data?.data;
 export const selectUserLoading = (state: RootState) => state.user.loadingState;
 export const selectUserError = (state: RootState) => state.user.errors;
+export const selectAiPoints = (state: RootState) =>
+  state.user.data?.data?.point || 0;
 
 // Custom hooks using useAppSelector
 export const useUser = () => useAppSelector(selectUser);
+export const useUserData = () => useAppSelector(selectUserData);
 export const useUserLoading = () => useAppSelector(selectUserLoading);
 export const useUserError = () => useAppSelector(selectUserError);
+export const useAiPoints = () => useAppSelector(selectAiPoints);
 
 // Custom hook using useAppDispatch
 export const useUserActions = () => {
@@ -102,5 +119,7 @@ export const useUserActions = () => {
     deleteUserStart: () => dispatch(deleteUserStart()),
     deleteUserSuccess: () => dispatch(deleteUserSuccess()),
     deleteUserFailure: (error: string) => dispatch(deleteUserFailure(error)),
+    updateAiPoints: (points: number) => dispatch(updateAiPoints(points)),
+    decrementAiPoints: () => dispatch(decrementAiPoints()),
   };
 };

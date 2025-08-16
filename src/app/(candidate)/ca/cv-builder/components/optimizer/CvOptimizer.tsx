@@ -52,8 +52,9 @@ import type { Cv, Experience, Education } from '@/types/Cv';
 import { toast } from 'react-toastify';
 import OptimizationHistory from './OptimizationHistory';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useUser } from '@/services/state/userSlice';
+import { useAiPoints, useUser } from '@/services/state/userSlice';
 import { CvOptimizationHistoryItem } from '@/services/api/cv/cv-api';
+import { AiLimitModal } from '@/components/AiLimitModal';
 
 interface CvOptimizerProps {
   cvId: string;
@@ -78,6 +79,8 @@ export default function CvOptimizer({ cvId, onUpdateCv }: CvOptimizerProps) {
   const isHistoryLoading = historyLoadingState === LoadingState.loading;
   const user = useUser();
   const userId = user?.data?.id;
+  const [showLimitModal, setShowLimitModal] = useState(false);
+  const points = useAiPoints();
   // Load history từ API khi mở dialog
   useEffect(() => {
     if (isOpen && cvId) {
@@ -86,6 +89,11 @@ export default function CvOptimizer({ cvId, onUpdateCv }: CvOptimizerProps) {
   }, [isOpen, cvId, dispatch]);
 
   const handleOptimize = async () => {
+    if (points <= 0) {
+      setShowLimitModal(true);
+      return;
+    }
+
     try {
       if (!userId) {
       }
@@ -108,6 +116,10 @@ export default function CvOptimizer({ cvId, onUpdateCv }: CvOptimizerProps) {
       console.error('Failed to optimize CV:', error);
       toast.error('Failed to optimize CV. Please try again.');
     }
+  };
+
+  const handleUpgrade = () => {
+    //TODO: implement pricing page
   };
 
   const handleClose = () => {
@@ -265,14 +277,21 @@ export default function CvOptimizer({ cvId, onUpdateCv }: CvOptimizerProps) {
 
       <Dialog open={isOpen} onOpenChange={handleClose}>
         <DialogContent className="max-h-[90vh] max-w-4xl overflow-hidden sm:max-w-2xl">
-          <DialogHeader className="border-b pb-4">
+          <DialogHeader className="pb-4">
             <DialogTitle className="flex items-center gap-3 text-xl">
               <div className="rounded-lg bg-gradient-to-br from-purple-500 to-indigo-600 p-2">
                 <Sparkles className="h-5 w-5 text-white" />
               </div>
               AI-Powered CV Optimization
+              <span
+                className={`ml-auto text-sm font-normal ${
+                  points > 0 ? 'text-green-600' : 'text-red-600'
+                }`}
+              >
+                • {points} points
+              </span>
             </DialogTitle>
-            <DialogDescription className="text-base">
+            <DialogDescription className="mt-2 text-base text-gray-600">
               Transform your CV with AI-driven suggestions tailored to specific
               job positions.
             </DialogDescription>
@@ -359,6 +378,11 @@ export default function CvOptimizer({ cvId, onUpdateCv }: CvOptimizerProps) {
                     </Button>
                   </div>
 
+                  <AiLimitModal
+                    isOpen={showLimitModal}
+                    onClose={() => setShowLimitModal(false)}
+                    onUpgrade={handleUpgrade}
+                  />
                   {/* History Section */}
                   {history && history.length > 0 && (
                     <div className="border-t pt-6">

@@ -104,7 +104,8 @@ export default function Header() {
                 <div className="absolute bottom-0 left-1/2 h-1 w-1 -translate-x-1/2 transform rounded-full bg-blue-700"></div>
               )}
             </Link>
-            {user && (
+
+            {user?.data.roles[0] === ROLES.USER && (
               <Link
                 href={ROUTES.HOMEPAGE.ROOM.path}
                 className={`relative rounded-lg px-3 py-2 font-medium transition-all duration-200 ${
