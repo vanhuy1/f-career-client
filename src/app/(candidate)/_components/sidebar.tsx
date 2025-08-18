@@ -10,6 +10,7 @@ import {
   LogOut,
   FileUser,
   Calendar,
+  Bookmark,
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -95,6 +96,12 @@ export default function Sidebar() {
             icon={<FileUser />}
             label="My CV"
             active={pathname === ROUTES.CA.HOME.CV.path}
+          />
+          <NavItem
+            href={ROUTES.CA.HOME.BOOKMARK.path}
+            icon={<Bookmark />}
+            label="Bookmarked Jobs"
+            active={pathname === ROUTES.CA.HOME.BOOKMARK.path}
           />
         </ul>
 

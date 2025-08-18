@@ -283,3 +283,13 @@ export interface JobStatsResponse {
   data: JobStats;
   meta: unknown;
 }
+
+// check isApplied
+
+export interface CheckIsAppliedRequest {
+  jobId: string;
+}
+
+export interface CheckIsAppliedResponse {
+  isApply: boolean;
+}

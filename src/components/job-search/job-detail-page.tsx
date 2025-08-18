@@ -52,6 +52,7 @@ export default async function JobDetailPageComponent({
         jobTitle={{ title: formattedTitle }}
       />
       <JobHeader
+        jobId={slug!}
         companyName={formattedCompany}
         jobTitle={formattedTitle}
         location={location}
