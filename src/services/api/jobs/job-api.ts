@@ -6,6 +6,7 @@ import {
   JobByCompanyIdResponse,
   JobStatsResponse,
   JobStats,
+  CheckIsAppliedResponse,
 } from '@/types/Job';
 import { httpClient } from '@/utils/axios';
 import { RequestBuilder } from '@/utils/axios/request-builder';
@@ -149,6 +150,19 @@ class JobService {
       typeCheck: (data) => ({ success: true, data: data as JobStatsResponse }),
     });
     return response.data;
+  }
+
+  /** GET /jobs/:id/is-apply */
+  async checkIsApplied(id: string): Promise<CheckIsAppliedResponse> {
+    const url = this.rb.buildUrl(`${id}/is-apply`);
+    const response = await httpClient.get<CheckIsAppliedResponse>({
+      url,
+      typeCheck: (data) => ({
+        success: true,
+        data: data as CheckIsAppliedResponse,
+      }),
+    });
+    return response;
   }
 }
 

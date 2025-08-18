@@ -108,6 +108,11 @@ const ROUTES = {
         path: '/ca/cv-builder',
         name: 'CV Builder',
       },
+
+      BOOKMARK: {
+        path: '/ca/bookmark',
+        name: 'Bookmarked Jobs',
+      },
     },
   },
 
