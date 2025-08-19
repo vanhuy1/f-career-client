@@ -154,6 +154,10 @@ const ROUTES = {
         path: '/co/post-job',
         name: 'Post Job',
       },
+      CVCHECKLISTS: {
+        path: '/co/cv-checklists',
+        name: 'CV Checklists',
+      },
     },
   },
 };
