@@ -1,7 +1,7 @@
 'use client';
 
 import type React from 'react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import {
   MapPin,
@@ -12,6 +12,7 @@ import {
   Check,
   Loader2,
   X,
+  Bookmark,
 } from 'lucide-react';
 import { AvatarInitial } from '@/components/ui/avatar-initial';
 import { Button } from '@/components/ui/button';
@@ -44,6 +45,7 @@ import {
 } from '@/services/state/caProfileSlice';
 import { LoadingState } from '@/store/store.model';
 import { useUser } from '@/services/state/userSlice';
+import { candidateBookmarkService } from '@/services/api/bookmark/bookmark-candidate.api';
 interface ProfileHeaderProps {
   profile: CandidateProfile | null;
   onProfileUpdate?: (updatedProfile: Partial<CandidateProfile>) => void;
@@ -67,6 +69,8 @@ export function ProfileHeader({
   const loadingState = useCaProfileLoading();
   const errors = useCaProfileLoading();
   const user = useUser();
+  const [isCandidateBookmarked, setIsCandidateBookmarked] = useState(false);
+  const [bookmarkLoading, setBookmarkLoading] = useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type } = e.target;
@@ -116,6 +120,54 @@ export function ProfileHeader({
     } catch (error) {
       dispatch(updateCaProfileFailure(error as string));
       toast.error(`Failed to update profile. Please try again. ${errors}`, {});
+    }
+  };
+
+  // Check bookmark status when viewing in read-only mode
+  useEffect(() => {
+    if (!readOnly) return;
+    const candidateProfileId = profile?.id;
+    if (!candidateProfileId) return;
+
+    let isMounted = true;
+    (async () => {
+      try {
+        const response = await candidateBookmarkService.checkBookmark(
+          String(candidateProfileId),
+        );
+        if (isMounted) {
+          setIsCandidateBookmarked(Boolean(response?.bookmarked));
+        }
+      } catch {
+        // ignore
+      }
+    })();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [readOnly, profile?.id]);
+
+  const handleToggleCandidateBookmark = async () => {
+    if (!readOnly) return;
+    if (!user) {
+      toast.error('Please sign in to bookmark candidates');
+      return;
+    }
+    const candidateProfileId = profile?.id;
+    if (!candidateProfileId) return;
+    if (bookmarkLoading) return;
+
+    setBookmarkLoading(true);
+    try {
+      const response = await candidateBookmarkService.toggleBookmarkCandidate(
+        String(candidateProfileId),
+      );
+      setIsCandidateBookmarked(Boolean(response?.bookmarked));
+    } catch {
+      toast.error('Failed to update bookmark');
+    } finally {
+      setBookmarkLoading(false);
     }
   };
 
@@ -310,6 +362,27 @@ export function ProfileHeader({
                     </DialogFooter>
                   </DialogContent>
                 </Dialog>
+              )}
+
+              {readOnly && profile?.id && (
+                <button
+                  onClick={handleToggleCandidateBookmark}
+                  disabled={bookmarkLoading}
+                  className={`rounded-full p-2 transition-colors ${
+                    isCandidateBookmarked
+                      ? 'bg-yellow-100 text-yellow-600 hover:bg-yellow-200'
+                      : 'text-gray-500 hover:bg-gray-100'
+                  } ${bookmarkLoading ? 'cursor-not-allowed opacity-50' : ''}`}
+                  title={
+                    isCandidateBookmarked ? 'Remove bookmark' : 'Add bookmark'
+                  }
+                >
+                  <Bookmark
+                    className={`h-5 w-5 ${
+                      isCandidateBookmarked ? 'fill-current' : ''
+                    }`}
+                  />
+                </button>
               )}
             </div>
           </div>

@@ -154,6 +154,10 @@ const ROUTES = {
         path: '/co/post-job',
         name: 'Post Job',
       },
+      BOOKMARK: {
+        path: '/co/bookmark-candidate',
+        name: 'Bookmarked Candidates',
+      },
     },
   },
 };

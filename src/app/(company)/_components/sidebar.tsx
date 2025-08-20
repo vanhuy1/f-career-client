@@ -11,6 +11,7 @@ import {
   LogOut,
   X,
   Bell,
+  Bookmark,
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -114,6 +115,13 @@ export default function Sidebar({ onClose }: SidebarProps) {
             icon={<User />}
             label="Profile"
             active={pathname === ROUTES.CO.HOME.PROFILE.path}
+            onClick={onClose}
+          />
+          <NavItem
+            href={ROUTES.CO.HOME.BOOKMARK.path}
+            icon={<Bookmark />}
+            label="Bookmark"
+            active={pathname === ROUTES.CO.HOME.BOOKMARK.path}
             onClick={onClose}
           />
         </ul>
