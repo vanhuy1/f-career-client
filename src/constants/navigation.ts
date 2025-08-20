@@ -158,6 +158,10 @@ const ROUTES = {
         path: '/co/bookmark-candidate',
         name: 'Bookmarked Candidates',
       },
+      CVCHECKLISTS: {
+        path: '/co/cv-checklists',
+        name: 'CV Checklists',
+      },
     },
   },
 };

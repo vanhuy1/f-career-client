@@ -12,6 +12,7 @@ import {
   X,
   Bell,
   Bookmark,
+  ClipboardCheck,
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -86,6 +87,13 @@ export default function Sidebar({ onClose }: SidebarProps) {
             icon={<FileText />}
             label="Job List"
             active={pathname === ROUTES.CO.HOME.JOBLIST.path}
+            onClick={onClose}
+          />
+          <NavItem
+            href={ROUTES.CO.HOME.CVCHECKLISTS.path}
+            icon={<ClipboardCheck />}
+            label="CV Checklists"
+            active={pathname === ROUTES.CO.HOME.CVCHECKLISTS.path}
             onClick={onClose}
           />
           <NavItem
