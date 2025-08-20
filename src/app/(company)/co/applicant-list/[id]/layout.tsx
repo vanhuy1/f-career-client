@@ -10,6 +10,8 @@ import {
   MapPin,
   Calendar,
   MessageSquare,
+  Bookmark,
+  BookmarkCheck,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -34,6 +36,7 @@ import { ApplicationStatus } from '@/enums/applicationStatus';
 import { messengerService } from '@/services/api/messenger';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
+import { candidateBookmarkService } from '@/services/api/bookmark/bookmark-candidate.api';
 
 export default function ApplicantLayout({
   children,
@@ -46,6 +49,8 @@ export default function ApplicantLayout({
   const applicant = useApplicantDetail();
   const loadingState = useApplicantDetailLoadingState();
   const [isLoading, setIsLoading] = useState(false);
+  const [isCandidateBookmarked, setIsCandidateBookmarked] = useState(false);
+  const [bookmarkLoading, setBookmarkLoading] = useState(false);
   const router = useRouter();
   const dispatch = useDispatch();
 
@@ -172,6 +177,49 @@ export default function ApplicantLayout({
       fetchApplicantData();
     }
   }, [applicantId, dispatch, applicant]);
+
+  // Check initial bookmark status when candidateProfileId is available
+  useEffect(() => {
+    const candidateProfileId = applicant?.candidateProfile?.id;
+    if (!candidateProfileId) return;
+
+    let isMounted = true;
+    (async () => {
+      try {
+        const response = await candidateBookmarkService.checkBookmark(
+          String(candidateProfileId),
+        );
+        if (isMounted) {
+          setIsCandidateBookmarked(Boolean(response?.bookmarked));
+        }
+      } catch (error) {
+        console.error('Failed to check bookmark:', error);
+      }
+    })();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [applicant?.candidateProfile?.id]);
+
+  const handleToggleCandidateBookmark = async () => {
+    const candidateProfileId = applicant?.candidateProfile?.id;
+    if (!candidateProfileId) return;
+    setBookmarkLoading(true);
+    try {
+      const response = await candidateBookmarkService.toggleBookmarkCandidate(
+        String(candidateProfileId),
+      );
+      setIsCandidateBookmarked(Boolean(response?.bookmarked));
+      if (response?.message) {
+        console.log(response.message);
+      }
+    } catch (error) {
+      toast.error(error as string);
+    } finally {
+      setBookmarkLoading(false);
+    }
+  };
 
   const tabs = [
     { name: 'Profile', href: `/co/applicant-list/${applicantId}` },
@@ -385,6 +433,30 @@ export default function ApplicantLayout({
                 Schedule Interview
               </Button>
             </Link>
+
+            <div className="mt-3">
+              <Button
+                variant={isCandidateBookmarked ? 'default' : 'outline'}
+                className={`w-full ${
+                  isCandidateBookmarked
+                    ? 'border-yellow-400 bg-yellow-400 text-white hover:bg-yellow-500'
+                    : ''
+                }`}
+                disabled={bookmarkLoading || !applicant?.candidateProfile?.id}
+                onClick={handleToggleCandidateBookmark}
+              >
+                {isCandidateBookmarked ? (
+                  <BookmarkCheck className="mr-2 h-4 w-4" />
+                ) : (
+                  <Bookmark className="mr-2 h-4 w-4" />
+                )}
+                {bookmarkLoading
+                  ? 'Updating...'
+                  : isCandidateBookmarked
+                    ? 'Saved'
+                    : 'Potential Candidate'}
+              </Button>
+            </div>
           </div>
 
           {/* Contact Card */}
