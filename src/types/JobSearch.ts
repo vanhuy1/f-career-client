@@ -84,8 +84,33 @@ export interface JobSearchResponse {
 }
 
 // Interface for job search suggestions
+export interface SuggestionKeyword {
+  value: string;
+  type: 'keyword';
+}
+
+export interface SuggestionJob {
+  id: string;
+  title: string;
+  companyName: string;
+  companyLogo: string | null;
+  location: string;
+  typeOfEmployment: string;
+  type: 'job';
+}
+
+export interface SuggestionCompany {
+  id: string;
+  name: string;
+  logoUrl: string | null;
+  industry: string;
+  type: 'company';
+}
+
 export interface SuggestionsResponse {
-  suggestions: string[];
+  keywords: SuggestionKeyword[];
+  jobs: SuggestionJob[];
+  companies: SuggestionCompany[];
 }
 
 export interface SuggestionQuery {
