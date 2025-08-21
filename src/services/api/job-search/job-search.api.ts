@@ -55,6 +55,20 @@ class JobSearchService {
 
     return response;
   }
+
+  // Helper method to get flattened suggestions for backward compatibility
+  async getJobSuggestionsFlat(query: SuggestionQuery): Promise<string[]> {
+    const response = await this.getJobSuggestions(query);
+
+    // Combine all suggestions into a flat array of strings
+    const suggestions: string[] = [
+      ...response.keywords.map((k) => k.value),
+      ...response.jobs.map((j) => j.title),
+      ...response.companies.map((c) => c.name),
+    ];
+
+    return suggestions;
+  }
 }
 
 export const jobSearchService = new JobSearchService();
