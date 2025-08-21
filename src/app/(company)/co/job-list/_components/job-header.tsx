@@ -39,7 +39,7 @@ export function JobHeader() {
           ) : (
             <>
               <h1 className="text-2xl font-bold text-gray-900">
-                {jobData?.title || 'Job Details'}
+                {jobData?.title || 'Job TITLE'}
               </h1>
               <p className="text-gray-600">
                 {jobData?.category?.name || 'N/A'} •{' '}

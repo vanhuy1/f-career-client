@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -36,23 +36,11 @@ import { employmentType } from '@/enums/employmentType';
 
 // Helper function to convert between frontend and backend employment type formats
 const convertEmploymentTypeToBackend = (frontendType: string): string => {
-  const mapping: Record<string, string> = {
-    FullTime: 'FULL_TIME',
-    PartTime: 'PART_TIME',
-    Contract: 'CONTRACT',
-    Internship: 'INTERN',
-  };
-  return mapping[frontendType] || 'FULL_TIME';
+  return frontendType; // No conversion needed, use the enum key directly
 };
 
 const convertEmploymentTypeToFrontend = (backendType: string): string => {
-  const mapping: Record<string, string> = {
-    FULL_TIME: 'FullTime',
-    PART_TIME: 'PartTime',
-    CONTRACT: 'Contract',
-    INTERN: 'Internship',
-  };
-  return mapping[backendType] || 'FullTime';
+  return backendType; // No conversion needed, use the enum key directly
 };
 
 // Form validation schema
@@ -65,10 +53,18 @@ const editJobSchema = z
     experienceYears: z.number().min(0, 'Experience years must be positive'),
     deadline: z.string().min(1, 'Deadline is required'),
     typeOfEmployment: z.enum([
-      'FullTime',
-      'PartTime',
-      'Contract',
-      'Internship',
+      'FULL_TIME',
+      'PART_TIME',
+      'CONTRACT',
+      'INTERN',
+      'FREELANCE',
+      'TEMPORARY',
+      'VOLUNTEER',
+      'APPRENTICESHIP',
+      'CO_OP',
+      'SEASONAL',
+      'REMOTE',
+      'HYBRID',
     ] as const),
     categoryId: z.string().min(1, 'Category is required'),
     status: z.enum(['OPEN', 'CLOSED'] as const),
@@ -117,6 +113,192 @@ export function EditJobDialog({
   const [companyLocations, setCompanyLocations] = useState<string[]>([]);
   const [isCompanyLoading, setIsCompanyLoading] = useState(true);
 
+  // Required skills input like post-job
+  const [skillSuggestions, setSkillSuggestions] = useState<string[]>([]);
+  const [isLoadingSkills, setIsLoadingSkills] = useState(false);
+  const [showSkillSuggestions, setShowSkillSuggestions] = useState(false);
+  const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(-1);
+  const [newSkillInput, setNewSkillInput] = useState('');
+  const skillInputRef = useRef<HTMLInputElement>(null);
+  const skillDropdownRef = useRef<HTMLDivElement>(null);
+  const skillTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Number formatting helpers for salary inputs (e.g., 20.000)
+  const formatWithDots = (value: number): string => {
+    if (!Number.isFinite(value)) return '';
+    return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  };
+  const unformatToNumber = (text: string): number => {
+    const digits = text.replace(/\D/g, '');
+    return digits ? parseInt(digits, 10) : 0;
+  };
+
+  const [salaryMinText, setSalaryMinText] = useState<string>(
+    formatWithDots(job.salaryMin),
+  );
+  const [salaryMaxText, setSalaryMaxText] = useState<string>(
+    formatWithDots(job.salaryMax),
+  );
+
+  // Fetch skills suggestions from StackOverflow (same as post-job)
+  const fetchSkillsSuggestions = async (query: string): Promise<string[]> => {
+    try {
+      const response = await fetch(
+        `https://api.stackexchange.com/2.3/tags?order=desc&sort=popular&inname=${encodeURIComponent(
+          query,
+        )}&site=stackoverflow&pagesize=20`,
+      );
+      const data = await response.json();
+      const skills =
+        data.items?.map((item: { name: string }) => {
+          return item.name
+            .split(/[-_]/)
+            .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(' ');
+        }) || [];
+      return skills;
+    } catch (error) {
+      console.error('Error fetching skills:', error);
+      return [];
+    }
+  };
+
+  const getCombinedSuggestions = (query: string) => {
+    const lowerQuery = query.toLowerCase();
+
+    // DB suggestions (exclude already selected)
+    const dbSuggestions = availableSkills
+      .filter(
+        (skill) =>
+          skill.name.toLowerCase().includes(lowerQuery) &&
+          !selectedSkills.some((id) => id === skill.id),
+      )
+      .map((skill) => ({
+        name: skill.name,
+        id: skill.id,
+        source: 'database' as const,
+      }));
+
+    // API suggestions (exclude skills already in DB by exact name)
+    const apiSuggestions = skillSuggestions
+      .filter(
+        (s) =>
+          !availableSkills.some(
+            (sk) => sk.name.toLowerCase() === s.toLowerCase(),
+          ),
+      )
+      .map((name) => ({
+        name,
+        id: null as string | null,
+        source: 'api' as const,
+      }));
+
+    return [...dbSuggestions, ...apiSuggestions];
+  };
+
+  const fetchSkillsDebounced = useCallback((query: string) => {
+    if (skillTimeoutRef.current) clearTimeout(skillTimeoutRef.current);
+    skillTimeoutRef.current = setTimeout(async () => {
+      if (query.length < 2) {
+        setSkillSuggestions([]);
+        return;
+      }
+      setIsLoadingSkills(true);
+      try {
+        const suggestions = await fetchSkillsSuggestions(query);
+        setSkillSuggestions(suggestions);
+      } catch (e) {
+        setSkillSuggestions([]);
+        console.error('Error fetching skills suggestions:', e);
+      } finally {
+        setIsLoadingSkills(false);
+      }
+    }, 300);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (skillTimeoutRef.current) clearTimeout(skillTimeoutRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (newSkillInput) {
+      fetchSkillsDebounced(newSkillInput);
+      setShowSkillSuggestions(true);
+    } else {
+      setSkillSuggestions([]);
+      setShowSkillSuggestions(false);
+    }
+    setSelectedSuggestionIndex(-1);
+  }, [newSkillInput, fetchSkillsDebounced]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        skillDropdownRef.current &&
+        !skillDropdownRef.current.contains(event.target as Node) &&
+        !skillInputRef.current?.contains(event.target as Node)
+      ) {
+        setShowSkillSuggestions(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleSkillSelect = async (selectedSkill: string, skillId?: string) => {
+    try {
+      if (skillId) {
+        // chọn skill có sẵn theo id
+        if (!selectedSkills.includes(skillId)) {
+          setSelectedSkills((prev) => [...prev, skillId]);
+        }
+      } else {
+        // tạo mới skill và add ngay vào cả availableSkills lẫn selectedSkills
+        const created = await skillService.create({ name: selectedSkill });
+        setAvailableSkills((prev) => [
+          { id: created.id, name: created.name } as Skill,
+          ...prev,
+        ]);
+        setSelectedSkills((prev) => [...prev, created.id]);
+      }
+
+      setNewSkillInput('');
+      setShowSkillSuggestions(false);
+      setSelectedSuggestionIndex(-1);
+      skillInputRef.current?.focus();
+      toast.success(`Skill "${selectedSkill}" added successfully!`);
+    } catch (err) {
+      console.error('Error creating/selecting skill:', err);
+      toast.error('Failed to add skill. Please try again.');
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    const combined = getCombinedSuggestions(newSkillInput);
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setSelectedSuggestionIndex((prev) =>
+        prev < combined.length - 1 ? prev + 1 : prev,
+      );
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setSelectedSuggestionIndex((prev) => (prev > 0 ? prev - 1 : -1));
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (selectedSuggestionIndex >= 0 && combined[selectedSuggestionIndex]) {
+        const suggestion = combined[selectedSuggestionIndex];
+        handleSkillSelect(suggestion.name, suggestion.id || undefined);
+      } else if (newSkillInput.trim()) {
+        handleSkillSelect(newSkillInput.trim());
+      }
+    } else if (e.key === 'Escape') {
+      setShowSkillSuggestions(false);
+      setSelectedSuggestionIndex(-1);
+    }
+  };
+
   // Check if job is within 24 hours of creation
   const isWithin24Hours = () => {
     if (!job.createdAt) return true; // If no creation date, allow editing
@@ -153,7 +335,19 @@ export function EditJobDialog({
         : '',
       typeOfEmployment: convertEmploymentTypeToFrontend(
         job.typeOfEmployment,
-      ) as 'FullTime' | 'PartTime' | 'Contract' | 'Internship',
+      ) as
+        | 'FULL_TIME'
+        | 'PART_TIME'
+        | 'CONTRACT'
+        | 'INTERN'
+        | 'FREELANCE'
+        | 'TEMPORARY'
+        | 'VOLUNTEER'
+        | 'APPRENTICESHIP'
+        | 'CO_OP'
+        | 'SEASONAL'
+        | 'REMOTE'
+        | 'HYBRID',
       categoryId: job.category?.id || '',
       status: job.status as 'OPEN' | 'CLOSED',
       benefit: job.benefit || [],
@@ -363,15 +557,16 @@ export function EditJobDialog({
           </div>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
           {/* Basic Information */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-6">
             <div>
               <Label htmlFor="title">Job Title *</Label>
               <Input
                 id="title"
                 {...register('title')}
                 placeholder="Enter job title"
+                className="mt-2"
               />
               {errors.title && (
                 <p className="mt-1 text-sm text-red-500">
@@ -387,7 +582,7 @@ export function EditJobDialog({
                 value={watch('location')}
                 onValueChange={(value) => setValue('location', value)}
               >
-                <SelectTrigger>
+                <SelectTrigger className="mt-2 w-full">
                   <SelectValue
                     placeholder={
                       isCompanyLoading
@@ -424,7 +619,7 @@ export function EditJobDialog({
           </div>
 
           {/* Category and Employment Type */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             <div>
               <Label htmlFor="category">Category *</Label>
               <input type="hidden" {...register('categoryId')} />
@@ -435,7 +630,7 @@ export function EditJobDialog({
                   console.log('Category changed to:', value);
                 }}
               >
-                <SelectTrigger>
+                <SelectTrigger className="mt-2 w-full">
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
@@ -461,29 +656,34 @@ export function EditJobDialog({
                   setValue(
                     'typeOfEmployment',
                     value as
-                      | 'FullTime'
-                      | 'PartTime'
-                      | 'Contract'
-                      | 'Internship',
+                      | 'FULL_TIME'
+                      | 'PART_TIME'
+                      | 'CONTRACT'
+                      | 'INTERN'
+                      | 'FREELANCE'
+                      | 'TEMPORARY'
+                      | 'VOLUNTEER'
+                      | 'APPRENTICESHIP'
+                      | 'CO_OP'
+                      | 'SEASONAL'
+                      | 'REMOTE'
+                      | 'HYBRID',
                   )
                 }
               >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select employment type" />
+                <SelectTrigger className="mt-2 w-full">
+                  <SelectValue placeholder="Select employment type">
+                    {employmentType[
+                      watch('typeOfEmployment') as keyof typeof employmentType
+                    ] || 'Select employment type'}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="FullTime">
-                    {employmentType.FULL_TIME}
-                  </SelectItem>
-                  <SelectItem value="PartTime">
-                    {employmentType.PART_TIME}
-                  </SelectItem>
-                  <SelectItem value="Contract">
-                    {employmentType.CONTRACT}
-                  </SelectItem>
-                  <SelectItem value="Internship">
-                    {employmentType.INTERN}
-                  </SelectItem>
+                  {Object.entries(employmentType).map(([key, value]) => (
+                    <SelectItem key={key} value={key}>
+                      {value}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               {errors.typeOfEmployment && (
@@ -494,42 +694,32 @@ export function EditJobDialog({
             </div>
           </div>
 
-          {/* Status */}
-          <div>
-            <Label htmlFor="status">Job Status *</Label>
-            <input type="hidden" {...register('status')} />
-            <Select
-              value={watch('status')}
-              onValueChange={(value) =>
-                setValue('status', value as 'OPEN' | 'CLOSED')
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select job status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="OPEN">Open</SelectItem>
-                <SelectItem value="CLOSED">Closed</SelectItem>
-              </SelectContent>
-            </Select>
-            {errors.status && (
-              <p className="mt-1 text-sm text-red-500">
-                {errors.status.message}
-              </p>
-            )}
-          </div>
+          {/* Status moved to separate dialog */}
 
           {/* Salary Range */}
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
             <div>
               <Label htmlFor="salaryMin">Minimum Salary *</Label>
-              <Input
-                id="salaryMin"
-                type="number"
-                min={0}
-                {...register('salaryMin', { valueAsNumber: true })}
-                placeholder="0"
-              />
+              <div className="mt-2 flex items-center">
+                <span className="mr-1">$</span>
+                <Input
+                  id="salaryMin"
+                  type="text"
+                  value={salaryMinText}
+                  onChange={(e) => {
+                    const raw = e.target.value;
+                    const num = unformatToNumber(raw);
+                    setSalaryMinText(formatWithDots(num));
+                    setValue('salaryMin', num);
+                  }}
+                  placeholder="5000"
+                  className="flex-1"
+                />
+                <input
+                  type="hidden"
+                  {...register('salaryMin', { valueAsNumber: true })}
+                />
+              </div>
               {errors.salaryMin && (
                 <p className="mt-1 text-sm text-red-500">
                   {errors.salaryMin.message}
@@ -539,13 +729,26 @@ export function EditJobDialog({
 
             <div>
               <Label htmlFor="salaryMax">Maximum Salary *</Label>
-              <Input
-                id="salaryMax"
-                type="number"
-                min={0}
-                {...register('salaryMax', { valueAsNumber: true })}
-                placeholder="0"
-              />
+              <div className="mt-2 flex items-center">
+                <span className="mr-1">$</span>
+                <Input
+                  id="salaryMax"
+                  type="text"
+                  value={salaryMaxText}
+                  onChange={(e) => {
+                    const raw = e.target.value;
+                    const num = unformatToNumber(raw);
+                    setSalaryMaxText(formatWithDots(num));
+                    setValue('salaryMax', num);
+                  }}
+                  placeholder="22000"
+                  className="flex-1"
+                />
+                <input
+                  type="hidden"
+                  {...register('salaryMax', { valueAsNumber: true })}
+                />
+              </div>
               {errors.salaryMax && (
                 <p className="mt-1 text-sm text-red-500">
                   {errors.salaryMax.message}
@@ -559,8 +762,10 @@ export function EditJobDialog({
                 id="experienceYears"
                 type="number"
                 min={0}
+                step="1"
                 {...register('experienceYears', { valueAsNumber: true })}
                 placeholder="0"
+                className="mt-2"
               />
               {errors.experienceYears && (
                 <p className="mt-1 text-sm text-red-500">
@@ -570,72 +775,112 @@ export function EditJobDialog({
             </div>
           </div>
 
-          {/* Deadline */}
-          <div>
-            <Label htmlFor="deadline">Application Deadline *</Label>
-            <Input
-              id="deadline"
-              type="date"
-              {...register('deadline')}
-              min={(() => {
-                // Set minimum date to today
-                const minDate = new Date();
-                return minDate.toISOString().split('T')[0];
-              })()}
-              onChange={(e) => {
-                const selectedDate = new Date(e.target.value);
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
-
-                // If selected date is in the past
-                if (selectedDate < today) {
-                  toast.error('Please select a future date');
-                  return;
-                }
-              }}
-            />
-            {errors.deadline && (
-              <p className="mt-1 text-sm text-red-500">
-                {errors.deadline.message}
-              </p>
-            )}
-          </div>
+          {/* Deadline moved to separate dialog */}
 
           {/* Skills */}
           <div>
-            <Label>Required Skills</Label>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {availableSkills.map((skill) => (
-                <Badge
-                  key={skill.id}
-                  variant={
-                    selectedSkills.includes(skill.id) ? 'default' : 'outline'
-                  }
-                  className={`cursor-pointer ${
-                    selectedSkills.includes(skill.id)
-                      ? 'bg-blue-500 text-white'
-                      : 'border-gray-300 text-gray-700'
-                  }`}
-                  onClick={() => handleSkillToggle(skill.id)}
+            <Label>Required Skills *</Label>
+            <p className="mt-1 text-sm text-gray-500">
+              Select the skills required for this position
+            </p>
+            {/* input with suggestions */}
+            <div className="relative mt-3">
+              <Input
+                ref={skillInputRef}
+                placeholder="Search and add skills..."
+                value={newSkillInput}
+                onChange={(e) => setNewSkillInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                onFocus={() => newSkillInput && setShowSkillSuggestions(true)}
+                autoComplete="off"
+              />
+              {isLoadingSkills && (
+                <span className="pointer-events-none absolute top-3 right-3 text-xs text-gray-400">
+                  Loading...
+                </span>
+              )}
+              {showSkillSuggestions && newSkillInput && (
+                <div
+                  ref={skillDropdownRef}
+                  className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md border bg-white shadow-lg"
                 >
-                  {skill.name}
-                </Badge>
-              ))}
+                  {getCombinedSuggestions(newSkillInput).map(
+                    (suggestion, index) => (
+                      <button
+                        type="button"
+                        key={`${suggestion.source}-${suggestion.id || suggestion.name}`}
+                        className={`w-full px-3 py-2 text-left text-sm transition-colors ${
+                          index === selectedSuggestionIndex
+                            ? 'bg-gray-100'
+                            : 'hover:bg-gray-50'
+                        }`}
+                        onMouseEnter={() => setSelectedSuggestionIndex(index)}
+                        onMouseLeave={() => setSelectedSuggestionIndex(-1)}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleSkillSelect(
+                            suggestion.name,
+                            suggestion.id || undefined,
+                          );
+                        }}
+                      >
+                        {suggestion.name}
+                        <span className="ml-2 text-xs text-gray-400">
+                          ({suggestion.source})
+                        </span>
+                      </button>
+                    ),
+                  )}
+                  {getCombinedSuggestions(newSkillInput).length === 0 && (
+                    <div className="px-3 py-2 text-sm text-gray-500">
+                      Press Enter to add &quot;{newSkillInput}&quot;
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
+            {/* selected skill chips (only show selected) */}
+            <div className="mt-3 flex flex-wrap gap-2">
+              {availableSkills
+                .filter((s) => selectedSkills.includes(s.id))
+                .map((skill) => (
+                  <Badge
+                    key={skill.id}
+                    variant="default"
+                    className="cursor-pointer bg-blue-500 text-white hover:bg-blue-600"
+                    onClick={() => handleSkillToggle(skill.id)}
+                  >
+                    {skill.name}
+                  </Badge>
+                ))}
+            </div>
+            {selectedSkills.length === 0 && (
+              <p className="mt-2 text-sm text-red-500">
+                Please select at least one skill
+              </p>
+            )}
           </div>
 
           {/* Benefits */}
           <div>
             <Label>Benefits & Perks *</Label>
-            <div className="mt-2 space-y-2">
+            <p className="mt-1 text-sm text-gray-500">
+              Add benefits and perks offered for this position
+            </p>
+            <div className="mt-3 space-y-3">
               {watch('benefit').map((benefit, index) => (
-                <div key={index} className="flex items-center gap-2">
+                <div
+                  key={index}
+                  className="flex items-center gap-3 rounded-md border border-gray-200 bg-gray-50 p-3"
+                >
                   <span className="flex-1 text-sm">{benefit}</span>
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
                     onClick={() => handleRemoveBenefit(index)}
+                    className="h-8 w-8 p-0 text-gray-500 hover:text-red-500"
                   >
                     <X className="h-4 w-4" />
                   </Button>
@@ -651,14 +896,18 @@ export function EditJobDialog({
                     e.key === 'Enter' &&
                     (e.preventDefault(), handleAddBenefit())
                   }
+                  className="flex-1"
                 />
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
                   onClick={handleAddBenefit}
+                  disabled={!newBenefit.trim()}
+                  className="px-4"
                 >
-                  <Plus className="h-4 w-4" />
+                  <Plus className="mr-1 h-4 w-4" />
+                  Add
                 </Button>
               </div>
             </div>
@@ -669,8 +918,13 @@ export function EditJobDialog({
             )}
           </div>
 
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={handleClose}>
+          <DialogFooter className="mt-8 flex gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleClose}
+              className="flex-1"
+            >
               Cancel
             </Button>
             <Button
@@ -681,6 +935,7 @@ export function EditJobDialog({
                   ? 'Job can only be modified within 24 hours of creation'
                   : ''
               }
+              className="flex-1"
             >
               {isLoading ? 'Updating...' : 'Update Job'}
             </Button>

@@ -117,6 +117,35 @@ export default function JobPostingForm() {
   const [vipExpiration, setVipExpiration] = useState<string>('');
   const user = useUser();
 
+  // Step validation helpers
+  const getStep1Errors = (): string[] => {
+    const errors: string[] = [];
+    if (!jobTitle?.trim()) errors.push('Job title is required');
+    if (!location?.trim()) errors.push('Location is required');
+    if (!deadline) errors.push('Application deadline is required');
+    if (!categoryId) errors.push('Job category is required');
+    if (!salaryRange || salaryRange.length !== 2)
+      errors.push('Salary range is required');
+    if ((selectedSkillIds || []).length === 0)
+      errors.push('At least one skill is required');
+    return errors;
+  };
+
+  const getStep2Errors = (): string[] => {
+    const errors: string[] = [];
+    const cleanDescription = (jobDescription || '')
+      .replace(/<[^>]*>/g, '')
+      .trim();
+    if (!cleanDescription) errors.push('Job description cannot be empty');
+    return errors;
+  };
+
+  const isCurrentStepValid = (): boolean => {
+    if (currentStep === 1) return getStep1Errors().length === 0;
+    if (currentStep === 2) return getStep2Errors().length === 0;
+    return true;
+  };
+
   const STORAGE_KEY = 'JOB_FORM_DATA';
 
   // Di chuyển các hàm xử lý localStorage vào đây
@@ -272,8 +301,25 @@ export default function JobPostingForm() {
     }
   };
 
+  const refreshSkills = async () => {
+    try {
+      const skills = await skillService.findAll();
+      setAvailableSkills(skills);
+    } catch (error) {
+      console.error('Error refreshing skills:', error);
+      toast.error('Failed to refresh skills');
+    }
+  };
+
   const nextStep = () => {
     if (currentStep < 3) {
+      // Block when current step has invalid inputs
+      if (!isCurrentStepValid()) {
+        toast.error(
+          'Please complete all required fields in this step before continuing.',
+        );
+        return;
+      }
       setCurrentStep(currentStep + 1);
     }
   };
@@ -284,21 +330,13 @@ export default function JobPostingForm() {
     }
   };
 
-  const handleCreateJob = async (orderCode?: string | null) => {
+  // Create job directly (used for Basic package only)
+  const handleCreateJob = async () => {
     try {
       // Validation cho premium/vip packages
       if (packageInfo.type !== 'basic') {
-        if (!orderCode) {
-          toast.error('Cannot create premium/vip job without payment');
-          return;
-        }
-
-        // Double check payment status
-        const paymentStatus = await payosService.getPaymentStatus(orderCode);
-        if (paymentStatus.status !== 'COMPLETED') {
-          toast.error('Payment required for premium/vip jobs');
-          return;
-        }
+        toast.error('Payment required for premium/vip jobs');
+        return;
       }
 
       // Khôi phục data từ localStorage nếu có
@@ -344,6 +382,24 @@ export default function JobPostingForm() {
 
       const companyId = String(user?.data?.companyId ?? '1');
 
+      // Compute vipExpired from selected duration days but clamp to deadline and today
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const dl = new Date(savedData?.deadline || deadline);
+      dl.setHours(0, 0, 0, 0);
+      // base expiry = today + durationDays (if any), else = deadline
+      const durationDays = (savedData?.packageInfo || packageInfo)
+        ?.durationDays;
+      let vipExpiredDate = new Date(today);
+      if (durationDays && durationDays > 0) {
+        vipExpiredDate.setDate(today.getDate() + durationDays);
+      } else {
+        vipExpiredDate = new Date(dl);
+      }
+      // clamp not past and not exceed deadline
+      if (vipExpiredDate < today) vipExpiredDate = new Date(today);
+      if (vipExpiredDate > dl) vipExpiredDate = new Date(dl);
+
       const jobData = {
         title: savedData?.title || jobTitle,
         description: savedData?.description || jobDescription,
@@ -363,7 +419,7 @@ export default function JobPostingForm() {
         typeOfEmployment: savedData?.typeOfEmployment || typeOfEmployment,
         status: jobStatus,
         priorityPosition: savedData?.priorityPosition || priorityPosition,
-        vip_expiration: savedData?.vip_expiration || vipExpiration,
+        vipExpired: vipExpiredDate.toISOString(),
       };
 
       await jobService.create(jobData);
@@ -434,8 +490,8 @@ export default function JobPostingForm() {
       const cancelUrl = `${window.location.origin}/co/payment-failed`;
 
       const response = await payosService.createPaymentLink({
-        amount: Math.round(totalPrice * 24000),
-        description: `${packageInfo.type.toUpperCase()} Package - ${packageInfo.durationDays} days`,
+        amount: Math.round(totalPrice),
+        description: `${packageInfo.type.toUpperCase()} Package ${packageInfo.durationDays}d`,
         orderCode,
         returnUrl,
         cancelUrl,
@@ -489,6 +545,9 @@ export default function JobPostingForm() {
     availableSkills,
     totalPrice,
     setTotalPrice,
+    refreshSkills,
+    selectedSkillIds,
+    setSelectedSkillIds,
   };
 
   return (
@@ -560,7 +619,11 @@ export default function JobPostingForm() {
           </Button>
         )}
         {currentStep < 3 ? (
-          <Button onClick={nextStep} className="w-full sm:w-auto">
+          <Button
+            onClick={nextStep}
+            className="w-full sm:w-auto"
+            disabled={!isCurrentStepValid()}
+          >
             Next Step
           </Button>
         ) : (
@@ -573,10 +636,15 @@ export default function JobPostingForm() {
               ? 'Processing...'
               : packageInfo.type === 'basic'
                 ? 'Post Job'
-                : `Pay $${totalPrice.toFixed(2)} & Post Job`}
+                : `Pay ${Math.round(totalPrice).toLocaleString('vi-VN')}₫ & Post your Job`}
           </Button>
         )}
       </div>
+      {!isCurrentStepValid() && currentStep < 3 && (
+        <p className="mt-2 text-sm text-red-500">
+          Please check required fields in this step.
+        </p>
+      )}
     </div>
   );
 }

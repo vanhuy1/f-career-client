@@ -15,4 +15,7 @@ export interface JobDetails {
   status: string;
   categories: string[];
   requiredSkills: string[];
+  companyName: string;
+  companyLogo?: string;
+  location?: string;
 }

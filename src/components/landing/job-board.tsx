@@ -1,18 +1,92 @@
 'use client';
 
-import { ArrowRight } from 'lucide-react';
+import {
+  ArrowRight,
+  MapPin,
+  Clock,
+  TrendingUp,
+  Code,
+  Building2,
+} from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { jobService } from '@/services/api/jobs/job-api';
 import { Job } from '@/types/Job';
-// import { formatSalaryRange } from '@/utils/formatters';
 import { Skeleton } from '@/components/ui/skeleton';
+
+// Vietnamese provinces data
+const VIETNAM_PROVINCES = [
+  'An Giang',
+  'Bà Rịa - Vũng Tàu',
+  'Bắc Giang',
+  'Bắc Kạn',
+  'Bạc Liêu',
+  'Bắc Ninh',
+  'Bến Tre',
+  'Bình Định',
+  'Bình Dương',
+  'Bình Phước',
+  'Bình Thuận',
+  'Cà Mau',
+  'Cần Thơ',
+  'Cao Bằng',
+  'Đà Nẵng',
+  'Đắk Lắk',
+  'Đắk Nông',
+  'Điện Biên',
+  'Đồng Nai',
+  'Đồng Tháp',
+  'Gia Lai',
+  'Hà Giang',
+  'Hà Nam',
+  'Hà Nội',
+  'Hà Tĩnh',
+  'Hải Dương',
+  'Hải Phòng',
+  'Hậu Giang',
+  'Hòa Bình',
+  'Hưng Yên',
+  'Khánh Hòa',
+  'Kiên Giang',
+  'Kon Tum',
+  'Lai Châu',
+  'Lâm Đồng',
+  'Lạng Sơn',
+  'Lào Cai',
+  'Long An',
+  'Nam Định',
+  'Nghệ An',
+  'Ninh Bình',
+  'Ninh Thuận',
+  'Phú Thọ',
+  'Phú Yên',
+  'Quảng Bình',
+  'Quảng Nam',
+  'Quảng Ngãi',
+  'Quảng Ninh',
+  'Quảng Trị',
+  'Sóc Trăng',
+  'Sơn La',
+  'Tây Ninh',
+  'Thái Bình',
+  'Thái Nguyên',
+  'Thanh Hóa',
+  'Thừa Thiên Huế',
+  'Tiền Giang',
+  'TP. Hồ Chí Minh',
+  'Trà Vinh',
+  'Tuyên Quang',
+  'Vĩnh Long',
+  'Vĩnh Phúc',
+  'Yên Bái',
+];
 
 export default function JobBoard() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(0);
 
   useEffect(() => {
     const fetchTopJobs = async () => {
@@ -36,6 +110,24 @@ export default function JobBoard() {
 
     fetchTopJobs();
   }, []);
+
+  // Calculate pagination
+  const jobsPerPage = 8;
+  const totalPages = Math.ceil(jobs.length / jobsPerPage);
+  const startIndex = currentPage * jobsPerPage;
+  const endIndex = startIndex + jobsPerPage;
+  const currentJobs = jobs.slice(startIndex, endIndex);
+
+  // Auto-slide functionality
+  useEffect(() => {
+    if (totalPages <= 1) return;
+
+    const interval = setInterval(() => {
+      setCurrentPage((prev) => (prev + 1) % totalPages);
+    }, 5000); // 5 seconds
+
+    return () => clearInterval(interval);
+  }, [totalPages]);
 
   if (loading) {
     return (
@@ -96,10 +188,44 @@ export default function JobBoard() {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
-            {jobs.map((job) => (
-              <JobCard key={job.id} job={job} />
-            ))}
+          <div className="relative">
+            {/* Job Cards Grid */}
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+              {currentJobs.map((job) => (
+                <JobCard key={job.id} job={job} />
+              ))}
+            </div>
+
+            {/* Auto-slide Progress Bar */}
+            {totalPages > 1 && (
+              <div className="mt-8">
+                <div className="flex justify-center">
+                  <div className="h-1 w-32 overflow-hidden rounded-full bg-gray-200">
+                    <div
+                      className="h-full rounded-full bg-blue-600 transition-all duration-500 ease-linear"
+                      style={{
+                        width: `${((currentPage + 1) / totalPages) * 100}%`,
+                        animation: 'slide 5s linear infinite',
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* Page Indicators */}
+                <div className="mt-4 flex justify-center gap-2">
+                  {Array.from({ length: totalPages }).map((_, index) => (
+                    <div
+                      key={index}
+                      className={`h-2 w-2 rounded-full transition-all duration-300 ${
+                        index === currentPage
+                          ? 'scale-125 bg-blue-600'
+                          : 'bg-gray-300'
+                      }`}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -126,107 +252,160 @@ function JobCard({ job }: { job: Job }) {
 
   const employmentTypeText = getEmploymentTypeText(job.typeOfEmployment);
 
-  // Strip HTML tags from description and limit length
-  const stripHtml = (html: string) => {
-    const tmp = document.createElement('div');
-    tmp.innerHTML = html;
-    return tmp.textContent || tmp.innerText || '';
-  };
-
-  const cleanDescription = stripHtml(job.description);
-  const truncatedDescription =
-    cleanDescription.length > 120
-      ? `${cleanDescription.substring(0, 120)}...`
-      : cleanDescription;
-
-  // Format location to be shorter
+  // Format location to show only Vietnamese province/city
   const formatLocation = (location: string) => {
     if (!location) return 'Remote';
 
-    // Split by comma and take first 2 parts
-    const parts = location.split(',').map((part) => part.trim());
-    if (parts.length <= 2) return location;
+    // Split by comma and clean up each part
+    const parts = location.split(',').map((part) => part.trim().toLowerCase());
 
-    // Take city and country/region
-    const city = parts[0];
-    const country = parts[parts.length - 1];
-    return `${city}, ${country}`;
-  };
+    // Find the Vietnamese province/city from the end of the location
+    // Since API always returns province/city, it's usually at the end
+    for (let i = parts.length - 1; i >= 0; i--) {
+      const part = parts[i];
 
-  // Get tags to display
-  const getTags = () => {
-    const tags = [];
+      // Check if this part matches any Vietnamese province
+      const foundProvince = VIETNAM_PROVINCES.find(
+        (province) =>
+          part.includes(province.toLowerCase()) ||
+          province.toLowerCase().includes(part),
+      );
 
-    // Add category if available
-    if (job.category && job.category.name) {
-      tags.push(job.category.name);
+      if (foundProvince) {
+        return foundProvince;
+      }
     }
 
-    // Add skills if available (take first 2 skills)
-    if (job.skills && job.skills.length > 0) {
-      const skillNames = job.skills.slice(0, 2).map((skill) => skill.name);
-      tags.push(...skillNames);
+    // If no province found, try to extract meaningful city name
+    // Remove common address words and keep the most relevant part
+    const addressWords = [
+      'đường',
+      'phố',
+      'quận',
+      'huyện',
+      'xã',
+      'phường',
+      'thị trấn',
+      'thị xã',
+      'street',
+      'district',
+      'ward',
+      'commune',
+      'town',
+      'city',
+      'province',
+      'việt nam',
+      'vietnam',
+      'vn',
+    ];
+
+    // Find the last meaningful part (usually city/province)
+    for (let i = parts.length - 1; i >= 0; i--) {
+      const part = parts[i];
+
+      // Skip if it's just an address word or too short
+      if (addressWords.includes(part) || part.length < 2) {
+        continue;
+      }
+
+      // Return the first meaningful part found
+      return part.charAt(0).toUpperCase() + part.slice(1);
     }
 
-    return tags;
+    // Fallback: return the last part if nothing else works
+    return (
+      parts[parts.length - 1]?.charAt(0).toUpperCase() +
+        parts[parts.length - 1]?.slice(1) || 'Remote'
+    );
   };
 
-  const tags = getTags();
+  // Get category and skills separately
+  const getCategoryAndSkills = () => {
+    const category = job.category?.name;
+    const skills = job.skills?.slice(0, 2).map((skill) => skill.name) || [];
+    return { category, skills };
+  };
+
+  const { category, skills } = getCategoryAndSkills();
 
   return (
-    <Link href={`/job/${job.id}`} className="block">
-      <div className="flex h-full cursor-pointer flex-col rounded-lg border border-gray-200 bg-white p-6 shadow-sm transition-all duration-200 hover:border-blue-300 hover:shadow-md">
+    <Link href={`/job/${job.id}`} className="group block">
+      <div className="flex h-full cursor-pointer flex-col rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition-all duration-300 hover:scale-[1.02] hover:border-blue-300 hover:shadow-lg">
+        {/* Header */}
         <div className="mb-4 flex items-start justify-between">
-          <div className="relative h-10 w-10 overflow-hidden rounded-full border border-gray-300">
+          <div className="relative h-12 w-12 overflow-hidden rounded-lg border border-gray-200 bg-gray-50">
             <Image
               src={job.company.logoUrl || '/placeholder.svg'}
               alt={`${job.company.companyName} logo`}
               fill
-              className="object-contain"
+              className="object-contain p-1"
             />
           </div>
-          <span className="rounded border border-blue-400 px-2 py-1 text-xs text-blue-600">
-            {employmentTypeText}
+          <div className="flex gap-2">
+            {category && (
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-purple-200 bg-purple-100 px-3 py-1 text-xs font-medium text-purple-700">
+                <Building2 className="h-3 w-3" />
+                {category}
+              </span>
+            )}
+            <span className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700">
+              {employmentTypeText}
+            </span>
+          </div>
+        </div>
+
+        {/* Job Title */}
+        <h3 className="mb-3 line-clamp-2 min-h-[3.5rem] text-lg font-bold text-gray-900 transition-colors group-hover:text-blue-600">
+          {job.title}
+        </h3>
+
+        {/* Company Name */}
+        <div className="mb-2">
+          <span className="text-sm font-medium text-gray-700">
+            {job.company.companyName}
           </span>
         </div>
 
-        <h3 className="mb-1 overflow-hidden text-lg font-semibold text-ellipsis whitespace-nowrap text-gray-900">
-          {job.title}
-        </h3>
-        <div className="mb-2 overflow-hidden text-sm text-ellipsis whitespace-nowrap text-gray-600">
-          {job.company.companyName} · {formatLocation(job.location)}
+        {/* Location */}
+        <div className="mb-4 flex items-center gap-1 text-sm text-gray-600">
+          <MapPin className="h-3 w-3 flex-shrink-0" />
+          <span className="truncate">{formatLocation(job.location)}</span>
         </div>
 
-        <p
-          className="mb-4 flex-grow overflow-hidden text-sm text-gray-600"
-          style={{
-            display: '-webkit-box',
-            WebkitLineClamp: 3,
-            WebkitBoxOrient: 'vertical',
-          }}
-        >
-          {truncatedDescription}
-        </p>
+        {/* Skills Tags */}
+        {skills.length > 0 && (
+          <div className="mb-4 flex flex-wrap gap-1.5">
+            {skills.map((skill: string, index: number) => (
+              <span
+                key={index}
+                className="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-700"
+              >
+                <Code className="h-3 w-3" />
+                {skill}
+              </span>
+            ))}
+          </div>
+        )}
 
-        <div className="mt-auto flex flex-wrap gap-2">
-          {tags.map((tag: string, index: number) => (
-            <span
-              key={index}
-              className="rounded-full bg-blue-100 px-3 py-1 text-xs text-blue-600"
-            >
-              {tag}
-            </span>
-          ))}
-          {job.experienceYears > 0 && (
-            <span className="rounded-full bg-green-100 px-3 py-1 text-xs text-green-600">
-              {job.experienceYears}+ years
-            </span>
-          )}
+        {/* Bottom Info Row */}
+        <div className="mt-auto flex items-center justify-between border-t border-gray-100 pt-3">
+          <div className="flex items-center gap-1 text-xs text-gray-500">
+            {job.experienceYears > 0 && (
+              <>
+                <Clock className="h-3 w-3" />
+                <span>{job.experienceYears}+ years</span>
+              </>
+            )}
+          </div>
+
           {job.salaryMin && job.salaryMax && (
-            <span className="rounded-full bg-purple-100 px-3 py-1 text-xs text-purple-600">
-              ${job.salaryMin.toLocaleString()} - $
-              {job.salaryMax.toLocaleString()}
-            </span>
+            <div className="flex items-center gap-1 text-xs font-medium text-green-600">
+              <TrendingUp className="h-3 w-3" />
+              <span className="truncate">
+                ${job.salaryMin.toLocaleString()} - $
+                {job.salaryMax.toLocaleString()}
+              </span>
+            </div>
           )}
         </div>
       </div>
@@ -236,17 +415,24 @@ function JobCard({ job }: { job: Job }) {
 
 function JobCardSkeleton() {
   return (
-    <div className="flex h-full flex-col rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+    <div className="flex h-full flex-col rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
       <div className="mb-4 flex items-start justify-between">
-        <Skeleton className="h-10 w-10 rounded-full" />
-        <Skeleton className="h-6 w-20 rounded" />
+        <Skeleton className="h-12 w-12 rounded-lg" />
+        <div className="flex gap-2">
+          <Skeleton className="h-6 w-16 rounded-full" />
+          <Skeleton className="h-6 w-20 rounded-full" />
+        </div>
       </div>
-      <Skeleton className="mb-1 h-6 w-3/4" />
+      <Skeleton className="mb-3 h-14 w-3/4" />
       <Skeleton className="mb-2 h-4 w-1/2" />
-      <Skeleton className="mb-4 h-16 w-full" />
-      <div className="mt-auto flex flex-wrap gap-2">
+      <Skeleton className="mb-4 h-4 w-1/3" />
+      <div className="mb-4 flex gap-1.5">
+        <Skeleton className="h-6 w-16 rounded-full" />
         <Skeleton className="h-6 w-20 rounded-full" />
-        <Skeleton className="h-6 w-24 rounded-full" />
+      </div>
+      <div className="mt-auto flex justify-between border-t border-gray-100 pt-3">
+        <Skeleton className="h-4 w-20" />
+        <Skeleton className="h-4 w-24" />
       </div>
     </div>
   );

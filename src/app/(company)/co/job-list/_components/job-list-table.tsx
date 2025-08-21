@@ -182,83 +182,95 @@ export default function JobListTable({
                 </TableCell>
               </TableRow>
             ) : (
-              filteredJobs.map((job) => (
-                <TableRow
-                  key={job.jobId}
-                  className="cursor-default transition-colors odd:bg-white even:bg-gray-50 hover:bg-gray-100"
-                >
-                  <TableCell className="px-6 py-4 font-medium text-gray-700">
-                    {job.jobTitle}
-                  </TableCell>
-                  <TableCell className="px-6 py-4">
-                    <Badge
-                      variant={getStatusBadgeVariant(job.status)}
-                      className={
-                        job.status === 'Open'
-                          ? 'border-green-200 bg-white text-green-600 hover:bg-white'
-                          : 'border-red-200 bg-white text-red-600 hover:bg-white'
-                      }
-                    >
-                      {job.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="px-6 py-4 text-gray-600">
-                    {formatDate(job.postedDate)}
-                  </TableCell>
-                  <TableCell className="px-6 py-4 text-gray-600">
-                    {formatDate(job.endDate)}
-                  </TableCell>
-                  <TableCell className="px-6 py-4">
-                    <Badge
-                      variant={getJobTypeBadgeVariant(job.jobType)}
-                      className={
-                        job.jobType === 'FullTime'
-                          ? 'border-purple-200 bg-white text-purple-600 hover:bg-white'
-                          : 'border-orange-200 bg-white text-orange-600 hover:bg-white'
-                      }
-                    >
-                      {job.jobType}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="px-6 py-4 font-medium text-gray-700">
-                    {job.totalApplications || 0}
-                  </TableCell>
-                  <TableCell className="px-6 py-4">
-                    <div className="flex items-center gap-2">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            onClick={() => onViewDetails(job.jobId)}
-                          >
-                            View Details
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => onViewApplicants(job.jobId)}
-                          >
-                            View Applicants
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => onEditJob(job.jobId)}
-                          >
-                            Manage Subscription
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => onDeleteJob(job.jobId)}
-                            className="text-red-600"
-                          >
-                            Delete Job
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
+              filteredJobs.map((job) => {
+                // Debug log
+                console.log(
+                  'Job:',
+                  job.jobId,
+                  'Posted Date Raw:',
+                  job.postedDate,
+                  'End Date Raw:',
+                  job.endDate,
+                );
+
+                return (
+                  <TableRow
+                    key={job.jobId}
+                    className="cursor-default transition-colors odd:bg-white even:bg-gray-50 hover:bg-gray-100"
+                  >
+                    <TableCell className="px-6 py-4 font-medium text-gray-700">
+                      {job.jobTitle}
+                    </TableCell>
+                    <TableCell className="px-6 py-4">
+                      <Badge
+                        variant={getStatusBadgeVariant(job.status)}
+                        className={
+                          job.status === 'Open'
+                            ? 'border-green-200 bg-white text-green-600 hover:bg-white'
+                            : 'border-red-200 bg-white text-red-600 hover:bg-white'
+                        }
+                      >
+                        {job.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="px-6 py-4 text-gray-600">
+                      {formatDate(job.postedDate)}
+                    </TableCell>
+                    <TableCell className="px-6 py-4 text-gray-600">
+                      {formatDate(job.endDate)}
+                    </TableCell>
+                    <TableCell className="px-6 py-4">
+                      <Badge
+                        variant={getJobTypeBadgeVariant(job.jobType)}
+                        className={
+                          job.jobType === 'FullTime'
+                            ? 'border-purple-200 bg-white text-purple-600 hover:bg-white'
+                            : 'border-orange-200 bg-white text-orange-600 hover:bg-white'
+                        }
+                      >
+                        {job.jobType}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="px-6 py-4 font-medium text-gray-700">
+                      {job.totalApplications || 0}
+                    </TableCell>
+                    <TableCell className="px-6 py-4">
+                      <div className="flex items-center gap-2">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={() => onViewDetails(job.jobId)}
+                            >
+                              View Details
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => onViewApplicants(job.jobId)}
+                            >
+                              View Applicants
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => onEditJob(job.jobId)}
+                            >
+                              Manage Subscription
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => onDeleteJob(job.jobId)}
+                              className="text-red-600"
+                            >
+                              Delete Job
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })
             )}
           </TableBody>
         </Table>

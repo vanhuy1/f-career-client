@@ -5,7 +5,7 @@ import { CompanyInfo } from '@/types/Job';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
-import { Trophy, Medal, Clock, DollarSign, Eye, Flame } from 'lucide-react';
+import { Trophy, Clock, DollarSign, Eye, Star } from 'lucide-react';
 import { employmentType } from '@/enums/employmentType';
 
 interface JobCardProps {
@@ -136,11 +136,10 @@ export default function JobCard({
       return (
         <Badge
           variant="outline"
-          className="absolute top-0 right-2 z-20 flex -translate-y-1/2 items-center gap-1 border-0 bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 px-2 py-1 text-xs text-white shadow-lg"
+          className="flex items-center gap-1 border-0 bg-gradient-to-r from-pink-500 to-rose-500 px-2 py-1 text-xs text-white shadow-lg"
         >
           <Trophy className="h-3 w-3" />
-          <Flame className="h-2.5 w-2.5 animate-pulse" />
-          TOP
+          <span className="font-bold">VIP</span>
         </Badge>
       );
     }
@@ -148,9 +147,9 @@ export default function JobCard({
       return (
         <Badge
           variant="outline"
-          className="absolute top-0 right-2 z-20 flex -translate-y-1/2 items-center gap-1 border-0 bg-gradient-to-r from-blue-600 to-cyan-600 px-2 py-1 text-xs text-white shadow-md"
+          className="flex items-center gap-1 border-0 bg-gradient-to-r from-indigo-500 to-purple-500 px-2 py-1 text-xs text-white shadow-md"
         >
-          <Medal className="h-3 w-3" /> PRO
+          <Star className="h-3 w-3" /> PREMIUM
         </Badge>
       );
     }
@@ -177,8 +176,6 @@ export default function JobCard({
         onClick={handleCardClick}
       >
         <div className="relative w-full">
-          <PositionBadge />
-
           {priorityPosition <= 2 && (
             <div className="absolute top-0 left-0">
               {priorityPosition === 1 ? (
@@ -191,7 +188,7 @@ export default function JobCard({
                 <Badge
                   className={`rounded-none rounded-br-lg ${styles.badge} z-10 px-2 py-0.5 text-xs`}
                 >
-                  ⭐ FEATURED
+                  ⭐ TOP
                 </Badge>
               ) : null}
             </div>
@@ -244,21 +241,24 @@ export default function JobCard({
                   <DollarSign className="h-3 w-3" />
                   <span>{salary}</span>
                 </div>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={handleDetailClick}
-                  className={`h-6 px-2 py-1 text-xs transition-all duration-200 hover:shadow-sm ${
-                    priorityPosition === 1
-                      ? 'border-purple-300 text-purple-700 hover:bg-purple-50'
-                      : priorityPosition === 2
-                        ? 'border-blue-300 text-blue-700 hover:bg-blue-50'
-                        : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                  }`}
-                >
-                  <Eye className="mr-1 h-3 w-3" />
-                  View
-                </Button>
+                <div className="flex items-center gap-2">
+                  {priorityPosition <= 2 && <PositionBadge />}
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleDetailClick}
+                    className={`h-6 px-2 py-1 text-xs transition-all duration-200 hover:shadow-sm ${
+                      priorityPosition === 1
+                        ? 'border-purple-300 text-purple-700 hover:bg-purple-50'
+                        : priorityPosition === 2
+                          ? 'border-blue-300 text-blue-700 hover:bg-blue-50'
+                          : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                    }`}
+                  >
+                    <Eye className="mr-1 h-3 w-3" />
+                    View
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
