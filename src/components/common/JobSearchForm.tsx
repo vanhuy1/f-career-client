@@ -271,7 +271,7 @@ export default function JobSearchForm({
           >
             <div className="overflow-hidden rounded-lg border border-gray-100 bg-white shadow-xl">
               <Command className="border-0">
-                <CommandList className="max-h-80">
+                <CommandList className="max-h-[28rem]">
                   {loading ? (
                     <div className="flex items-center justify-center py-8">
                       <div className="flex items-center gap-2 text-gray-500">
@@ -281,151 +281,169 @@ export default function JobSearchForm({
                     </div>
                   ) : (
                     <>
-                      {suggestions.keywords.length > 0 && (
-                        <CommandGroup>
-                          <div className="border-b border-gray-100 px-3 py-2 text-xs font-medium tracking-wide text-gray-500 uppercase">
-                            Keywords
-                          </div>
-                          {suggestions.keywords.map((keyword, index) => (
-                            <CommandItem
-                              key={`keyword-${index}`}
-                              onSelect={() => handleKeywordClick(keyword)}
-                              className="cursor-pointer border-b border-gray-50 px-3 py-3 transition-colors duration-150 last:border-b-0 hover:bg-blue-50"
-                            >
-                              <div className="flex w-full items-center gap-3">
-                                <div className="flex-shrink-0">
-                                  <Hash className="h-4 w-4 text-gray-400" />
-                                </div>
-                                <div className="flex-grow">
-                                  <span className="font-medium text-gray-900">
-                                    {keyword.value}
-                                  </span>
-                                </div>
-                                <div className="flex-shrink-0">
-                                  <TrendingUp className="h-3 w-3 text-gray-300" />
-                                </div>
+                      <div className="grid grid-cols-2 gap-0">
+                        <div className="border-r border-gray-100">
+                          {suggestions.keywords.length > 0 && (
+                            <CommandGroup>
+                              <div className="border-b border-gray-100 px-3 py-2 text-xs font-medium tracking-wide text-gray-500 uppercase">
+                                Keywords
                               </div>
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      )}
+                              {suggestions.keywords
+                                .slice(0, 3)
+                                .map((keyword, index) => (
+                                  <CommandItem
+                                    key={`keyword-${index}`}
+                                    onSelect={() => handleKeywordClick(keyword)}
+                                    className="cursor-pointer border-b border-gray-50 px-3 py-3 transition-colors duration-150 last:border-b-0 hover:bg-blue-50"
+                                  >
+                                    <div className="flex w-full items-center gap-3">
+                                      <div className="flex-shrink-0">
+                                        <Hash className="h-4 w-4 text-gray-400" />
+                                      </div>
+                                      <div className="flex-grow">
+                                        <span className="font-medium text-gray-900">
+                                          {keyword.value}
+                                        </span>
+                                      </div>
+                                      <div className="flex-shrink-0">
+                                        <TrendingUp className="h-3 w-3 text-gray-300" />
+                                      </div>
+                                    </div>
+                                  </CommandItem>
+                                ))}
+                            </CommandGroup>
+                          )}
 
-                      {suggestions.jobs.length > 0 && (
-                        <CommandGroup>
-                          <div className="border-b border-gray-100 px-3 py-2 text-xs font-medium tracking-wide text-gray-500 uppercase">
-                            Jobs
-                          </div>
-                          {suggestions.jobs.map((job, index) => (
-                            <CommandItem
-                              key={`job-${index}`}
-                              onSelect={() => handleJobClick(job)}
-                              className="cursor-pointer border-b border-gray-50 px-3 py-3 transition-colors duration-150 last:border-b-0 hover:bg-blue-50"
-                            >
-                              <div className="flex w-full items-center gap-3">
-                                <div className="flex-shrink-0">
-                                  {job.companyLogo ? (
-                                    <Image
-                                      src={job.companyLogo}
-                                      alt={`${job.companyName} logo`}
-                                      width={24}
-                                      height={24}
-                                      className="h-6 w-6 rounded object-cover"
-                                    />
-                                  ) : (
-                                    <Briefcase className="h-4 w-4 text-gray-400" />
-                                  )}
-                                </div>
-                                <div className="flex-grow">
-                                  <div>
-                                    <span className="block font-medium text-gray-900">
-                                      {job.title}
-                                    </span>
-                                    <span className="text-xs text-gray-500">
-                                      {job.companyName} • {job.location}
-                                    </span>
+                          {suggestions.companies.length > 0 && (
+                            <CommandGroup>
+                              <div className="border-b border-gray-100 px-3 py-2 text-xs font-medium tracking-wide text-gray-500 uppercase">
+                                Companies
+                              </div>
+                              {suggestions.companies
+                                .slice(0, 2)
+                                .map((company, index) => (
+                                  <CommandItem
+                                    key={`company-${index}`}
+                                    onSelect={() => handleCompanyClick(company)}
+                                    className="cursor-pointer border-b border-gray-50 px-3 py-3 transition-colors duration-150 last:border-b-0 hover:bg-blue-50"
+                                  >
+                                    <div className="flex w-full items-center gap-3">
+                                      <div className="flex-shrink-0">
+                                        {company.logoUrl ? (
+                                          <Image
+                                            src={
+                                              company.logoUrl ||
+                                              '/placeholder.svg'
+                                            }
+                                            alt={`${company.name} logo`}
+                                            width={24}
+                                            height={24}
+                                            className="h-6 w-6 rounded object-cover"
+                                          />
+                                        ) : (
+                                          <Building className="h-4 w-4 text-gray-400" />
+                                        )}
+                                      </div>
+                                      <div className="flex-grow">
+                                        <div>
+                                          <span className="block font-medium text-gray-900">
+                                            {company.name}
+                                          </span>
+                                          <span className="text-xs text-gray-500">
+                                            {company.industry}
+                                          </span>
+                                        </div>
+                                      </div>
+                                      <div className="flex-shrink-0">
+                                        <TrendingUp className="h-3 w-3 text-gray-300" />
+                                      </div>
+                                    </div>
+                                  </CommandItem>
+                                ))}
+                            </CommandGroup>
+                          )}
+
+                          {keyword.length < 2 && showPopularSearches && (
+                            <CommandGroup>
+                              <div className="border-b border-gray-100 px-3 py-2 text-xs font-medium tracking-wide text-gray-500 uppercase">
+                                Popular Searches
+                              </div>
+                              {popularSearches.map((popular, index) => (
+                                <CommandItem
+                                  key={`popular-${index}`}
+                                  onSelect={() => handlePopularClick(popular)}
+                                  className="cursor-pointer border-b border-gray-50 px-3 py-3 transition-colors duration-150 last:border-b-0 hover:bg-blue-50"
+                                >
+                                  <div className="flex w-full items-center gap-3">
+                                    <div className="flex-shrink-0">
+                                      <TrendingUp className="h-4 w-4 text-blue-500" />
+                                    </div>
+                                    <div className="flex-grow">
+                                      <span className="font-medium text-gray-900">
+                                        {popular}
+                                      </span>
+                                    </div>
+                                    <div className="flex-shrink-0">
+                                      <Clock className="h-3 w-3 text-gray-300" />
+                                    </div>
                                   </div>
-                                </div>
-                                <div className="flex-shrink-0">
-                                  <TrendingUp className="h-3 w-3 text-gray-300" />
-                                </div>
-                              </div>
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      )}
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          )}
+                        </div>
 
-                      {suggestions.companies.length > 0 && (
-                        <CommandGroup>
-                          <div className="border-b border-gray-100 px-3 py-2 text-xs font-medium tracking-wide text-gray-500 uppercase">
-                            Companies
-                          </div>
-                          {suggestions.companies.map((company, index) => (
-                            <CommandItem
-                              key={`company-${index}`}
-                              onSelect={() => handleCompanyClick(company)}
-                              className="cursor-pointer border-b border-gray-50 px-3 py-3 transition-colors duration-150 last:border-b-0 hover:bg-blue-50"
-                            >
-                              <div className="flex w-full items-center gap-3">
-                                <div className="flex-shrink-0">
-                                  {company.logoUrl ? (
-                                    <Image
-                                      src={company.logoUrl}
-                                      alt={`${company.name} logo`}
-                                      width={24}
-                                      height={24}
-                                      className="h-6 w-6 rounded object-cover"
-                                    />
-                                  ) : (
-                                    <Building className="h-4 w-4 text-gray-400" />
-                                  )}
-                                </div>
-                                <div className="flex-grow">
-                                  <div>
-                                    <span className="block font-medium text-gray-900">
-                                      {company.name}
-                                    </span>
-                                    <span className="text-xs text-gray-500">
-                                      {company.industry}
-                                    </span>
-                                  </div>
-                                </div>
-                                <div className="flex-shrink-0">
-                                  <TrendingUp className="h-3 w-3 text-gray-300" />
-                                </div>
+                        <div>
+                          {suggestions.jobs.length > 0 && (
+                            <CommandGroup>
+                              <div className="border-b border-gray-100 px-3 py-2 text-xs font-medium tracking-wide text-gray-500 uppercase">
+                                Jobs
                               </div>
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      )}
-
-                      {keyword.length < 2 && showPopularSearches && (
-                        <CommandGroup>
-                          <div className="border-b border-gray-100 px-3 py-2 text-xs font-medium tracking-wide text-gray-500 uppercase">
-                            Popular Searches
-                          </div>
-                          {popularSearches.map((popular, index) => (
-                            <CommandItem
-                              key={`popular-${index}`}
-                              onSelect={() => handlePopularClick(popular)}
-                              className="cursor-pointer border-b border-gray-50 px-3 py-3 transition-colors duration-150 last:border-b-0 hover:bg-blue-50"
-                            >
-                              <div className="flex w-full items-center gap-3">
-                                <div className="flex-shrink-0">
-                                  <TrendingUp className="h-4 w-4 text-blue-500" />
-                                </div>
-                                <div className="flex-grow">
-                                  <span className="font-medium text-gray-900">
-                                    {popular}
-                                  </span>
-                                </div>
-                                <div className="flex-shrink-0">
-                                  <Clock className="h-3 w-3 text-gray-300" />
-                                </div>
-                              </div>
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      )}
+                              {suggestions.jobs
+                                .slice(0, 5)
+                                .map((job, index) => (
+                                  <CommandItem
+                                    key={`job-${index}`}
+                                    onSelect={() => handleJobClick(job)}
+                                    className="cursor-pointer border-b border-gray-50 px-3 py-3 transition-colors duration-150 last:border-b-0 hover:bg-blue-50"
+                                  >
+                                    <div className="flex w-full items-center gap-3">
+                                      <div className="flex-shrink-0">
+                                        {job.companyLogo ? (
+                                          <Image
+                                            src={
+                                              job.companyLogo ||
+                                              '/placeholder.svg'
+                                            }
+                                            alt={`${job.companyName} logo`}
+                                            width={24}
+                                            height={24}
+                                            className="h-6 w-6 rounded object-cover"
+                                          />
+                                        ) : (
+                                          <Briefcase className="h-4 w-4 text-gray-400" />
+                                        )}
+                                      </div>
+                                      <div className="flex-grow">
+                                        <div>
+                                          <span className="block font-medium text-gray-900">
+                                            {job.title}
+                                          </span>
+                                          <span className="text-xs text-gray-500">
+                                            {job.companyName} • {job.location}
+                                          </span>
+                                        </div>
+                                      </div>
+                                      <div className="flex-shrink-0">
+                                        <TrendingUp className="h-3 w-3 text-gray-300" />
+                                      </div>
+                                    </div>
+                                  </CommandItem>
+                                ))}
+                            </CommandGroup>
+                          )}
+                        </div>
+                      </div>
 
                       {suggestions.keywords.length === 0 &&
                         suggestions.jobs.length === 0 &&
