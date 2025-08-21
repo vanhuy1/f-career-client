@@ -10,6 +10,5 @@ export enum employmentType {
   CO_OP = 'Co-op',
   SEASONAL = 'Seasonal',
   REMOTE = 'Remote',
-  ONSITE = 'Onsite',
   HYBRID = 'Hybrid',
 }

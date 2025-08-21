@@ -35,7 +35,7 @@ export function mapJobToJobDetails(job: Job): JobDetails {
     ],
     niceToHaves: job.benefit || ['Additional benefits to be discussed'],
     applicationsCount: job.applicants || 0,
-    capacity: 50, // This should come from the API in a real implementation
+    capacity: job.applicants || 0, // Use actual applicants count as capacity for now
     applyBefore: formatDate(job.deadline),
     postedOn: formatDate(job.createdAt),
     type: job.typeOfEmployment || 'Not specified',
@@ -49,5 +49,8 @@ export function mapJobToJobDetails(job: Job): JobDetails {
     requiredSkills: job.skills?.map((skill) => skill.name) || [
       'Skills to be discussed',
     ],
+    companyName: job.company?.companyName || 'Unknown Company',
+    companyLogo: job.company?.logoUrl,
+    location: job.location || 'Location not specified',
   };
 }

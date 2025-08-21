@@ -38,9 +38,9 @@ export default function ApplyJobButton({
     <>
       <Button
         onClick={openDialog}
-        className="rounded-md bg-indigo-600 px-8 py-2 text-white hover:bg-indigo-700"
+        className="rounded-md bg-indigo-600 px-10 py-4 text-white hover:bg-indigo-700"
       >
-        Apply
+        Apply to this job
       </Button>
 
       <ApplyDialog

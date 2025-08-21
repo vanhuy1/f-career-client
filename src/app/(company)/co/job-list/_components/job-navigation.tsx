@@ -6,6 +6,7 @@ import Link from 'next/link';
 const tabs = [
   { key: 'applicants', label: 'Applicants', href: 'applicants' },
   { key: 'job-details', label: 'Job Details', href: 'job-details' },
+  { key: 'top-job', label: 'Package Positions', href: 'top-job' },
   { key: 'settings', label: 'Statistics', href: 'settings' },
 ];
 
@@ -23,7 +24,7 @@ export function JobNavigation() {
               key={tab.key}
               href={
                 pathname?.replace(
-                  /\/(applicants|job-details|settings).*$/,
+                  /\/(applicants|job-details|top-job|settings).*$/,
                   `/${tab.href}`,
                 ) || tab.href
               }

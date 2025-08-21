@@ -65,9 +65,10 @@ export default function TopJobPaymentSuccessPage() {
           const topJobData = JSON.parse(savedData);
           console.log('Parsed top job data:', topJobData);
 
-          // Update job with new topJob value
+          // Update job with new topJob value and expiry
           await jobService.update(topJobData.jobId, {
             topJob: topJobData.newTopJob,
+            topJobExpired: topJobData.topJobExpired,
           });
 
           console.log('Top job updated successfully!');

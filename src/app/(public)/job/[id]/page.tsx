@@ -23,7 +23,8 @@ import { useUser } from '@/services/state/userSlice';
 import JobDetailSkeleton from './components/JobDetailSkeleton';
 import JobDetailError from './components/JobDetailError';
 import JobDetailNotFound from './components/JobDetailNotFound';
-import JobDetailContent from './components/JobDetailContent';
+import JobDescription from './components/JobDescription';
+import JobBenefits from './components/JobBenefits';
 import JobDetailSidebar from './components/JobDetailSidebar';
 
 export default function JobDetailPage() {
@@ -116,10 +117,12 @@ export default function JobDetailPage() {
         jobType={job.typeOfEmployment}
         isBookmarked={isBookmarked}
         onBookmarkChange={handleBookmarkChange}
+        companyLogo={job.company.logoUrl}
       />
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-        <div className="lg:col-span-2">
-          <JobDetailContent job={job} />
+        <div className="space-y-10 lg:col-span-2">
+          <JobDescription job={job} />
+          <JobBenefits job={job} />
         </div>
         <div className="space-y-8">
           <JobDetailSidebar job={job} />

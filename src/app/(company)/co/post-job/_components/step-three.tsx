@@ -12,10 +12,8 @@ import {
   Clock,
   Sparkles,
   Trophy,
-  Medal,
   X,
   Calendar,
-  Flame,
   TrendingUp,
   Users,
   Ticket,
@@ -103,7 +101,7 @@ const displayPackages: DisplayPackage[] = [
   {
     id: 'vip',
     name: 'VIP Elite',
-    pricePerDay: 0.5,
+    pricePerDay: 12000,
     features: [
       'Top position in search results',
       'Premium highlighted listing with glow effect',
@@ -124,7 +122,7 @@ const displayPackages: DisplayPackage[] = [
   {
     id: 'premium',
     name: 'Premium Pro',
-    pricePerDay: 0.4,
+    pricePerDay: 10000,
     features: [
       'Higher position in search results',
       'Highlighted listing with border',
@@ -308,11 +306,10 @@ function JobPreviewCard({
       return (
         <Badge
           variant="outline"
-          className="absolute top-0 right-2 z-20 flex -translate-y-1/2 items-center gap-1 border-0 bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 px-2 py-1 text-xs text-white shadow-lg"
+          className="flex items-center gap-1 border-0 bg-gradient-to-r from-pink-500 to-rose-500 px-2 py-1 text-xs text-white shadow-lg"
         >
           <Trophy className="h-3 w-3" />
-          <Flame className="h-2.5 w-2.5 animate-pulse" />
-          TOP
+          <span className="font-bold">VIP</span>
         </Badge>
       );
     }
@@ -320,9 +317,9 @@ function JobPreviewCard({
       return (
         <Badge
           variant="outline"
-          className="absolute top-0 right-2 z-20 flex -translate-y-1/2 items-center gap-1 border-0 bg-gradient-to-r from-blue-600 to-cyan-600 px-2 py-1 text-xs text-white shadow-md"
+          className="flex items-center gap-1 border-0 bg-gradient-to-r from-indigo-500 to-purple-500 px-2 py-1 text-xs text-white shadow-md"
         >
-          <Medal className="h-3 w-3" /> PRO
+          <Star className="h-3 w-3" /> PREMIUM
         </Badge>
       );
     }
@@ -337,11 +334,9 @@ function JobPreviewCard({
   return (
     <div className="group w-full">
       <div
-        className={`w-full cursor-pointer overflow-hidden rounded-lg ${styles.card} transition-all duration-300 hover:scale-[1.02] hover:shadow-xl`}
+        className={`w-full cursor-pointer overflow-hidden rounded-lg ${styles.card} relative transition-all duration-300 hover:scale-[1.02] hover:shadow-xl`}
       >
         <div className="relative w-full">
-          <PositionBadge />
-
           {isHighlighted && packageType && packageType !== 'basic' && (
             <div className="absolute top-0 left-0">
               {position === 1 ? (
@@ -354,7 +349,7 @@ function JobPreviewCard({
                 <Badge
                   className={`rounded-none rounded-br-lg ${styles.badge} z-10 px-2 py-0.5 text-xs`}
                 >
-                  ⭐ FEATURED
+                  ⭐ TOP
                 </Badge>
               ) : null}
             </div>
@@ -405,21 +400,24 @@ function JobPreviewCard({
                   <DollarSign className="h-3 w-3" />
                   <span>{job.salary}</span>
                 </div>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={handleDetailClick}
-                  className={`h-6 px-2 py-1 text-xs transition-all duration-200 hover:shadow-sm ${
-                    isHighlighted && packageType === 'vip'
-                      ? 'border-purple-300 text-purple-700 hover:bg-purple-50'
-                      : isHighlighted && packageType === 'premium'
-                        ? 'border-blue-300 text-blue-700 hover:bg-blue-50'
-                        : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                  }`}
-                >
-                  <Eye className="mr-1 h-3 w-3" />
-                  View
-                </Button>
+                <div className="flex items-center gap-2">
+                  {isHighlighted && <PositionBadge />}
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleDetailClick}
+                    className={`h-6 px-2 py-1 text-xs transition-all duration-200 hover:shadow-sm ${
+                      isHighlighted && packageType === 'vip'
+                        ? 'border-purple-300 text-purple-700 hover:bg-purple-50'
+                        : isHighlighted && packageType === 'premium'
+                          ? 'border-blue-300 text-blue-700 hover:bg-blue-50'
+                          : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                    }`}
+                  >
+                    <Eye className="mr-1 h-3 w-3" />
+                    View
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
@@ -495,7 +493,7 @@ function JobListPreview({
           </div>
         </div>
 
-        <div className="max-h-[60vh] space-y-4 overflow-y-auto p-6">
+        <div className="max-h-[60vh] space-y-4 overflow-y-auto p-6 pt-6">
           {mockPreviewJobs.slice(0, 5).map((job, index) => {
             const position = index + 1;
             const isHighlighted =
@@ -584,16 +582,17 @@ export default function Step3({
   useEffect(() => {
     const pkg = displayPackages.find((p) => p.id === selectedPackage);
     if (pkg) {
-      const basePrice = Number((pkg.pricePerDay * selectedDuration).toFixed(2));
+      const basePrice = Math.round(pkg.pricePerDay * selectedDuration);
       setOriginalPrice(basePrice);
 
       // Calculate discounted price if coupon is applied
       if (appliedCoupon) {
         const discount = (basePrice * appliedCoupon.discountPercentage) / 100;
         const finalPrice = basePrice - discount;
-        setInternalTotalPrice(Number(finalPrice.toFixed(2)));
+        const roundedFinal = Math.round(finalPrice);
+        setInternalTotalPrice(roundedFinal);
         if (setTotalPrice) {
-          setTotalPrice(Number(finalPrice.toFixed(2)));
+          setTotalPrice(roundedFinal);
         }
       } else {
         setInternalTotalPrice(basePrice);
@@ -787,7 +786,7 @@ export default function Step3({
                     <div className="mb-3">
                       <div className="flex items-baseline gap-1">
                         <span className="text-2xl font-bold">
-                          ${pkg.pricePerDay.toFixed(2)}
+                          {pkg.pricePerDay.toLocaleString('vi-VN')}₫
                         </span>
                         <span className="text-xs text-white/80">/ day</span>
                       </div>
@@ -976,8 +975,8 @@ export default function Step3({
                       {selectedDuration} days × $
                       {displayPackages
                         .find((p) => p.id === selectedPackage)
-                        ?.pricePerDay.toFixed(2)}
-                      /day
+                        ?.pricePerDay.toLocaleString('vi-VN')}
+                      ₫ /day
                     </p>
                     {appliedCoupon && (
                       <p className="text-sm text-green-600">
@@ -990,12 +989,12 @@ export default function Step3({
                   {appliedCoupon && (
                     <div className="mb-1">
                       <span className="text-sm text-gray-500 line-through">
-                        ${originalPrice.toFixed(2)}
+                        {originalPrice.toLocaleString('vi-VN')}₫
                       </span>
                     </div>
                   )}
                   <div className="text-3xl font-bold text-green-600">
-                    ${internalTotalPrice.toFixed(2)}
+                    {internalTotalPrice.toLocaleString('vi-VN')}₫
                   </div>
                   <p className="text-sm text-gray-500">one-time payment</p>
                 </div>

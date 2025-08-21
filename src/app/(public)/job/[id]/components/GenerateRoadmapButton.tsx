@@ -29,6 +29,7 @@ import { Label } from '@/components/ui/label';
 import { Cv } from '@/types/Cv';
 import { Roadmap } from '@/types/RoadMap';
 import { AiLimitModal } from '@/components/AiLimitModal';
+import { ROLES } from '@/enums/roles.enum';
 
 interface GenerateRoadmapButtonProps {
   jobId: string;
@@ -52,7 +53,10 @@ export default function GenerateRoadmapButton({
   const [showLimitModal, setShowLimitModal] = useState(false);
   const points = useAiPoints();
 
-  // Fetch user CVs when dialog opens and user is authenticated
+  // Check if user should see this button (only USER role or not logged in)
+  const shouldShowButton = user?.data.roles[0] === ROLES.USER || !user;
+
+  // Fetch user CVs when dialog opens
   useEffect(() => {
     const fetchUserCvs = async () => {
       if (!open || !user?.data?.id) return;
@@ -152,12 +156,17 @@ export default function GenerateRoadmapButton({
     }
   };
 
+  // Don't render the button if user is HR
+  if (!shouldShowButton) {
+    return null;
+  }
+
   return (
     <>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild>
           <Button
-            className="w-full bg-green-600 text-white hover:bg-green-700"
+            className="w-full bg-pink-500 text-white hover:bg-pink-700"
             size="lg"
           >
             <MapIcon className="mr-2 h-4 w-4" />

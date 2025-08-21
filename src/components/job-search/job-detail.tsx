@@ -1,53 +1,77 @@
+import { Badge } from '@/components/ui/badge';
+
 interface JobDetailsProps {
-  applied: number;
-  capacity: number;
+  applicantsCount?: number;
   applyBefore: string;
   postedOn: string;
   jobType: string;
+  experienceYears?: number;
   salary: string;
+  categories?: string[];
 }
 
 export default function JobDetails({
-  applied,
-  capacity,
+  applicantsCount,
   applyBefore,
-  postedOn,
   jobType,
+  experienceYears,
   salary,
+  categories,
 }: JobDetailsProps) {
-  const percentage = (applied / capacity) * 100;
   return (
     <section>
       <h2 className="mb-6 text-2xl font-bold text-gray-800">About this role</h2>
-      <div className="space-y-4">
+      <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <div className="text-gray-600">
-            <span className="font-medium text-gray-800">{applied} applied</span>{' '}
-            of {capacity} capacity
-          </div>
-          <div className="h-2 w-24 overflow-hidden rounded-full bg-gray-200">
-            <div
-              className="h-full rounded-full bg-indigo-500"
-              style={{ width: `${percentage}%` }}
-            ></div>
-          </div>
+          <span className="font-medium text-gray-600">Applicants</span>
+          <span className="text-2xl font-bold text-pink-600">
+            {applicantsCount && applicantsCount > 0
+              ? applicantsCount <= 10
+                ? applicantsCount
+                : '10+'
+              : 0}
+          </span>
         </div>
         <div className="flex justify-between border-b border-gray-100 py-3">
           <span className="text-gray-600">Apply Before</span>
           <span className="font-medium text-gray-800">{applyBefore}</span>
         </div>
         <div className="flex justify-between border-b border-gray-100 py-3">
-          <span className="text-gray-600">Job Posted On</span>
-          <span className="font-medium text-gray-800">{postedOn}</span>
-        </div>
-        <div className="flex justify-between border-b border-gray-100 py-3">
           <span className="text-gray-600">Job Type</span>
           <span className="font-medium text-gray-800">{jobType}</span>
         </div>
-        <div className="flex justify-between py-3">
+        {experienceYears !== undefined && (
+          <div className="flex justify-between border-b border-gray-100 py-3">
+            <span className="text-gray-600">Experience</span>
+            <span className="font-medium text-gray-900">
+              {experienceYears} years +
+            </span>
+          </div>
+        )}
+        <div className="flex justify-between border-b border-gray-100 py-3">
           <span className="text-gray-600">Salary</span>
-          <span className="font-medium text-gray-800">{salary}</span>
+          <span className="font-medium text-gray-900">{salary}</span>
         </div>
+        {categories && categories.length > 0 && (
+          <div className="flex justify-between py-3">
+            <span className="text-gray-600">Categories</span>
+            <div className="flex gap-2">
+              {categories.map((category, index) => (
+                <Badge
+                  key={index}
+                  variant="secondary"
+                  className={
+                    index === 0
+                      ? 'border-orange-200 bg-orange-100 text-orange-700'
+                      : 'border-amber-200 bg-amber-100 text-amber-700'
+                  }
+                >
+                  {category}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </section>
   );

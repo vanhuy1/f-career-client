@@ -32,7 +32,7 @@ export default async function JobDetailPageComponent({
   const location = 'Danang, Vietnam';
   const jobType = 'Full-Time';
   const applied = 5;
-  const capacity = 10;
+  const experienceYears = 3;
   const applyBefore = 'July 31, 2021';
   const postedOn = 'July 1, 2021';
   const salary = '$75k-$85k USD';
@@ -118,12 +118,12 @@ export default async function JobDetailPageComponent({
         <div className="lg:col-span-1">
           <div className="space-y-8 rounded-lg border p-6">
             <JobDetails
-              applied={applied}
-              capacity={capacity}
+              applicantsCount={applied}
               applyBefore={applyBefore}
               postedOn={postedOn}
               jobType={jobType}
               salary={salary}
+              experienceYears={experienceYears}
             />
             <JobCategories categories={categories} />
             <JobSkills skills={skills} />

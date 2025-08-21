@@ -83,6 +83,22 @@ export default function PaymentSuccessPage() {
           const formData = JSON.parse(savedData);
           console.log('Parsed form data:', formData);
 
+          // Compute vipExpired based on durationDays and deadline
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          const dl = new Date(formData.deadline);
+          dl.setHours(0, 0, 0, 0);
+          const durationDays =
+            (formData?.packageInfo?.durationDays as number) || 0;
+          let vipExpiredDate = new Date(today);
+          if (durationDays > 0) {
+            vipExpiredDate.setDate(today.getDate() + durationDays);
+          } else {
+            vipExpiredDate = new Date(dl);
+          }
+          if (vipExpiredDate < today) vipExpiredDate = new Date(today);
+          if (vipExpiredDate > dl) vipExpiredDate = new Date(dl);
+
           // Create job with saved data
           const jobData = {
             title: formData.title,
@@ -101,9 +117,9 @@ export default function PaymentSuccessPage() {
             packageInfo: formData.packageInfo,
             deadline: formData.deadline,
             typeOfEmployment: formData.typeOfEmployment || 'FULL_TIME',
-            status: 'ACTIVE' as JobStatus,
+            status: 'OPEN' as JobStatus,
             priorityPosition: formData.priorityPosition || 3,
-            vip_expiration: formData.vip_expiration,
+            vipExpired: vipExpiredDate.toISOString(),
           };
 
           console.log('Creating job with data:', jobData);

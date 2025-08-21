@@ -24,6 +24,7 @@ export type EmploymentType =
   | 'PART_TIME'
   | 'CONTRACT'
   | 'INTERNSHIP';
+
 export type JobStatus = 'OPEN' | 'CLOSED' | 'DRAFT';
 
 export type PackageType = 'basic' | 'premium' | 'vip';
@@ -59,9 +60,10 @@ export interface Job {
   updatedAt?: string;
   applicants: number;
   priorityPosition?: number;
-  vip_expiration?: string;
+  vipExpired?: string;
   isDeleted?: boolean;
   topJob?: number;
+  topJobExpired?: string;
 }
 
 export interface OpenPositionsJob {
@@ -104,6 +106,10 @@ export interface CreateJobReq {
   typeOfEmployment: EmploymentType;
   benefit: string[];
   topJob?: number;
+  topJobExpired?: string;
+  vipExpired?: string;
+  priorityPosition?: number;
+  priorityExpired?: string;
 }
 
 /** payload khi cập nhật job */
@@ -171,6 +177,9 @@ export interface StepProps {
   availableSkills: Skill[];
   totalPrice?: number;
   setTotalPrice?: (price: number) => void;
+  refreshSkills?: () => Promise<void>;
+  selectedSkillIds?: string[];
+  setSelectedSkillIds?: (ids: string[]) => void;
 }
 
 export interface JobCategory {
