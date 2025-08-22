@@ -42,6 +42,22 @@ class CompanyService {
   }
 
   /**
+   * Lấy danh sách top companies
+   */
+  async getTopCompanies(): Promise<CompanyListResponse> {
+    const url = this.requestBuilder.buildUrl('top');
+    const response = await httpClient.get<CompanyListResponse>({
+      url,
+      typeCheck: (data) => ({
+        success: true,
+        data: data as CompanyListResponse,
+      }),
+    });
+    console.log('Top companies response:', response);
+    return response;
+  }
+
+  /**
    * Lấy chi tiết 1 company theo ID
    */
   async findOne(id: string): Promise<Company> {
@@ -81,6 +97,28 @@ class CompanyService {
     const response = await httpClient.patch<Company, UpdateCompanyReq>({
       url,
       body: payload,
+      typeCheck: (data) => ({
+        success: true,
+        data: data as Company,
+      }),
+    });
+    return response;
+  }
+
+  /**
+   * Cập nhật VIP status của company
+   */
+  async updateVIPStatus(
+    id: string,
+    vipData: {
+      priorityPosition: number;
+      vipExpired: string | null;
+    },
+  ): Promise<Company> {
+    const url = this.requestBuilder.buildUrl(id);
+    const response = await httpClient.patch<Company, typeof vipData>({
+      url,
+      body: vipData,
       typeCheck: (data) => ({
         success: true,
         data: data as Company,

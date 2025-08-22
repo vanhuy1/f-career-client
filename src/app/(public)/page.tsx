@@ -3,7 +3,7 @@
 import { useHasUpdated } from '@/hooks/use-hasUpdated';
 import JobCategories from '@/components/landing/job-categories';
 import JobBoard from '@/components/landing/job-board';
-import JobBoardS from '@/components/landing/job-boards';
+import CompanyBoard from '@/components/landing/company-board';
 import { HeroSection } from '@/components/landing/hero-section';
 import WarningProfileUpdated from '@/components/landing/warning-profile-updated';
 
@@ -16,7 +16,7 @@ export default function Home() {
       <HeroSection />
       <JobCategories />
       <JobBoard />
-      <JobBoardS />
+      <CompanyBoard />
     </>
   );
 }

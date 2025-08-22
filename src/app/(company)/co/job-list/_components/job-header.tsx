@@ -8,6 +8,7 @@ import {
   useJobDetailLoadingState,
 } from '@/services/state/jobSlice';
 import { LoadingState } from '@/store/store.model';
+import { formatEmploymentType } from '@/utils/formatters';
 
 export function JobHeader() {
   const router = useRouter();
@@ -43,7 +44,7 @@ export function JobHeader() {
               </h1>
               <p className="text-gray-600">
                 {jobData?.category?.name || 'N/A'} •{' '}
-                {jobData?.typeOfEmployment || 'N/A'} •{' '}
+                {formatEmploymentType(jobData?.typeOfEmployment)} •{' '}
                 {jobData?.applicants || 0} Applications
               </p>
             </>

@@ -12,6 +12,148 @@ const Map = dynamic(
   { ssr: false },
 );
 
+// Vietnamese provinces data (copied from company-header-section.tsx)
+const VIETNAM_PROVINCES = [
+  'An Giang',
+  'Bà Rịa - Vũng Tàu',
+  'Bắc Giang',
+  'Bắc Kạn',
+  'Bạc Liêu',
+  'Bắc Ninh',
+  'Bến Tre',
+  'Bình Định',
+  'Bình Dương',
+  'Bình Phước',
+  'Bình Thuận',
+  'Cà Mau',
+  'Cần Thơ',
+  'Cao Bằng',
+  'Đà Nẵng',
+  'Đắk Lắk',
+  'Đắk Nông',
+  'Điện Biên',
+  'Đồng Nai',
+  'Đồng Tháp',
+  'Gia Lai',
+  'Hà Giang',
+  'Hà Nam',
+  'Hà Nội',
+  'Hà Tĩnh',
+  'Hải Dương',
+  'Hải Phòng',
+  'Hậu Giang',
+  'Hòa Bình',
+  'Hưng Yên',
+  'Khánh Hòa',
+  'Kiên Giang',
+  'Kon Tum',
+  'Lai Châu',
+  'Lâm Đồng',
+  'Lạng Sơn',
+  'Lào Cai',
+  'Long An',
+  'Nam Định',
+  'Nghệ An',
+  'Ninh Bình',
+  'Ninh Thuận',
+  'Phú Thọ',
+  'Phú Yên',
+  'Quảng Bình',
+  'Quảng Nam',
+  'Quảng Ngãi',
+  'Quảng Ninh',
+  'Quảng Trị',
+  'Sóc Trăng',
+  'Sơn La',
+  'Tây Ninh',
+  'Thái Bình',
+  'Thái Nguyên',
+  'Thanh Hóa',
+  'Thừa Thiên Huế',
+  'Tiền Giang',
+  'TP. Hồ Chí Minh',
+  'Trà Vinh',
+  'Tuyên Quang',
+  'Vĩnh Long',
+  'Vĩnh Phúc',
+  'Yên Bái',
+];
+
+// Smart location formatting function (copied from company-header-section.tsx)
+// Only shows headquarters (first element in address array)
+const formatLocation = (address?: string[] | null): string => {
+  if (!address || address.length === 0) return 'N/A';
+
+  // Take only the first element (headquarters)
+  const headquarters = address[0];
+
+  if (!headquarters) return 'N/A';
+
+  // Split by comma and clean up each part
+  const parts = headquarters
+    .split(',')
+    .map((part) => part.trim().toLowerCase());
+
+  // Find the Vietnamese province/city from the end of the location
+  // Since API always returns province/city, it's usually at the end
+  for (let i = parts.length - 1; i >= 0; i--) {
+    const part = parts[i];
+
+    // Check if this part matches any Vietnamese province
+    const foundProvince = VIETNAM_PROVINCES.find(
+      (province) =>
+        part.includes(province.toLowerCase()) ||
+        province.toLowerCase().includes(part),
+    );
+
+    if (foundProvince) {
+      return foundProvince;
+    }
+  }
+
+  // If no province found, try to extract meaningful city name
+  // Remove common address words and keep the most relevant part
+  const addressWords = [
+    'đường',
+    'phố',
+    'quận',
+    'huyện',
+    'xã',
+    'phường',
+    'thị trấn',
+    'thị xã',
+    'street',
+    'district',
+    'ward',
+    'commune',
+    'town',
+    'city',
+    'province',
+    'việt nam',
+    'vietnam',
+    'vn',
+  ];
+
+  // Find the last meaningful part (usually city/province)
+  for (let i = parts.length - 1; i >= 0; i--) {
+    const part = parts[i];
+
+    // Skip if it's just an address word or too short
+    if (addressWords.includes(part) || part.length < 2) {
+      continue;
+    }
+
+    // Return the first meaningful part found
+    return part.charAt(0).toUpperCase() + part.slice(1);
+  }
+
+  // Fallback: return the last part if nothing else works
+  return (
+    parts[parts.length - 1]?.charAt(0).toUpperCase() +
+      parts[parts.length - 1]?.slice(1) || 'N/A'
+  );
+};
+
 interface MapSectionProps {
   company: Company;
 }
@@ -30,21 +172,26 @@ const MapSection = ({ company }: MapSectionProps) => {
       }
 
       try {
-        // Format address for better geocoding results
-        const formattedAddress = company.address[0]
-          .replace(/[,\s]+/g, ' ')
-          .trim();
+        // Use the same location formatting logic as company-header-section.tsx
+        const cityName = formatLocation(company.address);
 
-        // Add "Vietnam" to the address if not present
-        const addressWithCountry = formattedAddress
-          .toLowerCase()
-          .includes('vietnam')
-          ? formattedAddress
-          : `${formattedAddress}, Vietnam`;
+        if (cityName === 'N/A') {
+          setError('Unable to determine city location');
+          setIsLoading(false);
+          return;
+        }
+
+        // Format city name for geocoding
+        const formattedCityName = cityName.replace(/[,\s]+/g, ' ').trim();
+
+        // Add "Vietnam" to the city name for better geocoding results
+        const cityWithCountry = `${formattedCityName}, Vietnam`;
+
+        console.log('Searching for city:', cityWithCountry);
 
         const response = await fetch(
           `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
-            addressWithCountry,
+            cityWithCountry,
           )}&countrycodes=vn&limit=1`,
           {
             headers: {
@@ -62,37 +209,9 @@ const MapSection = ({ company }: MapSectionProps) => {
 
         if (data && data[0]) {
           setCoordinates([parseFloat(data[0].lat), parseFloat(data[0].lon)]);
+          console.log('Found coordinates for city:', cityName, data[0]);
         } else {
-          // Try with district/city search
-          const districtMatch = company.address[0].match(
-            /(Quận|Huyện|Thành phố|TP\.|Q\.) ([^,]+)/i,
-          );
-          if (districtMatch) {
-            const districtSearch = `${districtMatch[0]}, Vietnam`;
-            const districtResponse = await fetch(
-              `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
-                districtSearch,
-              )}&countrycodes=vn&limit=1`,
-              {
-                headers: {
-                  'Accept-Language': 'vi',
-                  'User-Agent': 'F-Career-Client',
-                },
-              },
-            );
-            const districtData = await districtResponse.json();
-
-            if (districtData && districtData[0]) {
-              setCoordinates([
-                parseFloat(districtData[0].lat),
-                parseFloat(districtData[0].lon),
-              ]);
-            } else {
-              setError('Location not found');
-            }
-          } else {
-            setError('Location not found');
-          }
+          setError(`Location not found for ${cityName}`);
         }
       } catch (err) {
         setError('Failed to fetch location data');
@@ -105,9 +224,9 @@ const MapSection = ({ company }: MapSectionProps) => {
     getCoordinates();
   }, [company.address]);
 
-  // Memoize the address to prevent unnecessary re-renders
-  const address = useMemo(
-    () => company.address?.[0] || 'Company Location',
+  // Memoize the city name to prevent unnecessary re-renders
+  const cityName = useMemo(
+    () => formatLocation(company.address),
     [company.address],
   );
 
@@ -142,7 +261,7 @@ const MapSection = ({ company }: MapSectionProps) => {
                     Loading map...
                   </p>
                   <p className="mt-1 text-sm text-gray-500">
-                    Fetching location data
+                    Fetching location data for {cityName}
                   </p>
                 </div>
               </div>
@@ -168,12 +287,12 @@ const MapSection = ({ company }: MapSectionProps) => {
 
           {!isLoading && !error && coordinates && (
             <div className="h-[400px] w-full">
-              <Map coordinates={coordinates} address={address} />
+              <Map coordinates={coordinates} address={cityName} />
             </div>
           )}
         </div>
 
-        {/* Address Info */}
+        {/* City Info */}
         {!isLoading && !error && (
           <div className="mt-4 rounded-xl border border-white/50 bg-white/70 p-4 backdrop-blur-sm">
             <div className="flex items-center gap-3">
@@ -182,10 +301,10 @@ const MapSection = ({ company }: MapSectionProps) => {
               </div>
               <div>
                 <div className="mb-1 text-xs font-semibold tracking-wider text-gray-500 uppercase">
-                  Our Address
+                  Company City
                 </div>
                 <p className="text-sm leading-relaxed font-medium text-gray-900">
-                  {address}
+                  {cityName}
                 </p>
               </div>
             </div>

@@ -8,6 +8,7 @@ import { ApplicationByJobId } from '@/types/Applicants';
 import { Candidate } from '../../_components/types/candidate';
 import { toast } from 'react-toastify';
 import { ApplicationStatus } from '@/enums/applicationStatus';
+import { useJobDetail } from '@/hooks/use-job-detail';
 
 const getScoreColor = (score: number) => {
   if (score === 100) return 'text-purple-600';
@@ -32,6 +33,10 @@ export default function ApplicantsPage() {
       ? params.id[0]
       : params.id
     : undefined;
+
+  // Fetch job data for header
+  useJobDetail(jobId);
+
   const [applicants, setApplicants] = useState<Candidate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 

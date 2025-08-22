@@ -1,3 +1,5 @@
+import { employmentType } from '@/enums/employmentType';
+
 /**
  * Format date string to "Month DD, YYYY" format
  */
@@ -68,4 +70,16 @@ export function formatTime(dateString: string): string {
     hour: '2-digit',
     minute: '2-digit',
   });
+}
+
+export function formatEmploymentType(code?: string): string {
+  if (!code) return 'Not specified';
+  const key = code as keyof typeof employmentType;
+  if (employmentType[key]) return employmentType[key];
+  const pretty = code
+    .toLowerCase()
+    .split('_')
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ');
+  return pretty;
 }

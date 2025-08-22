@@ -1,7 +1,7 @@
 import { Badge } from '@/components/ui/badge';
+import { formatEmploymentType } from '@/utils/formatters';
 
 interface JobDetailsProps {
-  applicantsCount?: number;
   applyBefore: string;
   postedOn: string;
   jobType: string;
@@ -11,7 +11,6 @@ interface JobDetailsProps {
 }
 
 export default function JobDetails({
-  applicantsCount,
   applyBefore,
   jobType,
   experienceYears,
@@ -20,25 +19,17 @@ export default function JobDetails({
 }: JobDetailsProps) {
   return (
     <section>
-      <h2 className="mb-6 text-2xl font-bold text-gray-800">About this role</h2>
+      <h2 className="mb-6 text-2xl font-bold text-gray-800">About this Job</h2>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <span className="font-medium text-gray-600">Applicants</span>
-          <span className="text-2xl font-bold text-pink-600">
-            {applicantsCount && applicantsCount > 0
-              ? applicantsCount <= 10
-                ? applicantsCount
-                : '10+'
-              : 0}
-          </span>
-        </div>
         <div className="flex justify-between border-b border-gray-100 py-3">
           <span className="text-gray-600">Apply Before</span>
           <span className="font-medium text-gray-800">{applyBefore}</span>
         </div>
         <div className="flex justify-between border-b border-gray-100 py-3">
           <span className="text-gray-600">Job Type</span>
-          <span className="font-medium text-gray-800">{jobType}</span>
+          <span className="font-medium text-gray-800">
+            {formatEmploymentType(jobType)}
+          </span>
         </div>
         {experienceYears !== undefined && (
           <div className="flex justify-between border-b border-gray-100 py-3">

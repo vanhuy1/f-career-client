@@ -366,14 +366,12 @@ export function TopJobPreview({
                   >
                     {/* Header */}
                     <div className="mb-4 flex items-start justify-between">
-                      <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-lg border border-gray-200 bg-gray-50">
+                      <div className="relative h-12 w-12 overflow-hidden rounded-lg border border-gray-200 bg-gray-50">
                         <Image
                           src={job.company.logoUrl || '/placeholder.svg'}
                           alt={`${job.company.companyName} logo`}
-                          width={40}
-                          height={40}
-                          className="object-cover"
-                          style={{ objectPosition: 'center' }}
+                          fill
+                          className="object-contain p-1"
                         />
                       </div>
                       <div className="flex gap-2">
@@ -383,9 +381,6 @@ export function TopJobPreview({
                             {category}
                           </span>
                         )}
-                        <span className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700">
-                          {employmentTypeText}
-                        </span>
                       </div>
                     </div>
 
@@ -401,11 +396,16 @@ export function TopJobPreview({
                       </span>
                     </div>
 
-                    {/* Location */}
+                    {/* Location & Employment Type */}
                     <div className="mb-4 flex items-center gap-1 text-sm text-gray-600">
                       <MapPin className="h-3 w-3 flex-shrink-0" />
                       <span className="truncate">
                         {formatLocation(job.location)}
+                      </span>
+                      <span className="mx-1 text-gray-400">•</span>
+                      <Clock className="h-3 w-3 flex-shrink-0 text-blue-500" />
+                      <span className="truncate font-medium text-blue-600">
+                        {employmentTypeText}
                       </span>
                     </div>
 

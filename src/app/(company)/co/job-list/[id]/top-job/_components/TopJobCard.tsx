@@ -371,6 +371,19 @@ export function TopJobCard({
                               : `Pay ${applyDiscount(Math.round(topJobPrice * Math.max(1, topJobExtendDaysDiff || 0)), topJobAppliedCoupon).toLocaleString('vi-VN')}₫ & extend spotlight ${Math.max(1, topJobExtendDaysDiff || 0)} days`}
                         </Button>
                       </div>
+
+                      <div className="mt-3">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={onPreviewClick}
+                          className="w-full border-amber-300 text-amber-700 hover:bg-amber-50"
+                        >
+                          <Eye className="mr-2 h-4 w-4" />
+                          Preview Homepage Spotlight
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </div>
