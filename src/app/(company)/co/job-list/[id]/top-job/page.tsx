@@ -11,6 +11,7 @@ import { jobService } from '@/services/api/jobs/job-api';
 import { payosService } from '@/services/api/payment/payos-api';
 import { Job } from '@/types/Job';
 import { couponService, type Coupon } from '@/services/api/coupons/coupon-api';
+import { useJobDetail } from '@/hooks/use-job-detail';
 
 // Import components
 import {
@@ -29,6 +30,9 @@ export default function TopJobPage() {
   const params = useParams();
   const router = useRouter();
   const jobId = params?.id as string;
+
+  // Fetch job data for header
+  useJobDetail(jobId);
 
   const [job, setJob] = useState<Job | null>(null);
   const [isLoading, setIsLoading] = useState(true);

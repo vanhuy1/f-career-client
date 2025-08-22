@@ -9,6 +9,7 @@ import { ROLES } from '@/enums/roles.enum';
 import { bookmarkJobService } from '@/services/api/bookmark/bookmark-job.api';
 import { toast } from 'react-toastify';
 import { jobService } from '@/services/api/jobs/job-api';
+import { formatEmploymentType } from '@/utils/formatters';
 
 // Vietnamese provinces data
 const VIETNAM_PROVINCES = [
@@ -258,7 +259,7 @@ export default function JobHeader({
                   <span>{formatLocation(location)}</span>
                 </div>
                 <span className="text-gray-400">•</span>
-                <span>{jobType}</span>
+                <span>{formatEmploymentType(jobType)}</span>
               </div>
             </div>
           </div>

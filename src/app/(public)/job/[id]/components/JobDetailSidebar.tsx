@@ -1,6 +1,5 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
 import { Job } from '@/types/Job';
 import JobDetails from '@/components/job-search/job-detail';
 import { formatDate, formatSalaryRange } from '../utils/formatters';
@@ -8,7 +7,6 @@ import GenerateRoadmapButton from './GenerateRoadmapButton';
 import { useUser } from '@/services/state/userSlice';
 import { ROLES } from '@/enums/roles.enum';
 import JobSkills from './JobSkills';
-import { applicationService } from '@/services/api/applications/application-api';
 
 interface JobDetailSidebarProps {
   job: Job;
@@ -16,34 +14,6 @@ interface JobDetailSidebarProps {
 
 export default function JobDetailSidebar({ job }: JobDetailSidebarProps) {
   const user = useUser();
-  const [applicantsCount, setApplicantsCount] = useState(0);
-
-  const fetchApplicantsCount = useCallback(async () => {
-    if (!job.id) return;
-
-    try {
-      const response = await applicationService.getApplicationByJobId({
-        jobId: job.id.toString(),
-        offset: 0,
-        limit: 100,
-      });
-
-      if (response && response.applications) {
-        setApplicantsCount(response.applications.length);
-      } else {
-        setApplicantsCount(0);
-      }
-    } catch (error) {
-      console.error('Error fetching applicants count:', error);
-      setApplicantsCount(0);
-    }
-  }, [job.id]);
-
-  useEffect(() => {
-    if (job.id) {
-      fetchApplicantsCount();
-    }
-  }, [job.id, fetchApplicantsCount]);
 
   return (
     <div className="lg:col-span-1">
@@ -56,13 +26,12 @@ export default function JobDetailSidebar({ job }: JobDetailSidebarProps) {
           {/* Content */}
           <div className="relative space-y-8">
             <JobDetails
-              applicantsCount={applicantsCount}
               applyBefore={formatDate(job.deadline)}
               postedOn={job.createdAt ? formatDate(job.createdAt) : ''}
               jobType={job.typeOfEmployment}
               experienceYears={job.experienceYears}
               salary={formatSalaryRange(job.salaryMin, job.salaryMax)}
-              categories={[job.category.name]} // Thêm categories vào JobDetails
+              categories={[job.category.name]}
             />
 
             <div className="border-t pt-4">

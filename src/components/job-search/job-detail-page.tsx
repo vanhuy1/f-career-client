@@ -31,7 +31,6 @@ export default async function JobDetailPageComponent({
   // Hardcoded data for demonstration
   const location = 'Danang, Vietnam';
   const jobType = 'Full-Time';
-  const applied = 5;
   const experienceYears = 3;
   const applyBefore = 'July 31, 2021';
   const postedOn = 'July 1, 2021';
@@ -118,7 +117,6 @@ export default async function JobDetailPageComponent({
         <div className="lg:col-span-1">
           <div className="space-y-8 rounded-lg border p-6">
             <JobDetails
-              applicantsCount={applied}
               applyBefore={applyBefore}
               postedOn={postedOn}
               jobType={jobType}

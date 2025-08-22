@@ -348,9 +348,6 @@ function JobCard({ job }: { job: Job }) {
                 {category}
               </span>
             )}
-            <span className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700">
-              {employmentTypeText}
-            </span>
           </div>
         </div>
 
@@ -366,10 +363,15 @@ function JobCard({ job }: { job: Job }) {
           </span>
         </div>
 
-        {/* Location */}
+        {/* Location & Employment Type */}
         <div className="mb-4 flex items-center gap-1 text-sm text-gray-600">
           <MapPin className="h-3 w-3 flex-shrink-0" />
           <span className="truncate">{formatLocation(job.location)}</span>
+          <span className="mx-1 text-gray-400">•</span>
+          <Clock className="h-3 w-3 flex-shrink-0 text-blue-500" />
+          <span className="truncate font-medium text-blue-600">
+            {employmentTypeText}
+          </span>
         </div>
 
         {/* Skills Tags */}

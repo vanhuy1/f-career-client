@@ -80,9 +80,6 @@ export interface CreateCompanyReq {
   businessLicenseUrl?: string;
   createdAt?: string;
   updatedAt?: string;
-  // New BE fields
-  topCompany?: boolean | number;
-  topJobExpired?: string | null;
   priorityPosition?: number | null;
   vipExpired?: string | null;
 }

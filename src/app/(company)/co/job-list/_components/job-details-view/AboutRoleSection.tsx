@@ -1,6 +1,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Briefcase } from 'lucide-react';
 import type { JobDetails } from '../types/job';
+import { formatEmploymentType } from '@/utils/formatters';
 
 interface AboutRoleSectionProps {
   job: JobDetails;
@@ -48,7 +49,9 @@ export function AboutRoleSection({
         </div>
         <div className="flex justify-between">
           <span className="text-gray-600">Job Type</span>
-          <span className="font-medium text-gray-900">{job.type}</span>
+          <span className="font-medium text-gray-900">
+            {formatEmploymentType(job.type)}
+          </span>
         </div>
         <div className="flex justify-between">
           <span className="text-gray-600">Experience</span>
