@@ -36,6 +36,8 @@ import QuizAttemptDetailModal from './QuizAttemptDetailModal';
 import { useAiPoints } from '@/services/state/userSlice';
 import { useRouter } from 'next/navigation';
 import { AiLimitModal } from '@/components/AiLimitModal';
+import { useUserActions } from '@/services/state/userSlice';
+import { userService } from '@/services/api/auth/user-api';
 
 interface QuizModalProps {
   isOpen: boolean;
@@ -77,6 +79,7 @@ export default function QuizModal({
   const [showLimitModal, setShowLimitModal] = useState(false);
   const points = useAiPoints();
   const router = useRouter();
+  const { decrementAiPoints, updateAiPoints } = useUserActions();
 
   // Quiz state
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -249,6 +252,17 @@ export default function QuizModal({
         forceNew ? `AI-generated practice test for ${roadmapTitle}` : undefined,
         forceNew,
       );
+
+      // Optimistically decrement AI points only when generating a NEW quiz
+      if (forceNew) {
+        decrementAiPoints();
+        try {
+          const refreshed = await userService.getAiPoints();
+          if (typeof refreshed?.point === 'number') {
+            updateAiPoints(refreshed.point);
+          }
+        } catch {}
+      }
 
       setQuiz(newQuiz);
 
