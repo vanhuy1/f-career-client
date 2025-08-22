@@ -22,7 +22,11 @@ import { MapIcon, Loader2, User } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { cvService } from '@/services/api/cv/cv-api';
 import { roadmapService } from '@/services/api/roadmap/roadmap-api';
-import { useAiPoints, useUser } from '@/services/state/userSlice';
+import {
+  useAiPoints,
+  useUser,
+  useUserActions,
+} from '@/services/state/userSlice';
 import { toast } from 'react-hot-toast';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -30,6 +34,7 @@ import { Cv } from '@/types/Cv';
 import { Roadmap } from '@/types/RoadMap';
 import { AiLimitModal } from '@/components/AiLimitModal';
 import { ROLES } from '@/enums/roles.enum';
+import { userService } from '@/services/api/auth/user-api';
 
 interface GenerateRoadmapButtonProps {
   jobId: string;
@@ -52,6 +57,7 @@ export default function GenerateRoadmapButton({
   const user = useUser();
   const [showLimitModal, setShowLimitModal] = useState(false);
   const points = useAiPoints();
+  const { decrementAiPoints, updateAiPoints } = useUserActions();
 
   // Check if user should see this button (only USER role or not logged in)
   const shouldShowButton = user?.data.roles[0] === ROLES.USER || !user;
@@ -124,6 +130,15 @@ export default function GenerateRoadmapButton({
         jobTitle: jobTitle,
         useTestMode: useTestMode,
       });
+
+      // Optimistically decrement AI points and sync with server
+      decrementAiPoints();
+      try {
+        const refreshed = await userService.getAiPoints();
+        if (typeof refreshed?.point === 'number') {
+          updateAiPoints(refreshed.point);
+        }
+      } catch {}
 
       // Save to local storage (merge with existing)
       if (typeof window !== 'undefined') {

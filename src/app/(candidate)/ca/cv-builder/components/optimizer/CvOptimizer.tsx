@@ -55,6 +55,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAiPoints, useUser } from '@/services/state/userSlice';
 import { CvOptimizationHistoryItem } from '@/services/api/cv/cv-api';
 import { AiLimitModal } from '@/components/AiLimitModal';
+import { useUserActions } from '@/services/state/userSlice';
+import { userService } from '@/services/api/auth/user-api';
 
 interface CvOptimizerProps {
   cvId: string;
@@ -81,6 +83,7 @@ export default function CvOptimizer({ cvId, onUpdateCv }: CvOptimizerProps) {
   const userId = user?.data?.id;
   const [showLimitModal, setShowLimitModal] = useState(false);
   const points = useAiPoints();
+  const { decrementAiPoints, updateAiPoints } = useUserActions();
   // Load history từ API khi mở dialog
   useEffect(() => {
     if (isOpen && cvId) {
@@ -106,6 +109,15 @@ export default function CvOptimizer({ cvId, onUpdateCv }: CvOptimizerProps) {
           userId: Number(userId),
         }),
       ).unwrap();
+
+      // Optimistically decrement AI points and then sync from server
+      decrementAiPoints();
+      try {
+        const refreshed = await userService.getAiPoints();
+        if (typeof refreshed?.point === 'number') {
+          updateAiPoints(refreshed.point);
+        }
+      } catch {}
 
       // Refresh history sau khi optimize thành công
       dispatch(fetchOptimizationHistory({ cvId, limit: 10, offset: 0 }));
