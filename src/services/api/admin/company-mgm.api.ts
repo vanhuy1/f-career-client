@@ -5,6 +5,7 @@ import {
   CompanyResponse,
   VerifyCompanyResponse,
   CompanyDetailResponse,
+  UnverifyCompanyResponse,
 } from '@/types/admin/CompanyManagement';
 
 class CompanyManagementService {
@@ -53,6 +54,27 @@ class CompanyManagementService {
         return {
           success: true,
           data: data as VerifyCompanyResponse,
+        };
+      },
+      config: {
+        withCredentials: false,
+      },
+    });
+    return response;
+  }
+
+  async unverifyCompany(id: string): Promise<UnverifyCompanyResponse> {
+    const url = this.requestBuilder.buildUrl(`${id}/unverify`);
+    const response = await httpClient.patch<
+      UnverifyCompanyResponse,
+      Record<string, never>
+    >({
+      url,
+      body: {},
+      typeCheck: (data) => {
+        return {
+          success: true,
+          data: data as UnverifyCompanyResponse,
         };
       },
       config: {

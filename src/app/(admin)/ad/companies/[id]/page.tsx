@@ -52,6 +52,12 @@ export default function CompanyDetailPage() {
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
   const [emailSubject, setEmailSubject] = useState('');
   const [emailMessage, setEmailMessage] = useState('');
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [pendingAction, setPendingAction] = useState<{
+    action: 'verify' | 'unverify';
+    companyName: string;
+  } | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
     const fetchDetail = async () => {
@@ -77,6 +83,47 @@ export default function CompanyDetailPage() {
     setEmailDialogOpen(false);
     setEmailSubject('');
     setEmailMessage('');
+  };
+
+  const handleVerifyToggle = () => {
+    if (!company) return;
+
+    const action = company.isVerified ? 'unverify' : 'verify';
+    setPendingAction({
+      action,
+      companyName: company.companyName,
+    });
+    setConfirmDialogOpen(true);
+  };
+
+  const confirmVerifyToggle = async () => {
+    if (!pendingAction || !company) return;
+
+    try {
+      setIsProcessing(true);
+
+      const res =
+        pendingAction.action === 'verify'
+          ? await companyManagementService.verifyCompany(company.id)
+          : await companyManagementService.unverifyCompany(company.id);
+
+      // Update the company state with the new verification status
+      setCompany((prev) =>
+        prev ? { ...prev, isVerified: res.data.isVerified } : null,
+      );
+
+      setConfirmDialogOpen(false);
+      setPendingAction(null);
+    } catch (err) {
+      console.error(`Failed to ${pendingAction.action} company:`, err);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const cancelVerifyToggle = () => {
+    setConfirmDialogOpen(false);
+    setPendingAction(null);
   };
 
   if (loading) {
@@ -148,6 +195,23 @@ export default function CompanyDetailPage() {
           </div>
 
           <div className="flex gap-2">
+            <Button
+              onClick={handleVerifyToggle}
+              variant={company.isVerified ? 'destructive' : 'default'}
+              disabled={isProcessing}
+            >
+              {company.isVerified ? (
+                <>
+                  <XCircle className="mr-2 h-4 w-4" />
+                  Unverify Company
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="mr-2 h-4 w-4" />
+                  Verify Company
+                </>
+              )}
+            </Button>
             <Dialog open={emailDialogOpen} onOpenChange={setEmailDialogOpen}>
               <DialogTrigger asChild>
                 <Button variant="outline">
@@ -481,6 +545,51 @@ export default function CompanyDetailPage() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Confirmation Dialog */}
+      <Dialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Confirm Action</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to {pendingAction?.action} the company{' '}
+              <span className="font-semibold">
+                {pendingAction?.companyName}
+              </span>
+              ?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-sm text-gray-600">
+              {pendingAction?.action === 'unverify'
+                ? 'This will mark the company as unverified and may affect their visibility and access to certain features.'
+                : 'This will mark the company as verified, confirming their legitimacy and granting them full access to the platform.'}
+            </p>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={cancelVerifyToggle}
+              disabled={isProcessing}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={confirmVerifyToggle}
+              disabled={isProcessing}
+              variant={
+                pendingAction?.action === 'unverify' ? 'destructive' : 'default'
+              }
+            >
+              {isProcessing
+                ? 'Processing...'
+                : pendingAction?.action === 'unverify'
+                  ? 'Unverify'
+                  : 'Verify'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

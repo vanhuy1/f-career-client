@@ -29,6 +29,11 @@ export interface VerifyCompanyResponse {
   meta: ApiMeta;
 }
 
+export interface UnverifyCompanyResponse {
+  data: Company;
+  meta: ApiMeta;
+}
+
 export interface CompanyManagementRequest {
   limit: number;
   offset: number;
