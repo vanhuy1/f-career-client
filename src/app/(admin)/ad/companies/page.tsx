@@ -45,6 +45,12 @@ export default function CompaniesPage() {
   const [verifiedFilter, setVerifiedFilter] = useState<
     'all' | 'verified' | 'unverified'
   >('all');
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [pendingAction, setPendingAction] = useState<{
+    companyId: string;
+    companyName: string;
+    currentStatus: boolean;
+  } | null>(null);
 
   useEffect(() => {
     const fetchCompanies = async () => {
@@ -96,20 +102,49 @@ export default function CompaniesPage() {
     );
   }, [companies, searchTerm]);
 
-  const handleVerifyToggle = async (companyId: string, current: boolean) => {
-    if (current) return; // No unverify API provided; skip when already verified
+  const handleVerifyToggle = (companyId: string, current: boolean) => {
+    const company = companies.find((c) => c.id === companyId);
+    if (!company) return;
+
+    setPendingAction({
+      companyId,
+      companyName: company.companyName,
+      currentStatus: current,
+    });
+    setConfirmDialogOpen(true);
+  };
+
+  const confirmVerifyToggle = async () => {
+    if (!pendingAction) return;
+
     try {
       setIsLoading(true);
-      const res = await companyManagementService.verifyCompany(companyId);
+      setError(null);
+
+      const res = pendingAction.currentStatus
+        ? await companyManagementService.unverifyCompany(
+            pendingAction.companyId,
+          )
+        : await companyManagementService.verifyCompany(pendingAction.companyId);
+
       const updated = res.data;
       setCompanies((prev) =>
         prev.map((c) => (c.id === updated.id ? { ...c, ...updated } : c)),
       );
+
+      setConfirmDialogOpen(false);
+      setPendingAction(null);
     } catch (err) {
-      setError(typeof err === 'string' ? err : 'Failed to verify company');
+      const action = pendingAction.currentStatus ? 'unverify' : 'verify';
+      setError(typeof err === 'string' ? err : `Failed to ${action} company`);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const cancelVerifyToggle = () => {
+    setConfirmDialogOpen(false);
+    setPendingAction(null);
   };
 
   const handleSendEmail = () => {
@@ -389,6 +424,50 @@ export default function CompaniesPage() {
               }}
             >
               View Full Profile
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirmation Dialog */}
+      <Dialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Confirm Action</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to{' '}
+              {pendingAction?.currentStatus ? 'unverify' : 'verify'} the company{' '}
+              <span className="font-semibold">
+                {pendingAction?.companyName}
+              </span>
+              ?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-sm text-gray-600">
+              {pendingAction?.currentStatus
+                ? 'This will mark the company as unverified and may affect their visibility and access to certain features.'
+                : 'This will mark the company as verified, confirming their legitimacy and granting them full access to the platform.'}
+            </p>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={cancelVerifyToggle}
+              disabled={isLoading}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={confirmVerifyToggle}
+              disabled={isLoading}
+              variant={pendingAction?.currentStatus ? 'destructive' : 'default'}
+            >
+              {isLoading
+                ? 'Processing...'
+                : pendingAction?.currentStatus
+                  ? 'Unverify'
+                  : 'Verify'}
             </Button>
           </div>
         </DialogContent>
