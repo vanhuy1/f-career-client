@@ -75,9 +75,46 @@ export const UserSignUpForm = ({ isCompany = false }: UserSignUpFormProps) => {
         'Registration successful! Please check your email to verify your account.',
       );
     } catch (error) {
-      toast.error(
-        `Error: ${error instanceof Error ? error.message : String(error)}`,
-      );
+      // Parse and show user-friendly error messages
+      let userMessage = 'Registration failed. Please try again.';
+      const errorString =
+        error instanceof Error ? error.message : String(error);
+
+      if (typeof errorString === 'string') {
+        const errorLower = errorString.toLowerCase();
+
+        // Handle database constraint violations
+        if (
+          errorLower.includes('duplicate key') ||
+          errorLower.includes('unique constraint')
+        ) {
+          if (errorLower.includes('email')) {
+            userMessage =
+              'This email address is already registered. Please use a different email or sign in instead.';
+          } else if (errorLower.includes('username')) {
+            userMessage =
+              'This username is already taken. Please choose a different username.';
+          } else {
+            userMessage =
+              'This information already exists in our system. Please check your details.';
+          }
+        } else if (
+          errorLower.includes('validation') ||
+          errorLower.includes('invalid')
+        ) {
+          userMessage = 'Please check your information and try again.';
+        } else if (
+          errorLower.includes('network') ||
+          errorLower.includes('connection')
+        ) {
+          userMessage =
+            'Network error. Please check your connection and try again.';
+        } else {
+          userMessage = 'Registration failed. Please try again.';
+        }
+      }
+
+      toast.error(userMessage);
     } finally {
       setIsLoading(false);
     }

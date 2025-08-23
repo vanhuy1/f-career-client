@@ -58,6 +58,16 @@ export const CompanyInfoModal: React.FC<Props> = ({
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportTaxCode, setReportTaxCode] = useState('');
 
+  // Check if all required fields are filled
+  const isFormValid = () => {
+    const values = getValues();
+    return (
+      values.company_name.trim() !== '' &&
+      values.taxCode.trim() !== '' &&
+      businessLicenseFile !== null
+    );
+  };
+
   const {
     register,
     getValues,
@@ -233,6 +243,51 @@ export const CompanyInfoModal: React.FC<Props> = ({
       const apiError = error as string;
       const companyData = getValues();
 
+      // Parse and show user-friendly error messages
+      let userMessage = 'Registration failed. Please try again.';
+
+      if (typeof apiError === 'string') {
+        const errorLower = apiError.toLowerCase();
+
+        // Handle database constraint violations
+        if (
+          errorLower.includes('duplicate key') ||
+          errorLower.includes('unique constraint')
+        ) {
+          if (errorLower.includes('email')) {
+            userMessage =
+              'This email address is already registered. Please use a different email or sign in instead.';
+          } else if (errorLower.includes('username')) {
+            userMessage =
+              'This username is already taken. Please choose a different username.';
+          } else if (errorLower.includes('tax code')) {
+            userMessage = 'A company with this tax code already exists.';
+          } else {
+            userMessage =
+              'This information already exists in our system. Please check your details.';
+          }
+        } else if (
+          errorLower.includes('tax code') ||
+          errorLower.includes('company not found')
+        ) {
+          userMessage =
+            'Invalid tax code. Please check your tax code and try again.';
+        } else if (
+          errorLower.includes('external api') ||
+          errorLower.includes('verify company')
+        ) {
+          userMessage =
+            'Unable to verify company information. Please check your tax code and company details.';
+        } else if (errorLower.includes('business license')) {
+          userMessage = 'Error uploading business license. Please try again.';
+        } else if (errorLower.includes('missing required')) {
+          userMessage = 'Missing required information. Please fill all fields.';
+        }
+      }
+
+      // Show user-friendly error message
+      toast.error(userMessage);
+
       const isTaxCodeError = apiError
         .toLowerCase()
         .includes('a company with this tax code already exists.');
@@ -241,7 +296,7 @@ export const CompanyInfoModal: React.FC<Props> = ({
         setReportTaxCode(companyData.taxCode);
         setShowReportModal(true);
       } else {
-        toast.error(apiError);
+        // Log the full error for debugg
       }
     } finally {
       setIsSubmitting(false);
@@ -303,7 +358,9 @@ export const CompanyInfoModal: React.FC<Props> = ({
                   id="company_name"
                   {...register('company_name')}
                   placeholder="e.g. ABC Company Ltd."
-                  className="w-full transition-colors focus:border-emerald-500"
+                  className={`w-full transition-colors focus:border-emerald-500 ${
+                    errors.company_name ? 'border-red-500' : ''
+                  }`}
                 />
                 {errors.company_name && (
                   <p className="flex items-center gap-1 text-sm text-red-500">
@@ -325,7 +382,9 @@ export const CompanyInfoModal: React.FC<Props> = ({
                   id="taxCode"
                   {...register('taxCode')}
                   placeholder="e.g. 0123456789"
-                  className="w-full transition-colors focus:border-emerald-500"
+                  className={`w-full transition-colors focus:border-emerald-500 ${
+                    errors.taxCode ? 'border-red-500' : ''
+                  }`}
                 />
                 {errors.taxCode && (
                   <p className="flex items-center gap-1 text-sm text-red-500">
@@ -341,8 +400,14 @@ export const CompanyInfoModal: React.FC<Props> = ({
                   htmlFor="business_license"
                   className="text-sm font-medium text-gray-700"
                 >
-                  Company Verification Documents
+                  Company Verification Documents{' '}
+                  <span className="text-red-500">*</span>
                 </Label>
+                {!businessLicenseFile && (
+                  <p className="text-sm text-red-500">
+                    Please upload a company verification document
+                  </p>
+                )}
                 <div className="rounded-lg border border-blue-200 bg-blue-50 p-3">
                   <p className="text-sm leading-relaxed text-blue-800">
                     To speed up the verification process, please provide one of
@@ -387,6 +452,7 @@ export const CompanyInfoModal: React.FC<Props> = ({
                       accept="image/*,.pdf"
                       onChange={handleFileSelect}
                       className="hidden"
+                      required
                     />
                     <label
                       htmlFor="business_license"
@@ -532,7 +598,7 @@ export const CompanyInfoModal: React.FC<Props> = ({
                 type="button"
                 className="min-w-[120px] bg-emerald-600 px-6 text-white hover:bg-emerald-700"
                 onClick={handleRegisterClick}
-                disabled={isSubmitting}
+                disabled={isSubmitting || !isFormValid()}
               >
                 {isSubmitting ? (
                   <span className="flex items-center gap-2">
