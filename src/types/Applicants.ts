@@ -51,19 +51,19 @@ export interface ApplicantDetail {
     id: number;
     name: string;
     email: string;
-    phone: string;
+    phone: string | null;
     avatar: string;
-    gender: string;
+    gender: string | null;
   };
   candidateProfile: {
     id: string;
     title: string;
-    company: string;
+    company: string | null;
     location: string;
     avatar: string | null;
     coverImage: string | null;
     isOpenToOpportunities: boolean;
-    about: string;
+    about: string | null;
     contact: string | null;
     social: string | null;
     birthDate: string | null;
@@ -90,6 +90,9 @@ export interface ApplicantDetail {
       createdAt: string;
       updatedAt: string;
     }>;
+    skills: Array<{
+      name: string;
+    }>;
   };
   job: {
     id: string;
@@ -102,21 +105,7 @@ export interface ApplicantDetail {
       logoUrl: string | null;
     };
   };
-  interviewSchedule?: {
-    companyName: string;
-    createdBy: number;
-    title: string;
-    type: string;
-    status: string;
-    startsAt: string;
-    endsAt: string;
-    location: string;
-    notes: string | null;
-    version: number;
-    createdAt: string;
-    updatedAt: string;
-  };
-  interviewSchedules?: Array<{
+  interviewSchedules: Array<{
     companyName: string;
     createdBy: number;
     title: string;
