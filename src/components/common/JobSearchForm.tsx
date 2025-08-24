@@ -7,7 +7,6 @@ import {
   MapPin,
   Loader2,
   TrendingUp,
-  Clock,
   Building,
   Briefcase,
   Hash,
@@ -214,16 +213,16 @@ export default function JobSearchForm({
   return (
     <form
       onSubmit={handleSearch}
-      className={`rounded-lg border border-gray-200 bg-white p-4 shadow-sm ${className}`}
+      className={`rounded-lg border border-gray-300 bg-white p-3 shadow-sm ${className}`}
     >
-      <div className="relative flex flex-col gap-4 md:flex-row">
+      <div className="relative flex flex-col gap-3 md:flex-row">
         <div className="relative flex-grow">
-          <Search className="absolute top-1/2 left-3 z-10 h-5 w-5 -translate-y-1/2 transform text-gray-400" />
+          <Search className="absolute top-1/2 left-3 z-10 h-4 w-4 -translate-y-1/2 transform text-gray-500" />
           <input
             ref={inputRef}
             type="text"
             placeholder={placeholder}
-            className="h-12 w-full rounded-md border border-gray-200 py-2 pr-4 pl-10 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            className="h-11 w-full rounded-md border border-gray-300 py-2 pr-4 pl-10 focus:border-gray-400 focus:ring-1 focus:ring-gray-400 focus:outline-none"
             value={keyword}
             onChange={(e) => {
               setKeyword(e.target.value);
@@ -245,10 +244,10 @@ export default function JobSearchForm({
         </div>
 
         <div className="relative flex-grow">
-          <MapPin className="absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 transform text-gray-400" />
+          <MapPin className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform text-gray-500" />
           <input
             type="text"
-            className="h-12 w-full rounded-md border border-gray-200 py-2 pr-4 pl-10 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            className="h-11 w-full rounded-md border border-gray-300 py-2 pr-4 pl-10 focus:border-gray-400 focus:ring-1 focus:ring-gray-400 focus:outline-none"
             placeholder="Location"
             value={location}
             onChange={(e) => setLocation(e.target.value)}
@@ -258,7 +257,7 @@ export default function JobSearchForm({
         <div className="flex space-x-2">
           <Button
             type="submit"
-            className="h-12 bg-blue-600 px-8 hover:bg-blue-700"
+            className="h-11 bg-gray-900 px-6 text-white hover:bg-gray-800"
           >
             Search
           </Button>
@@ -267,13 +266,13 @@ export default function JobSearchForm({
         {showSuggestions && (
           <div
             ref={suggestionsRef}
-            className="absolute z-50 mt-14 w-full overflow-hidden rounded-lg shadow-lg"
+            className="absolute z-50 mt-12 w-full overflow-hidden rounded-md shadow-lg"
           >
-            <div className="overflow-hidden rounded-lg border border-gray-100 bg-white shadow-xl">
+            <div className="overflow-hidden rounded-md border border-gray-200 bg-white shadow-lg">
               <Command className="border-0">
-                <CommandList className="max-h-[28rem]">
+                <CommandList className="max-h-[24rem]">
                   {loading ? (
-                    <div className="flex items-center justify-center py-8">
+                    <div className="flex items-center justify-center py-6">
                       <div className="flex items-center gap-2 text-gray-500">
                         <Loader2 className="h-4 w-4 animate-spin" />
                         <span className="text-sm">Searching...</span>
@@ -285,7 +284,7 @@ export default function JobSearchForm({
                         <div className="border-r border-gray-100">
                           {suggestions.keywords.length > 0 && (
                             <CommandGroup>
-                              <div className="border-b border-gray-100 px-3 py-2 text-xs font-medium tracking-wide text-gray-500 uppercase">
+                              <div className="border-b border-gray-100 px-3 py-2 text-xs font-medium text-gray-600 uppercase">
                                 Keywords
                               </div>
                               {suggestions.keywords
@@ -294,19 +293,16 @@ export default function JobSearchForm({
                                   <CommandItem
                                     key={`keyword-${index}`}
                                     onSelect={() => handleKeywordClick(keyword)}
-                                    className="cursor-pointer border-b border-gray-50 px-3 py-3 transition-colors duration-150 last:border-b-0 hover:bg-blue-50"
+                                    className="cursor-pointer border-b border-gray-50 px-3 py-2.5 transition-colors duration-150 last:border-b-0 hover:bg-gray-50"
                                   >
                                     <div className="flex w-full items-center gap-3">
                                       <div className="flex-shrink-0">
-                                        <Hash className="h-4 w-4 text-gray-400" />
+                                        <Hash className="h-4 w-4 text-gray-500" />
                                       </div>
                                       <div className="flex-grow">
-                                        <span className="font-medium text-gray-900">
+                                        <span className="text-sm text-gray-900">
                                           {keyword.value}
                                         </span>
-                                      </div>
-                                      <div className="flex-shrink-0">
-                                        <TrendingUp className="h-3 w-3 text-gray-300" />
                                       </div>
                                     </div>
                                   </CommandItem>
@@ -316,7 +312,7 @@ export default function JobSearchForm({
 
                           {suggestions.companies.length > 0 && (
                             <CommandGroup>
-                              <div className="border-b border-gray-100 px-3 py-2 text-xs font-medium tracking-wide text-gray-500 uppercase">
+                              <div className="border-b border-gray-100 px-3 py-2 text-xs font-medium text-gray-600 uppercase">
                                 Companies
                               </div>
                               {suggestions.companies
@@ -325,7 +321,7 @@ export default function JobSearchForm({
                                   <CommandItem
                                     key={`company-${index}`}
                                     onSelect={() => handleCompanyClick(company)}
-                                    className="cursor-pointer border-b border-gray-50 px-3 py-3 transition-colors duration-150 last:border-b-0 hover:bg-blue-50"
+                                    className="cursor-pointer border-b border-gray-50 px-3 py-2.5 transition-colors duration-150 last:border-b-0 hover:bg-gray-50"
                                   >
                                     <div className="flex w-full items-center gap-3">
                                       <div className="flex-shrink-0">
@@ -336,26 +332,23 @@ export default function JobSearchForm({
                                               '/placeholder.svg'
                                             }
                                             alt={`${company.name} logo`}
-                                            width={24}
-                                            height={24}
-                                            className="h-6 w-6 rounded object-cover"
+                                            width={20}
+                                            height={20}
+                                            className="h-5 w-5 rounded object-cover"
                                           />
                                         ) : (
-                                          <Building className="h-4 w-4 text-gray-400" />
+                                          <Building className="h-4 w-4 text-gray-500" />
                                         )}
                                       </div>
                                       <div className="flex-grow">
                                         <div>
-                                          <span className="block font-medium text-gray-900">
+                                          <span className="block text-sm text-gray-900">
                                             {company.name}
                                           </span>
                                           <span className="text-xs text-gray-500">
                                             {company.industry}
                                           </span>
                                         </div>
-                                      </div>
-                                      <div className="flex-shrink-0">
-                                        <TrendingUp className="h-3 w-3 text-gray-300" />
                                       </div>
                                     </div>
                                   </CommandItem>
@@ -365,26 +358,23 @@ export default function JobSearchForm({
 
                           {keyword.length < 2 && showPopularSearches && (
                             <CommandGroup>
-                              <div className="border-b border-gray-100 px-3 py-2 text-xs font-medium tracking-wide text-gray-500 uppercase">
+                              <div className="border-b border-gray-100 px-3 py-2 text-xs font-medium text-gray-600 uppercase">
                                 Popular Searches
                               </div>
                               {popularSearches.map((popular, index) => (
                                 <CommandItem
                                   key={`popular-${index}`}
                                   onSelect={() => handlePopularClick(popular)}
-                                  className="cursor-pointer border-b border-gray-50 px-3 py-3 transition-colors duration-150 last:border-b-0 hover:bg-blue-50"
+                                  className="cursor-pointer border-b border-gray-50 px-3 py-2.5 transition-colors duration-150 last:border-b-0 hover:bg-gray-50"
                                 >
                                   <div className="flex w-full items-center gap-3">
                                     <div className="flex-shrink-0">
-                                      <TrendingUp className="h-4 w-4 text-blue-500" />
+                                      <TrendingUp className="h-4 w-4 text-gray-500" />
                                     </div>
                                     <div className="flex-grow">
-                                      <span className="font-medium text-gray-900">
+                                      <span className="text-sm text-gray-900">
                                         {popular}
                                       </span>
-                                    </div>
-                                    <div className="flex-shrink-0">
-                                      <Clock className="h-3 w-3 text-gray-300" />
                                     </div>
                                   </div>
                                 </CommandItem>
@@ -396,7 +386,7 @@ export default function JobSearchForm({
                         <div>
                           {suggestions.jobs.length > 0 && (
                             <CommandGroup>
-                              <div className="border-b border-gray-100 px-3 py-2 text-xs font-medium tracking-wide text-gray-500 uppercase">
+                              <div className="border-b border-gray-100 px-3 py-2 text-xs font-medium text-gray-600 uppercase">
                                 Jobs
                               </div>
                               {suggestions.jobs
@@ -405,7 +395,7 @@ export default function JobSearchForm({
                                   <CommandItem
                                     key={`job-${index}`}
                                     onSelect={() => handleJobClick(job)}
-                                    className="cursor-pointer border-b border-gray-50 px-3 py-3 transition-colors duration-150 last:border-b-0 hover:bg-blue-50"
+                                    className="cursor-pointer border-b border-gray-50 px-3 py-2.5 transition-colors duration-150 last:border-b-0 hover:bg-gray-50"
                                   >
                                     <div className="flex w-full items-center gap-3">
                                       <div className="flex-shrink-0">
@@ -416,26 +406,23 @@ export default function JobSearchForm({
                                               '/placeholder.svg'
                                             }
                                             alt={`${job.companyName} logo`}
-                                            width={24}
-                                            height={24}
-                                            className="h-6 w-6 rounded object-cover"
+                                            width={20}
+                                            height={20}
+                                            className="h-5 w-5 rounded object-cover"
                                           />
                                         ) : (
-                                          <Briefcase className="h-4 w-4 text-gray-400" />
+                                          <Briefcase className="h-4 w-4 text-gray-500" />
                                         )}
                                       </div>
                                       <div className="flex-grow">
                                         <div>
-                                          <span className="block font-medium text-gray-900">
+                                          <span className="block text-sm text-gray-900">
                                             {job.title}
                                           </span>
                                           <span className="text-xs text-gray-500">
                                             {job.companyName} • {job.location}
                                           </span>
                                         </div>
-                                      </div>
-                                      <div className="flex-shrink-0">
-                                        <TrendingUp className="h-3 w-3 text-gray-300" />
                                       </div>
                                     </div>
                                   </CommandItem>
@@ -450,14 +437,14 @@ export default function JobSearchForm({
                         suggestions.companies.length === 0 &&
                         keyword.length >= 2 &&
                         !loading && (
-                          <div className="px-3 py-8 text-center">
+                          <div className="px-3 py-6 text-center">
                             <div className="mb-2 text-gray-400">
-                              <Search className="mx-auto mb-2 h-8 w-8 opacity-50" />
+                              <Search className="mx-auto mb-2 h-6 w-6 opacity-50" />
                             </div>
-                            <p className="text-sm font-medium text-gray-500">
+                            <p className="text-sm text-gray-600">
                               No suggestions found
                             </p>
-                            <p className="mt-1 text-xs text-gray-400">
+                            <p className="mt-1 text-xs text-gray-500">
                               Try a different keyword or check your spelling
                             </p>
                           </div>
@@ -468,14 +455,14 @@ export default function JobSearchForm({
               </Command>
 
               {/* Footer with keyboard hint */}
-              <div className="border-t border-gray-100 bg-gray-50 px-3 py-2">
-                <div className="flex items-center justify-between text-xs text-gray-500">
+              <div className="border-t border-gray-200 bg-gray-50 px-3 py-2">
+                <div className="flex items-center justify-between text-xs text-gray-600">
                   <span>Press Enter to search</span>
                   <div className="flex items-center gap-1">
-                    <kbd className="rounded border border-gray-200 bg-white px-1.5 py-0.5 text-xs">
+                    <kbd className="rounded border border-gray-300 bg-white px-1.5 py-0.5 text-xs">
                       ↑
                     </kbd>
-                    <kbd className="rounded border border-gray-200 bg-white px-1.5 py-0.5 text-xs">
+                    <kbd className="rounded border border-gray-300 bg-white px-1.5 py-0.5 text-xs">
                       ↓
                     </kbd>
                     <span className="ml-1">to navigate</span>
