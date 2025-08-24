@@ -44,12 +44,6 @@ export default function ApplicantProfilePage() {
               {applicant?.candidateProfile.birthDate}
             </p>
           </div> */}
-          <div>
-            <label className="text-sm text-gray-600">Language</label>
-            <p className="mt-1 text-sm font-medium text-gray-900">
-              English, French, Bahasa
-            </p>
-          </div>
           <div className="col-span-2">
             <label className="text-sm text-gray-600">Address</label>
             <p className="mt-1 text-sm font-medium text-gray-900">
@@ -97,25 +91,21 @@ export default function ApplicantProfilePage() {
           </div>
           <div>
             <label className="text-sm text-gray-600">Skill set</label>
-            <div className="mt-2 flex gap-2">
-              <Badge
-                variant="secondary"
-                className="bg-blue-100 text-blue-700 hover:bg-blue-200"
-              >
-                Project Management
-              </Badge>
-              <Badge
-                variant="secondary"
-                className="bg-blue-100 text-blue-700 hover:bg-blue-200"
-              >
-                Copywriting
-              </Badge>
-              <Badge
-                variant="secondary"
-                className="bg-blue-100 text-blue-700 hover:bg-blue-200"
-              >
-                English
-              </Badge>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {applicant?.candidateProfile?.skills &&
+              applicant.candidateProfile.skills.length > 0 ? (
+                applicant.candidateProfile.skills.map((skill, index) => (
+                  <Badge
+                    key={index}
+                    variant="secondary"
+                    className="bg-blue-100 text-blue-700 hover:bg-blue-200"
+                  >
+                    {skill.name}
+                  </Badge>
+                ))
+              ) : (
+                <p className="text-sm text-gray-500">No skills listed</p>
+              )}
             </div>
           </div>
         </div>
