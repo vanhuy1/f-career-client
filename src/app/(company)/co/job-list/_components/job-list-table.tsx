@@ -183,16 +183,6 @@ export default function JobListTable({
               </TableRow>
             ) : (
               filteredJobs.map((job) => {
-                // Debug log
-                console.log(
-                  'Job:',
-                  job.jobId,
-                  'Posted Date Raw:',
-                  job.postedDate,
-                  'End Date Raw:',
-                  job.endDate,
-                );
-
                 return (
                   <TableRow
                     key={job.jobId}

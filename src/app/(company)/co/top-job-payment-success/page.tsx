@@ -2,11 +2,31 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { CheckCircle, Loader2, Star, Building, Briefcase } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import {
+  CheckCircle,
+  Loader2,
+  Star,
+  Building,
+  Briefcase,
+  CreditCard,
+  Calendar,
+  XCircle,
+} from 'lucide-react';
+import { format } from 'date-fns';
 import { toast } from 'react-toastify';
 import { payosService } from '@/services/api/payment/payos-api';
 import { jobService } from '@/services/api/jobs/job-api';
-import { Button } from '@/components/ui/button';
+
+interface TopJobData {
+  jobId: string;
+  newTopJob: number;
+  topJobExpired: string;
+  amount?: number;
+  durationDays?: number;
+}
 
 export default function TopJobPaymentSuccessPage() {
   const router = useRouter();
@@ -15,6 +35,7 @@ export default function TopJobPaymentSuccessPage() {
   const [status, setStatus] = useState<'processing' | 'success' | 'error'>(
     'processing',
   );
+  const [topJobData, setTopJobData] = useState<TopJobData | null>(null);
 
   useEffect(() => {
     const processPaymentSuccess = async () => {
@@ -62,20 +83,21 @@ export default function TopJobPaymentSuccessPage() {
             return;
           }
 
-          const topJobData = JSON.parse(savedData);
-          console.log('Parsed top job data:', topJobData);
+          const parsedTopJobData = JSON.parse(savedData);
+          console.log('Parsed top job data:', parsedTopJobData);
 
           // Update job with new topJob value and expiry
-          await jobService.update(topJobData.jobId, {
-            topJob: topJobData.newTopJob,
-            topJobExpired: topJobData.topJobExpired,
+          await jobService.update(parsedTopJobData.jobId, {
+            topJob: parsedTopJobData.newTopJob,
+            topJobExpired: parsedTopJobData.topJobExpired,
           });
 
           console.log('Top job updated successfully!');
 
+          setTopJobData(parsedTopJobData);
           setStatus('success');
           toast.success(
-            `Job successfully added to top position ${topJobData.newTopJob}!`,
+            `Job successfully added to top position ${parsedTopJobData.newTopJob}!`,
           );
 
           // Clear top job data only after successful display
@@ -102,72 +124,218 @@ export default function TopJobPaymentSuccessPage() {
 
   if (isProcessing) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="mx-auto h-12 w-12 animate-spin text-blue-600" />
-          <h2 className="mt-4 text-xl font-semibold text-gray-900">
-            Processing Payment...
-          </h2>
-          <p className="mt-2 text-gray-600">
-            Please wait while we verify your payment and update your job
-            position.
-          </p>
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-50">
+        <Card className="w-full max-w-md border-2 border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50 shadow-xl">
+          <CardContent className="p-8">
+            <div className="text-center">
+              <Loader2 className="mx-auto h-16 w-16 animate-spin text-blue-600" />
+              <h2 className="mt-4 text-xl font-semibold text-blue-900">
+                Processing Payment...
+              </h2>
+              <p className="mt-2 text-blue-700">
+                Please wait while we verify your payment and update your job
+                position.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (status === 'success' && topJobData) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 p-4">
+        <div className="mx-auto max-w-4xl">
+          {/* Header Section */}
+          <div className="mb-8 text-center">
+            <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-green-100 to-emerald-100 shadow-lg">
+              <CheckCircle className="h-10 w-10 text-green-600" />
+            </div>
+            <h1 className="mb-2 text-3xl font-bold text-green-900">
+              Top Job Payment Successful!
+            </h1>
+            <p className="text-lg text-green-700">
+              Your job has been successfully added to the top positions and will
+              now appear on the homepage!
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+            {/* Payment Summary */}
+            <div className="lg:col-span-2">
+              <Card className="border-2 border-green-200 bg-gradient-to-br from-green-50 to-emerald-50 shadow-xl">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center gap-2 text-green-900">
+                    <CreditCard className="h-5 w-5" />
+                    Payment Successful
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Package Details */}
+                  <div className="flex items-center justify-between rounded-lg bg-white/60 p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="rounded-lg bg-gradient-to-br from-amber-100 to-orange-100 p-2">
+                        <Star className="h-5 w-5 text-amber-600" />
+                      </div>
+                      <div>
+                        <div className="font-semibold text-gray-900">
+                          Top Job Spotlight Package
+                        </div>
+                        <div className="text-sm text-gray-600">
+                          Homepage Featured Position
+                        </div>
+                      </div>
+                    </div>
+                    <Badge
+                      variant="outline"
+                      className="border-amber-300 bg-amber-50 text-amber-700"
+                    >
+                      Position #{topJobData.newTopJob}
+                    </Badge>
+                  </div>
+
+                  {/* Duration & Expiry */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="rounded-lg bg-white/60 p-4">
+                      <div className="mb-2 flex items-center gap-2">
+                        <Calendar className="h-4 w-4 text-amber-600" />
+                        <span className="text-sm font-medium text-gray-700">
+                          Featured Until
+                        </span>
+                      </div>
+                      <div className="text-lg font-bold text-gray-900">
+                        {format(
+                          new Date(topJobData.topJobExpired),
+                          'MMM dd, yyyy',
+                        )}
+                      </div>
+                    </div>
+                    <div className="rounded-lg bg-white/60 p-4">
+                      <div className="mb-2 flex items-center gap-2">
+                        <Star className="h-4 w-4 text-amber-600" />
+                        <span className="text-sm font-medium text-gray-700">
+                          Priority Level
+                        </span>
+                      </div>
+                      <div className="text-lg font-bold text-gray-900">
+                        Top #{topJobData.newTopJob}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Features */}
+                  <div className="border-t border-green-200/50 pt-4">
+                    <h4 className="mb-3 font-semibold text-green-900">
+                      What you get:
+                    </h4>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-sm text-gray-700">
+                        <CheckCircle className="h-4 w-4 text-green-500" />
+                        Featured on homepage spotlight
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-gray-700">
+                        <CheckCircle className="h-4 w-4 text-green-500" />
+                        Higher visibility to candidates
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-gray-700">
+                        <CheckCircle className="h-4 w-4 text-green-500" />
+                        Priority position in search results
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-gray-700">
+                        <CheckCircle className="h-4 w-4 text-green-500" />
+                        Enhanced job listing appearance
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Action Section */}
+            <div className="lg:col-span-1">
+              <Card className="border-2 border-green-200 bg-white shadow-xl">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-green-900">Success!</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="py-4 text-center">
+                    <CheckCircle className="mx-auto mb-4 h-16 w-16 text-green-500" />
+                    <h3 className="mb-2 text-lg font-semibold text-green-900">
+                      Job Featured Successfully!
+                    </h3>
+                    <p className="mb-6 text-sm text-gray-600">
+                      Your job is now prominently displayed on the homepage
+                    </p>
+
+                    <div className="space-y-3">
+                      <Button
+                        onClick={() => router.push('/co/job-list')}
+                        className="w-full bg-green-600 text-white hover:bg-green-700"
+                      >
+                        <Building className="mr-2 h-4 w-4" />
+                        Manage Company Jobs
+                      </Button>
+
+                      <Button
+                        onClick={() => router.push('/job')}
+                        variant="outline"
+                        className="w-full border-amber-300 text-amber-700 hover:bg-amber-50"
+                      >
+                        <Briefcase className="mr-2 h-4 w-4" />
+                        View Public Jobs
+                      </Button>
+
+                      <Button
+                        onClick={() => router.push('/')}
+                        variant="outline"
+                        className="w-full border-gray-300 text-gray-700 hover:bg-gray-50"
+                      >
+                        <Star className="mr-2 h-4 w-4" />
+                        Go to Homepage
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
         </div>
       </div>
     );
   }
 
-  if (status === 'success') {
+  if (status === 'error') {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50">
-        <div className="w-full max-w-md rounded-lg bg-white p-8 shadow-lg">
-          <div className="text-center">
-            {/* Success Icon */}
-            <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
-              <CheckCircle className="h-8 w-8 text-green-600" />
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-red-50 to-pink-50">
+        <Card className="w-full max-w-md border-2 border-red-200 bg-gradient-to-br from-red-50 to-pink-50 shadow-xl">
+          <CardContent className="p-8">
+            <div className="text-center">
+              <XCircle className="mx-auto h-16 w-16 text-red-500" />
+              <h2 className="mt-4 text-xl font-semibold text-red-900">
+                Payment Processing Failed
+              </h2>
+              <p className="mt-2 text-red-700">
+                There was an issue processing your payment. Please try again.
+              </p>
+              <div className="mt-6 space-y-3">
+                <Button
+                  onClick={() => router.push('/co/job-list')}
+                  className="w-full bg-red-600 text-white hover:bg-red-700"
+                >
+                  Return to Job List
+                </Button>
+                <Button
+                  onClick={() => router.push('/')}
+                  variant="outline"
+                  className="w-full border-red-300 text-red-700 hover:bg-red-50"
+                >
+                  Go to Homepage
+                </Button>
+              </div>
             </div>
-
-            {/* Success Title */}
-            <h1 className="mb-4 text-2xl font-bold text-gray-900">
-              Payment Successful!
-            </h1>
-
-            {/* Success Message */}
-            <p className="mb-6 text-gray-600">
-              Your job has been successfully added to the top positions. It will
-              now appear on the homepage!
-            </p>
-
-            {/* Action Buttons */}
-            <div className="space-y-3">
-              <Button
-                onClick={() => router.push('/co/job-list')}
-                className="w-full bg-blue-600 text-white hover:bg-blue-700"
-              >
-                <Building className="mr-2 h-4 w-4" />
-                Manage Company Jobs
-              </Button>
-
-              <Button
-                onClick={() => router.push('/job')}
-                variant="outline"
-                className="w-full border-gray-300 text-gray-700 hover:bg-gray-50"
-              >
-                <Briefcase className="mr-2 h-4 w-4" />
-                View Public Jobs
-              </Button>
-
-              <Button
-                onClick={() => router.push('/')}
-                variant="outline"
-                className="w-full border-gray-300 text-gray-700 hover:bg-gray-50"
-              >
-                <Star className="mr-2 h-4 w-4" />
-                Go to Homepage
-              </Button>
-            </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }

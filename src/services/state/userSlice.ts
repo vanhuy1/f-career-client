@@ -53,6 +53,13 @@ const userSlice = createSlice({
         state.data.data.point -= 1;
       }
     },
+    // Action mới để cập nhật AI points sau khi thêm thành công
+    addAiPointsSuccess(state, action: PayloadAction<number>) {
+      if (state.data && state.data.data) {
+        // API trả về số points mới (tổng), không phải số points cần thêm
+        state.data.data.point = action.payload;
+      }
+    },
     deleteUserStart(state) {
       state.loadingState = LoadingState.loading;
       state.errors = null;
@@ -88,6 +95,7 @@ export const {
   clearUser,
   updateAiPoints,
   decrementAiPoints,
+  addAiPointsSuccess,
 } = userSlice.actions;
 
 // Export reducer
@@ -121,5 +129,7 @@ export const useUserActions = () => {
     deleteUserFailure: (error: string) => dispatch(deleteUserFailure(error)),
     updateAiPoints: (points: number) => dispatch(updateAiPoints(points)),
     decrementAiPoints: () => dispatch(decrementAiPoints()),
+    addAiPointsSuccess: (points: number) =>
+      dispatch(addAiPointsSuccess(points)),
   };
 };

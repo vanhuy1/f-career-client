@@ -1,4 +1,5 @@
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Dialog,
   DialogContent,
@@ -21,6 +22,21 @@ export const AiLimitModal: React.FC<AiLimitModalProps> = ({
   onClose,
   onUpgrade,
 }) => {
+  const router = useRouter();
+
+  const handleUpgrade = () => {
+    // Close modal first
+    onClose();
+
+    // Navigate to settings page
+    router.push('/ca/settings');
+
+    // Call original onUpgrade if provided
+    if (onUpgrade) {
+      onUpgrade();
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
@@ -30,32 +46,32 @@ export const AiLimitModal: React.FC<AiLimitModalProps> = ({
             <DialogTitle>AI Credits Exhausted</DialogTitle>
           </div>
           <DialogDescription className="pt-3">
-            You&apos;ve used all your AI credits for this month. Upgrade to Pro
-            to get unlimited access to AI features.
+            You&apos;ve used all your AI credits. Purchase more AI points to
+            continue using our premium AI features.
           </DialogDescription>
         </DialogHeader>
 
         <div className="py-4">
           <div className="space-y-3 rounded-lg bg-gray-50 p-4">
             <h4 className="text-sm font-medium text-gray-900">
-              Pro Plan Benefits:
+              AI Points Benefits:
             </h4>
             <ul className="space-y-2 text-sm text-gray-600">
               <li className="flex items-start gap-2">
                 <Sparkles className="mt-0.5 h-4 w-4 text-purple-500" />
-                <span>Unlimited AI-powered CV optimization</span>
+                <span>AI-powered CV optimization (1 point per use)</span>
               </li>
               <li className="flex items-start gap-2">
                 <Sparkles className="mt-0.5 h-4 w-4 text-purple-500" />
-                <span>Unlimited roadmap generation</span>
+                <span>Roadmap generation (1 points per use)</span>
               </li>
               <li className="flex items-start gap-2">
                 <Sparkles className="mt-0.5 h-4 w-4 text-purple-500" />
-                <span>Unlimited quiz creation</span>
+                <span>AI chat assistance (1 point per conversation)</span>
               </li>
               <li className="flex items-start gap-2">
                 <Sparkles className="mt-0.5 h-4 w-4 text-purple-500" />
-                <span>Priority support</span>
+                <span>Points never expire</span>
               </li>
             </ul>
           </div>
@@ -66,10 +82,10 @@ export const AiLimitModal: React.FC<AiLimitModalProps> = ({
             Maybe Later
           </Button>
           <Button
-            onClick={onUpgrade}
+            onClick={handleUpgrade}
             className="bg-purple-600 hover:bg-purple-700"
           >
-            Upgrade to Pro
+            Buy AI Points
           </Button>
         </DialogFooter>
       </DialogContent>

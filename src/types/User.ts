@@ -44,3 +44,14 @@ export interface AiPointsResponse {
   point: number;
   userId: number;
 }
+
+export interface AddAiPointsRequest {
+  points: number;
+}
+
+export interface AddAiPointsResponse {
+  message: string;
+  success: boolean;
+  newPoints: number;
+  userId: number;
+}

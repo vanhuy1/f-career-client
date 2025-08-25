@@ -5,8 +5,142 @@ import { CompanyInfo } from '@/types/Job';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
-import { Trophy, Clock, DollarSign, Eye, Star } from 'lucide-react';
+import { Trophy, Clock, DollarSign, Eye, Star, Briefcase } from 'lucide-react';
 import { employmentType } from '@/enums/employmentType';
+
+// Vietnamese provinces data (copied from company-board.tsx)
+const VIETNAM_PROVINCES = [
+  'An Giang',
+  'Bà Rịa - Vũng Tàu',
+  'Bắc Giang',
+  'Bắc Kạn',
+  'Bạc Liêu',
+  'Bắc Ninh',
+  'Bến Tre',
+  'Bình Định',
+  'Bình Dương',
+  'Bình Phước',
+  'Bình Thuận',
+  'Cà Mau',
+  'Cần Thơ',
+  'Cao Bằng',
+  'Đà Nẵng',
+  'Đắk Lắk',
+  'Đắk Nông',
+  'Điện Biên',
+  'Đồng Nai',
+  'Đồng Tháp',
+  'Gia Lai',
+  'Hà Giang',
+  'Hà Nam',
+  'Hà Nội',
+  'Hà Tĩnh',
+  'Hải Dương',
+  'Hải Phòng',
+  'Hậu Giang',
+  'Hòa Bình',
+  'Hưng Yên',
+  'Khánh Hòa',
+  'Kiên Giang',
+  'Kon Tum',
+  'Lai Châu',
+  'Lâm Đồng',
+  'Lạng Sơn',
+  'Lào Cai',
+  'Long An',
+  'Nam Định',
+  'Nghệ An',
+  'Ninh Bình',
+  'Ninh Thuận',
+  'Phú Thọ',
+  'Phú Yên',
+  'Quảng Bình',
+  'Quảng Nam',
+  'Quảng Ngãi',
+  'Quảng Ninh',
+  'Quảng Trị',
+  'Sóc Trăng',
+  'Sơn La',
+  'Tây Ninh',
+  'Thái Bình',
+  'Thái Nguyên',
+  'Thanh Hóa',
+  'Thừa Thiên Huế',
+  'Tiền Giang',
+  'TP. Hồ Chí Minh',
+  'Trà Vinh',
+  'Tuyên Quang',
+  'Vĩnh Long',
+  'Vĩnh Phúc',
+  'Yên Bái',
+];
+
+// Smart location formatting function (copied from company-board.tsx)
+const formatLocation = (location: string): string => {
+  if (!location) return 'Remote';
+
+  // Split by comma and clean up each part
+  const parts = location.split(',').map((part) => part.trim().toLowerCase());
+
+  // Find the Vietnamese province/city from the end of the location
+  // Since API always returns province/city, it's usually at the end
+  for (let i = parts.length - 1; i >= 0; i--) {
+    const part = parts[i];
+
+    // Check if this part matches any Vietnamese province
+    const foundProvince = VIETNAM_PROVINCES.find(
+      (province) =>
+        part.includes(province.toLowerCase()) ||
+        province.toLowerCase().includes(part),
+    );
+
+    if (foundProvince) {
+      return foundProvince;
+    }
+  }
+
+  // If no province found, try to extract meaningful city name
+  // Remove common address words and keep the most relevant part
+  const addressWords = [
+    'đường',
+    'phố',
+    'quận',
+    'huyện',
+    'xã',
+    'phường',
+    'thị trấn',
+    'thị xã',
+    'street',
+    'district',
+    'ward',
+    'commune',
+    'town',
+    'city',
+    'province',
+    'việt nam',
+    'vietnam',
+    'vn',
+  ];
+
+  // Find the last meaningful part (usually city/province)
+  for (let i = parts.length - 1; i >= 0; i--) {
+    const part = parts[i];
+
+    // Skip if it's just an address word or too short
+    if (addressWords.includes(part) || part.length < 2) {
+      continue;
+    }
+
+    // Return the first meaningful part found
+    return part.charAt(0).toUpperCase() + part.slice(1);
+  }
+
+  // Fallback: return the last part if nothing else works
+  return (
+    parts[parts.length - 1]?.charAt(0).toUpperCase() +
+      parts[parts.length - 1]?.slice(1) || 'Remote'
+  );
+};
 
 interface JobCardProps {
   id?: string;
@@ -17,6 +151,7 @@ interface JobCardProps {
   category: { id: string; name: string };
   salary?: string;
   priorityPosition: number;
+  createdAt?: string;
 }
 
 // Map the incoming string to the enum value
@@ -48,40 +183,29 @@ export default function JobCard({
   category,
   salary,
   priorityPosition,
+  createdAt,
 }: JobCardProps) {
   const router = useRouter();
 
-  // Map typeOfEmployment to badge style
-  const getTypeBadge = (t: string) => {
-    // You can still style based on the normalized type if you want
-    const normalized = t.replace(/[\s_-]/g, '').toLowerCase();
-    switch (normalized) {
-      case 'fulltime':
-        return 'bg-gray-50 text-gray-700 border-gray-200';
-      case 'parttime':
-        return 'bg-gray-50 text-gray-700 border-gray-200';
-      case 'contract':
-        return 'bg-gray-50 text-gray-700 border-gray-200';
-      default:
-        return 'bg-gray-50 text-gray-700 border-gray-200';
-    }
-  };
+  // Format time difference for job posting
+  const formatTimeAgo = (createdAt?: string) => {
+    if (!createdAt) return 'Recently';
 
-  // Map category.name to badge style
-  const getCategoryBadge = () => {
-    switch (category.name) {
-      case 'Technology':
-        return 'bg-emerald-50 text-emerald-700 border-emerald-200';
-      case 'Management':
-        return 'bg-blue-50 text-blue-700 border-blue-200';
-      case 'Design':
-        return 'bg-purple-50 text-purple-700 border-purple-200';
-      case 'Data Science':
-        return 'bg-indigo-50 text-indigo-700 border-indigo-200';
-      case 'Marketing':
-        return 'bg-orange-50 text-orange-700 border-orange-200';
-      default:
-        return 'bg-gray-50 text-gray-700 border-gray-200';
+    const now = new Date();
+    const created = new Date(createdAt);
+    const diffInMs = now.getTime() - created.getTime();
+    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+    const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+    const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
+
+    if (diffInDays > 0) {
+      return `${diffInDays} day${diffInDays > 1 ? 's' : ''} ago`;
+    } else if (diffInHours > 0) {
+      return `${diffInHours} hour${diffInHours > 1 ? 's' : ''} ago`;
+    } else if (diffInMinutes > 0) {
+      return `${diffInMinutes} minute${diffInMinutes > 1 ? 's' : ''} ago`;
+    } else {
+      return 'Just now';
     }
   };
 
@@ -215,39 +339,53 @@ export default function JobCard({
                 >
                   {title}
                 </h3>
-                <p className="truncate text-xs text-gray-600">
-                  {company.companyName} • {location}
+                <p className="mb-2 truncate text-xs text-gray-600">
+                  <span className="font-medium text-gray-700">
+                    {company.companyName}
+                  </span>
+                  <span className="mx-2 text-gray-400">•</span>
+                  <span className="text-gray-600">
+                    {formatLocation(location)}
+                  </span>
                 </p>
-                <div className="mt-1.5 flex items-center gap-2">
-                  <span
-                    className={`inline-flex rounded-full border px-2 py-0.5 text-xs ${getTypeBadge(typeOfEmployment)}`}
-                  >
-                    {getEmploymentTypeLabel(typeOfEmployment)}
+                <div className="mt-3 flex items-center gap-4">
+                  <span className="flex items-center gap-1 text-xs text-gray-600">
+                    <Clock className="h-3 w-3 text-blue-500" />
+                    <span className="font-medium text-blue-600">
+                      {getEmploymentTypeLabel(typeOfEmployment)}
+                    </span>
                   </span>
-                  <span
-                    className={`inline-flex rounded-full border px-2 py-0.5 text-xs ${getCategoryBadge()}`}
+                  <span className="text-xs font-medium text-gray-400">•</span>
+                  <Badge
+                    variant="outline"
+                    className="border border-gray-700 bg-transparent text-xs font-medium text-gray-700"
                   >
+                    <Briefcase className="mr-1 h-3 w-3" />
                     {category.name}
-                  </span>
+                  </Badge>
                 </div>
               </div>
 
               <div className="ml-3 flex flex-col items-end justify-between text-xs">
-                <div className="flex items-center gap-1 text-gray-500">
+                <div className="mb-1 flex items-center gap-1 text-gray-500">
                   <Clock className="h-3 w-3" />
-                  <span>2 days ago</span>
+                  <span className="font-medium">
+                    {formatTimeAgo(createdAt)}
+                  </span>
                 </div>
-                <div className="flex items-center gap-1 font-medium text-green-600">
-                  <DollarSign className="h-3 w-3" />
-                  <span>{salary}</span>
-                </div>
+                {salary && (
+                  <div className="mb-2 flex items-center gap-1 font-semibold text-green-600">
+                    <DollarSign className="h-3 w-3" />
+                    <span>{salary}</span>
+                  </div>
+                )}
                 <div className="flex items-center gap-2">
                   {priorityPosition <= 2 && <PositionBadge />}
                   <Button
                     size="sm"
                     variant="outline"
                     onClick={handleDetailClick}
-                    className={`h-6 px-2 py-1 text-xs transition-all duration-200 hover:shadow-sm ${
+                    className={`h-7 px-3 py-1 text-xs transition-all duration-200 hover:shadow-sm ${
                       priorityPosition === 1
                         ? 'border-purple-300 text-purple-700 hover:bg-purple-50'
                         : priorityPosition === 2
