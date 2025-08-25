@@ -784,10 +784,7 @@ export default function CompanyPromotionModal({
                               }
                             }
 
-                            setValue(
-                              'vipExpired',
-                              date.toISOString().split('T')[0],
-                            );
+                            setValue('vipExpired', date.toISOString());
                           }}
                           disabled={(date) => {
                             const d = new Date(date);

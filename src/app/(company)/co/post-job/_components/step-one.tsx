@@ -619,8 +619,8 @@ export default function Step1({
                           return;
                         }
 
-                        // Set time to 00:00:00
-                        date.setUTCHours(0, 0, 0, 0);
+                        // Set time to 00:00:00 (local time, not UTC)
+                        date.setHours(0, 0, 0, 0);
                         setDeadline(date.toISOString());
                       }
                     }}

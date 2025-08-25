@@ -30,6 +30,7 @@ import FileUploader from '@/components/common/FileUploader';
 import { SupabaseBucket, SupabaseFolder } from '@/enums/supabase';
 import Image from 'next/image';
 import { uploadFile } from '@/lib/storage';
+import { AiPointsSection } from './_components';
 
 const countryCodes = [
   { code: '+84', country: 'Vietnam', flag: '🇻🇳' },
@@ -145,7 +146,6 @@ export default function SettingsPage() {
       };
 
       const response = await userService.updateMe(requestData);
-      toast.success('Profile updated successfully');
 
       // Update form with the new avatar URL if we uploaded one
       if (avatarUrl !== data.avatar) {
@@ -430,6 +430,9 @@ export default function SettingsPage() {
         </div>
         <div className="bopnpmrder-gray-200 mt-8 border-t"></div>
       </section>
+
+      {/* ————— AI Points Section ————— */}
+      <AiPointsSection />
 
       {/* ————— Save Button ————— */}
       <div className="mt-8 flex justify-end">

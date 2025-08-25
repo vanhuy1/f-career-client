@@ -7,6 +7,8 @@ import {
   UpdatePasswordRequest,
   UserProfile,
   AiPointsResponse,
+  AddAiPointsRequest,
+  AddAiPointsResponse,
 } from '@/types/User';
 import { httpClient } from '@/utils/axios';
 import { RequestBuilder } from '@/utils/axios/request-builder';
@@ -111,6 +113,27 @@ class UserService {
           success: true,
           data: data as AiPointsResponse,
         };
+      },
+    });
+    return response;
+  }
+
+  async addAiPoints(data: AddAiPointsRequest): Promise<AddAiPointsResponse> {
+    const url = this.requestBuilder.buildUrl('add-ai-points');
+    const response = await httpClient.post<
+      AddAiPointsResponse,
+      AddAiPointsRequest
+    >({
+      url,
+      body: data,
+      typeCheck: (data) => {
+        return {
+          success: true,
+          data: data as AddAiPointsResponse,
+        };
+      },
+      config: {
+        withCredentials: false,
       },
     });
     return response;

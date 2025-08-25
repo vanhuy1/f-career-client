@@ -250,6 +250,7 @@ export default function JobListingsPage() {
                 category={job.category}
                 priorityPosition={job.priorityPosition || 3}
                 salary={formatSalaryRange(job.salaryMin, job.salaryMax)}
+                createdAt={job.createdAt}
               />
             ))}
           </div>
@@ -267,6 +268,7 @@ export default function JobListingsPage() {
                 category={job.category}
                 priorityPosition={job.priorityPosition || 3}
                 salary={formatSalaryRange(job.salaryMin, job.salaryMax)}
+                createdAt={job.createdAt}
               />
             ))}
           </div>

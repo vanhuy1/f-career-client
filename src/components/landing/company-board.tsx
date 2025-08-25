@@ -1,12 +1,11 @@
 'use client';
 
 import { ArrowRight } from 'lucide-react';
-import { useEffect, useState, useRef, useMemo } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useDispatch } from 'react-redux';
 import Link from 'next/link';
-import CompanyCard from './company-card'; // Use local company card instead of search card
+import CompanyCard from './company-card';
 import { companyService } from '@/services/api/company/company-api';
-import { Company } from '@/types/Company';
 import {
   setCompanyStart,
   setCompanySuccess,
@@ -16,7 +15,7 @@ import {
 } from '@/services/state/companySlice';
 import { LoadingState } from '@/store/store.model';
 
-// Vietnamese provinces data (copied from job-board.tsx)
+// Vietnamese provinces data
 const VIETNAM_PROVINCES = [
   'An Giang',
   'Bà Rịa - Vũng Tàu',
@@ -83,92 +82,7 @@ const VIETNAM_PROVINCES = [
   'Yên Bái',
 ];
 
-// Sample companies data for fallback to ensure always 8 companies
-const sampleCompanies: Company[] = [
-  {
-    id: 'sample-1',
-    companyName: 'TechViet Solutions',
-    industry: 'Technology',
-    logoUrl: '/logo-landing/nomad.png',
-    website: 'techviet.com.vn',
-    address: ['Ho Chi Minh City', 'Vietnam'],
-    employees: 250,
-    foundedAt: '2018',
-  },
-  {
-    id: 'sample-2',
-    companyName: 'VietWeb Digital',
-    industry: 'Web Development',
-    logoUrl: '/logo-landing/netlify.webp',
-    website: 'vietwebdigital.vn',
-    address: ['Hanoi', 'Vietnam'],
-    employees: 180,
-    foundedAt: '2019',
-  },
-  {
-    id: 'sample-3',
-    companyName: 'CloudVN Storage',
-    industry: 'Cloud Services',
-    logoUrl: '/logo-landing/dropbox.png',
-    website: 'cloudvn.com',
-    address: ['Da Nang', 'Vietnam'],
-    employees: 320,
-    foundedAt: '2017',
-  },
-  {
-    id: 'sample-4',
-    companyName: 'UX Design Studio',
-    industry: 'UX/UI Design',
-    logoUrl: '/logo-landing/maze.png',
-    website: 'uxstudio.vn',
-    address: ['Ho Chi Minh City', 'Vietnam'],
-    employees: 95,
-    foundedAt: '2020',
-  },
-  {
-    id: 'sample-5',
-    companyName: 'DevOps Vietnam',
-    industry: 'DevOps & Infrastructure',
-    logoUrl: '/logo-landing/terraform.png',
-    website: 'devops.vn',
-    address: ['Hanoi', 'Vietnam'],
-    employees: 140,
-    foundedAt: '2016',
-  },
-  {
-    id: 'sample-6',
-    companyName: 'EduTech Vietnam',
-    industry: 'Education Technology',
-    logoUrl: '/logo-landing/udacity.png',
-    website: 'edutech.vn',
-    address: ['Ho Chi Minh City', 'Vietnam'],
-    employees: 280,
-    foundedAt: '2015',
-  },
-  {
-    id: 'sample-7',
-    companyName: 'BuildTech Systems',
-    industry: 'Software Engineering',
-    logoUrl: '/logo-landing/packer.avif',
-    website: 'buildtech.com.vn',
-    address: ['Can Tho', 'Vietnam'],
-    employees: 160,
-    foundedAt: '2018',
-  },
-  {
-    id: 'sample-8',
-    companyName: 'FlowDesign Co.',
-    industry: 'Web Design & Development',
-    logoUrl: '/logo-landing/webflow.webp',
-    website: 'flowdesign.vn',
-    address: ['Da Nang', 'Vietnam'],
-    employees: 120,
-    foundedAt: '2019',
-  },
-];
-
-// Smart location formatting function (adapted from job-board.tsx)
-// Only shows headquarters (first element in address array)
+// Smart location formatting function
 const formatLocation = (address?: string[] | null): string => {
   if (!address || address.length === 0) return '';
 
@@ -183,7 +97,6 @@ const formatLocation = (address?: string[] | null): string => {
     .map((part) => part.trim().toLowerCase());
 
   // Find the Vietnamese province/city from the end of the location
-  // Since API always returns province/city, it's usually at the end
   for (let i = parts.length - 1; i >= 0; i--) {
     const part = parts[i];
 
@@ -200,7 +113,6 @@ const formatLocation = (address?: string[] | null): string => {
   }
 
   // If no province found, try to extract meaningful city name
-  // Remove common address words and keep the most relevant part
   const addressWords = [
     'đường',
     'phố',
@@ -244,34 +156,15 @@ const formatLocation = (address?: string[] | null): string => {
 
 export default function CompanyBoard() {
   const [count, setCount] = useState(0);
-  const hasInitialized = useRef(false); // Track if we've already fetched data
   console.log(count);
+  const hasInitialized = useRef(false);
   const dispatch = useDispatch();
   const companies = useCompanies();
   const loading = useCompanyLoadingState();
   const isLoading = loading === LoadingState.loading;
 
-  // Merge real companies with sample data to ensure always 8 companies
-  const displayCompanies = useMemo(() => {
-    const realCompanies = companies || [];
-    const neededCount = Math.max(0, 8 - realCompanies.length);
-
-    if (neededCount === 0) {
-      // If we have 8+ real companies, just return first 8
-      return realCompanies.slice(0, 8);
-    }
-
-    // Filter out sample companies that might conflict with real ones (by name)
-    const realCompanyNames = realCompanies.map((c) =>
-      c.companyName.toLowerCase(),
-    );
-    const filteredSamples = sampleCompanies.filter(
-      (sample) => !realCompanyNames.includes(sample.companyName.toLowerCase()),
-    );
-
-    // Combine real companies + needed sample companies
-    return [...realCompanies, ...filteredSamples.slice(0, neededCount)];
-  }, [companies]);
+  // Only show real companies from API, limit to 8
+  const displayCompanies = companies ? companies.slice(0, 8) : [];
 
   useEffect(() => {
     async function fetchTopCompanies() {
@@ -281,7 +174,7 @@ export default function CompanyBoard() {
       try {
         hasInitialized.current = true;
         dispatch(setCompanyStart());
-        const res = await companyService.getTopCompanies(); // Use new top companies API
+        const res = await companyService.getTopCompanies();
         dispatch(setCompanySuccess(res.data));
         setCount(res.meta.count);
       } catch (error) {
@@ -295,7 +188,7 @@ export default function CompanyBoard() {
     if (!companies || companies.length === 0) {
       fetchTopCompanies();
     }
-  }, [dispatch, isLoading]); // Removed limit since top companies API doesn't need it
+  }, [dispatch, isLoading]);
 
   return (
     <main className="min-h-screen bg-[#f8f8fd] px-4 py-16 text-white md:px-8">
@@ -322,7 +215,7 @@ export default function CompanyBoard() {
                 />
               ))}
             </div>
-          ) : (
+          ) : displayCompanies.length > 0 ? (
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               {displayCompanies.map((company) => (
                 <CompanyCard
@@ -338,9 +231,13 @@ export default function CompanyBoard() {
                 />
               ))}
             </div>
+          ) : (
+            <div className="py-12 text-center">
+              <p className="text-lg text-gray-600">
+                No companies available at the moment.
+              </p>
+            </div>
           )}
-
-          {/* Always show success state since we guarantee 8 companies */}
         </div>
       </div>
     </main>
