@@ -51,6 +51,10 @@ export default function CompaniesPage() {
     companyName: string;
     currentStatus: boolean;
   } | null>(null);
+  // Track which companies have at least one disabled user
+  const [hasDisabledUsersMap, setHasDisabledUsersMap] = useState<
+    Record<string, boolean>
+  >({});
 
   useEffect(() => {
     const fetchCompanies = async () => {
@@ -76,6 +80,43 @@ export default function CompaniesPage() {
     };
     fetchCompanies();
   }, [verifiedFilter]);
+
+  // Load whether verified companies have disabled users
+  useEffect(() => {
+    const verifiedCompanies = companies.filter((c) => c.isVerified);
+    const missingIds = verifiedCompanies
+      .map((c) => c.id)
+      .filter((id) => hasDisabledUsersMap[id] === undefined);
+
+    if (missingIds.length === 0) return;
+
+    let cancelled = false;
+    const run = async () => {
+      try {
+        const results = await Promise.all(
+          missingIds.map(async (id) => {
+            const res = await companyManagementService.getCompanyDetail(id);
+            const hasDisabled = (res.data.users || []).some(
+              (u) => u.isAccountDisabled,
+            );
+            return { id, hasDisabled };
+          }),
+        );
+        if (cancelled) return;
+        setHasDisabledUsersMap((prev) => {
+          const next = { ...prev };
+          for (const r of results) next[r.id] = r.hasDisabled;
+          return next;
+        });
+      } catch (_) {
+        // best-effort; ignore errors per row
+      }
+    };
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [companies, hasDisabledUsersMap]);
 
   const getVerifiedBadge = (verified: boolean) => {
     if (verified) {
@@ -169,6 +210,7 @@ export default function CompaniesPage() {
           <TableHead>Contact Email</TableHead>
           <TableHead>Created At</TableHead>
           <TableHead>Verified</TableHead>
+          <TableHead>Approve</TableHead>
           <TableHead className="text-right">Actions</TableHead>
         </TableRow>
       </TableHeader>
@@ -182,6 +224,43 @@ export default function CompaniesPage() {
               {new Date(company.createdAt).toLocaleDateString()}
             </TableCell>
             <TableCell>{getVerifiedBadge(company.isVerified)}</TableCell>
+            <TableCell>
+              {company.isVerified && hasDisabledUsersMap[company.id] && (
+                <Button
+                  variant="default"
+                  disabled={isLoading}
+                  onClick={async () => {
+                    try {
+                      setIsLoading(true);
+                      const res = await companyManagementService.approveCompany(
+                        company.id,
+                      );
+                      const updated = res.data;
+                      setCompanies((prev) =>
+                        prev.map((c) =>
+                          c.id === updated.id ? { ...c, ...updated } : c,
+                        ),
+                      );
+                      // After approve, clear disabled flag for this company
+                      setHasDisabledUsersMap((prev) => ({
+                        ...prev,
+                        [company.id]: false,
+                      }));
+                    } catch (err) {
+                      setError(
+                        typeof err === 'string'
+                          ? err
+                          : 'Failed to approve company users',
+                      );
+                    } finally {
+                      setIsLoading(false);
+                    }
+                  }}
+                >
+                  Approve
+                </Button>
+              )}
+            </TableCell>
             <TableCell className="text-right">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -212,6 +291,7 @@ export default function CompaniesPage() {
                   >
                     {company.isVerified ? 'Mark Unverified' : 'Mark Verified'}
                   </DropdownMenuItem>
+                  {/* Approve moved to its own column */}
                 </DropdownMenuContent>
               </DropdownMenu>
             </TableCell>

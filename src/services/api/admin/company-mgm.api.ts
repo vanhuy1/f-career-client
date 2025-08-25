@@ -100,6 +100,27 @@ class CompanyManagementService {
     });
     return response;
   }
+
+  async approveCompany(id: string): Promise<VerifyCompanyResponse> {
+    const url = this.requestBuilder.buildUrl(`${id}/approve`);
+    const response = await httpClient.patch<
+      VerifyCompanyResponse,
+      Record<string, never>
+    >({
+      url,
+      body: {},
+      typeCheck: (data) => {
+        return {
+          success: true,
+          data: data as VerifyCompanyResponse,
+        };
+      },
+      config: {
+        withCredentials: false,
+      },
+    });
+    return response;
+  }
 }
 
 export const companyManagementService = new CompanyManagementService();
