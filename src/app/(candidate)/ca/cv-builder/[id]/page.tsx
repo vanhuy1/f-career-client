@@ -491,6 +491,98 @@ const createTextOnlyPdf = async (): Promise<Blob> => {
   return pdf.output('blob');
 };
 
+const addHiddenTextLayer = (pdf: jsPDF, rootEl: HTMLElement): void => {
+  const pdfWidthMm = pdf.internal.pageSize.getWidth();
+  const pdfHeightMm = pdf.internal.pageSize.getHeight();
+
+  const rootRect = rootEl.getBoundingClientRect();
+  const rootWidthPx = rootRect.width;
+  const rootHeightPx = rootRect.height;
+
+  if (rootWidthPx === 0 || rootHeightPx === 0) return;
+
+  const pxToMmX = (px: number) => (px * pdfWidthMm) / rootWidthPx;
+  const pxToMmY = (px: number) => (px * pdfWidthMm) / rootWidthPx; // keep aspect ratio with width scaling
+
+  // Select common text-bearing elements
+  const textNodes = rootEl.querySelectorAll(
+    'h1,h2,h3,h4,h5,h6,p,span,li,div,a,em,strong,small,label,td,th',
+  );
+
+  // Use white text so it remains invisible on white background but searchable
+  pdf.setTextColor(255, 255, 255);
+
+  textNodes.forEach((el) => {
+    const element = el as HTMLElement;
+    // Skip elements explicitly marked to ignore
+    if (element.getAttribute('data-export-text-ignore') === 'true') return;
+
+    const text = (element.innerText || '').trim();
+    if (!text) return;
+
+    const style = window.getComputedStyle(element);
+    // Ignore fully hidden elements
+    if (style.visibility === 'hidden' || style.display === 'none') return;
+
+    const rect = element.getBoundingClientRect();
+    if (!rect || rect.width === 0 || rect.height === 0) return;
+
+    const xMm = pxToMmX(rect.left - rootRect.left + 2); // slight inset to avoid clipping
+    const yTopMm = pxToMmY(rect.top - rootRect.top + 12); // approximate baseline offset
+
+    // Estimate font size from computed pixels
+    const fontSizePx = parseFloat(style.fontSize || '12');
+    const lineHeightPx = parseFloat(
+      style.lineHeight || String(fontSizePx * 1.2),
+    );
+    const fontSizeMm = pxToMmY(fontSizePx);
+    const lineHeightMm = pxToMmY(lineHeightPx);
+
+    // Basic split to avoid very long lines (keeps text searchable)
+    const lines = text.split('\n').flatMap((t) => t.split(/(?<=\.)\s+/));
+
+    let currentY = yTopMm;
+    lines.forEach((line) => {
+      if (!line.trim()) return;
+
+      // Determine the page for this line
+      let pageIndex = Math.floor(currentY / pdfHeightMm);
+      const yOnPage = currentY - pageIndex * pdfHeightMm;
+      pageIndex = Math.max(0, pageIndex);
+
+      // Ensure page exists
+      const totalPages = pdf.getNumberOfPages();
+      if (pageIndex + 1 > totalPages) {
+        while (pdf.getNumberOfPages() < pageIndex + 1) pdf.addPage();
+      }
+      pdf.setPage(pageIndex + 1);
+
+      // Apply font family weight roughly
+      const isBold = /bold|600|700|800|900/i.test(style.fontWeight || '');
+      const isItalic = /italic|oblique/i.test(style.fontStyle || '');
+      const fontStyle =
+        isBold && isItalic
+          ? 'bolditalic'
+          : isBold
+            ? 'bold'
+            : isItalic
+              ? 'italic'
+              : 'normal';
+      try {
+        pdf.setFont('helvetica', fontStyle);
+      } catch {
+        // fallback to default
+      }
+      pdf.setFontSize(Math.max(4, Math.min(14, fontSizeMm)));
+
+      // Write white text at computed position
+      pdf.text(line, xMm, Math.max(2, yOnPage));
+
+      currentY += lineHeightMm;
+    });
+  });
+};
+
 // Add a helper function to clean up old CV files
 const cleanupOldCvFiles = async (cvId: string) => {
   try {
@@ -749,6 +841,11 @@ export default function CvBuilderPage() {
           if (remainingHeight > 0) {
             pdf.addPage();
           }
+        }
+
+        // Overlay hidden searchable text layer
+        if (cvRef.current) {
+          addHiddenTextLayer(pdf, cvRef.current);
         }
 
         // Get the PDF blob
