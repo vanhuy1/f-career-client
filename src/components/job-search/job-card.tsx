@@ -5,7 +5,7 @@ import { CompanyInfo } from '@/types/Job';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
-import { Trophy, Clock, DollarSign, Eye, Star, Briefcase } from 'lucide-react';
+import { Trophy, Clock, Eye, Star, Briefcase } from 'lucide-react';
 import { employmentType } from '@/enums/employmentType';
 
 // Vietnamese provinces data (copied from company-board.tsx)
@@ -375,7 +375,6 @@ export default function JobCard({
                 </div>
                 {salary && (
                   <div className="mb-2 flex items-center gap-1 font-semibold text-green-600">
-                    <DollarSign className="h-3 w-3" />
                     <span>{salary}</span>
                   </div>
                 )}

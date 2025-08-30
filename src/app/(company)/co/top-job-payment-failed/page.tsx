@@ -14,6 +14,8 @@ import {
   Home,
   CreditCard,
 } from 'lucide-react';
+import { paymentHistoryService } from '@/services/api/payment/payment-history-api';
+import { useUserData } from '@/services/state/userSlice';
 
 interface TopJobData {
   jobId: string;
@@ -21,44 +23,89 @@ interface TopJobData {
   topJobExpired: string;
   amount?: number;
   durationDays?: number;
+  coupon?: {
+    id: number;
+    code: string;
+    discountPercentage: number;
+  } | null;
 }
 
 export default function TopJobPaymentFailedPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const userData = useUserData();
   const [topJobData, setTopJobData] = useState<TopJobData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [failureReason, setFailureReason] = useState<string>(
     'Payment was not completed',
   );
+  const [hasProcessedPayment, setHasProcessedPayment] = useState(false);
 
   useEffect(() => {
+    const orderCode = searchParams?.get('orderCode');
     const status = searchParams?.get('status');
     const cancel = searchParams?.get('cancel');
 
     // Retrieve payment data from localStorage
     const storedData = localStorage.getItem('TOP_JOB_DATA');
-    if (storedData) {
-      try {
-        const data = JSON.parse(storedData);
-        setTopJobData(data);
-        console.log('Top job data loaded:', data);
-      } catch (error) {
-        console.error('Failed to parse top job data:', error);
+    if (!storedData) {
+      console.log('No top job data found in localStorage');
+      setFailureReason('No payment data found. Please try again.');
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const data = JSON.parse(storedData);
+      setTopJobData(data);
+      console.log('Top job data loaded:', data);
+
+      // Prevent duplicate processing
+      if (hasProcessedPayment) {
+        console.log('Payment already processed, skipping...');
+        setIsLoading(false);
+        return;
       }
-    }
 
-    // Determine failure reason
-    if (cancel === 'true') {
-      setFailureReason('Payment was cancelled by user');
-    } else if (status === 'FAILED') {
-      setFailureReason('Payment failed due to technical issues');
-    } else {
-      setFailureReason('Payment was not completed successfully');
-    }
+      // Determine failure reason
+      let failureReasonText = 'Payment was not completed successfully';
 
-    setIsLoading(false);
-  }, [searchParams]);
+      if (cancel === 'true') {
+        failureReasonText = 'Payment was cancelled by user';
+      } else if (status === 'FAILED') {
+        failureReasonText = 'Payment failed due to technical issues';
+      }
+
+      setFailureReason(failureReasonText);
+
+      // Create payment record with FAILED status
+      const createFailedPayment = async () => {
+        try {
+          await paymentHistoryService.createPayment({
+            userId: Number(userData?.id) || 0,
+            packageType: 2, // TOP_JOB = 2
+            couponId: data.coupon?.id ? Number(data.coupon.id) : undefined,
+            amount: data.amount || 0,
+            paymentMethod: 'PAYOS',
+            status: 'FAILED',
+            transactionId: orderCode || undefined,
+          });
+          console.log('Failed top job payment record created successfully');
+        } catch (error) {
+          console.error('Failed to create payment record:', error);
+        }
+      };
+
+      // Create failed payment record
+      createFailedPayment();
+      setHasProcessedPayment(true);
+    } catch (error) {
+      console.error('Failed to parse top job data:', error);
+      setFailureReason('Invalid payment data. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [searchParams, hasProcessedPayment, userData]);
 
   const handleRetryTopJob = () => {
     // Get the job ID from localStorage if available

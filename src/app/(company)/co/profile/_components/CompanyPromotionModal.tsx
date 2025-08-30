@@ -227,6 +227,7 @@ export default function CompanyPromotionModal({
         baseAmount: baseAmount, // Store original amount before discount
         coupon: appliedCoupon
           ? {
+              id: appliedCoupon.id,
               code: appliedCoupon.code,
               discountPercentage: appliedCoupon.discountPercentage,
             }

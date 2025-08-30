@@ -248,9 +248,13 @@ export default function TopJobPage() {
       }
     }
 
-    const amountVnd =
+    const baseAmountVnd =
       (pkg === 'vip' ? VIP_PRICE_PER_DAY : PREMIUM_PRICE_PER_DAY) *
       Math.max(1, days);
+    const finalAmountVnd = applyDiscount(
+      Math.round(baseAmountVnd),
+      visibilityAppliedCoupon,
+    );
     localStorage.setItem(
       'VISIBILITY_PACKAGE_DATA',
       JSON.stringify({
@@ -259,23 +263,27 @@ export default function TopJobPage() {
         durationDays: Math.max(1, days),
         priorityPosition: pkg === 'vip' ? 1 : 2,
         vipExpired: newExp.toISOString(),
-        amountVnd,
+        amountVnd: finalAmountVnd,
+        amount: finalAmountVnd, // For payment history API
+        coupon: visibilityAppliedCoupon
+          ? {
+              id: visibilityAppliedCoupon.id,
+              code: visibilityAppliedCoupon.code,
+              discountPercentage: visibilityAppliedCoupon.discountPercentage,
+            }
+          : null,
       }),
     );
 
     setIsProcessingPayment(true);
     try {
       const orderCode = Date.now();
-      const amount = applyDiscount(
-        Math.round(amountVnd),
-        visibilityAppliedCoupon,
-      );
       const response = await payosService.createPaymentLink({
-        amount,
+        amount: finalAmountVnd,
         description: `${pkg === 'vip' ? 'VIP' : 'Premium'} Visibility ${Math.max(1, days)}d`,
         orderCode,
         returnUrl: `${window.location.origin}/co/visibility-payment-success`,
-        cancelUrl: `${window.location.origin}/co/top-job-payment-failed`,
+        cancelUrl: `${window.location.origin}/co/visibility-payment-failed`,
       });
       window.location.href = response.checkoutUrl;
     } catch (e) {
@@ -492,6 +500,8 @@ export default function TopJobPage() {
     normalizedEnd.setHours(0, 0, 0, 0);
 
     const safeDays = Math.max(1, days);
+    const baseAmount = safeDays * topJobPrice;
+    const finalAmount = applyDiscount(baseAmount, topJobAppliedCoupon);
 
     const topJobData = {
       jobId: job?.id,
@@ -501,7 +511,16 @@ export default function TopJobPage() {
       companyName: job?.company.companyName,
       topJobExpired: normalizedEnd.toISOString(),
       displayDays: safeDays,
-      amountVnd: safeDays * topJobPrice,
+      amountVnd: finalAmount,
+      amount: finalAmount, // For payment history API
+      durationDays: safeDays,
+      coupon: topJobAppliedCoupon
+        ? {
+            id: topJobAppliedCoupon.id,
+            code: topJobAppliedCoupon.code,
+            discountPercentage: topJobAppliedCoupon.discountPercentage,
+          }
+        : null,
     };
 
     localStorage.setItem('TOP_JOB_DATA', JSON.stringify(topJobData));

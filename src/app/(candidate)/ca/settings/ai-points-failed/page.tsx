@@ -1,21 +1,52 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { XCircle, ArrowLeft, Sparkles } from 'lucide-react';
 import { toast } from 'react-toastify';
+import { paymentHistoryService } from '@/services/api/payment/payment-history-api';
+import { useUserData } from '@/services/state/userSlice';
 
 export default function AiPointsFailedPage() {
   const router = useRouter();
+  const userData = useUserData();
+  const searchParams = useSearchParams();
+  const orderCode = searchParams?.get('orderCode');
 
   useEffect(() => {
-    // Clear any stored payment data on failed payment
-    localStorage.removeItem('aiPointsPayment');
-    localStorage.removeItem('aiPointsPaymentProcessed');
-    toast.error('Payment was cancelled or failed. Please try again.');
-  }, []);
+    const createFailedPaymentRecord = async () => {
+      try {
+        // Get payment data from localStorage before clearing
+        const storedData = localStorage.getItem('aiPointsPayment');
+        if (storedData) {
+          const data = JSON.parse(storedData);
+
+          // Create payment record with FAILED status
+          await paymentHistoryService.createPayment({
+            userId: Number(userData?.id) || 0,
+            packageType: 5, // AI_POINT = 5
+            couponId: data.coupon?.id ? Number(data.coupon.id) : undefined,
+            amount: data.amountVnd || 0,
+            paymentMethod: 'PAYOS',
+            status: 'FAILED',
+            transactionId: orderCode || undefined,
+          });
+          console.log('Failed AI points payment record created successfully');
+        }
+      } catch (error) {
+        console.error('Failed to create payment record:', error);
+      } finally {
+        // Clear any stored payment data on failed payment
+        localStorage.removeItem('aiPointsPayment');
+        localStorage.removeItem('aiPointsPaymentProcessed');
+        toast.error('Payment was cancelled or failed. Please try again.');
+      }
+    };
+
+    createFailedPaymentRecord();
+  }, [userData]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">

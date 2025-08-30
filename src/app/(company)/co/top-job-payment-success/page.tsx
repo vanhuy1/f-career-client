@@ -19,6 +19,8 @@ import { format } from 'date-fns';
 import { toast } from 'react-toastify';
 import { payosService } from '@/services/api/payment/payos-api';
 import { jobService } from '@/services/api/jobs/job-api';
+import { paymentHistoryService } from '@/services/api/payment/payment-history-api';
+import { useUserData } from '@/services/state/userSlice';
 
 interface TopJobData {
   jobId: string;
@@ -26,16 +28,23 @@ interface TopJobData {
   topJobExpired: string;
   amount?: number;
   durationDays?: number;
+  coupon?: {
+    id: number;
+    code: string;
+    discountPercentage: number;
+  } | null;
 }
 
 export default function TopJobPaymentSuccessPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const userData = useUserData();
   const [isProcessing, setIsProcessing] = useState(true);
   const [status, setStatus] = useState<'processing' | 'success' | 'error'>(
     'processing',
   );
   const [topJobData, setTopJobData] = useState<TopJobData | null>(null);
+  const [hasProcessedPayment, setHasProcessedPayment] = useState(false);
 
   useEffect(() => {
     const processPaymentSuccess = async () => {
@@ -86,6 +95,15 @@ export default function TopJobPaymentSuccessPage() {
           const parsedTopJobData = JSON.parse(savedData);
           console.log('Parsed top job data:', parsedTopJobData);
 
+          // Prevent duplicate processing
+          if (hasProcessedPayment) {
+            console.log('Payment already processed, skipping...');
+            setTopJobData(parsedTopJobData);
+            setStatus('success');
+            setIsProcessing(false);
+            return;
+          }
+
           // Update job with new topJob value and expiry
           await jobService.update(parsedTopJobData.jobId, {
             topJob: parsedTopJobData.newTopJob,
@@ -94,8 +112,27 @@ export default function TopJobPaymentSuccessPage() {
 
           console.log('Top job updated successfully!');
 
+          // Create payment record in database
+          try {
+            await paymentHistoryService.createPayment({
+              userId: Number(userData?.id) || 0,
+              packageType: 2, // TOP_JOB = 2
+              couponId: parsedTopJobData.coupon?.id
+                ? Number(parsedTopJobData.coupon.id)
+                : undefined,
+              amount: parsedTopJobData.amount || 0,
+              paymentMethod: 'PAYOS',
+              status: 'SUCCESS',
+              transactionId: orderCode || undefined,
+            });
+            console.log('Top job payment record created successfully');
+          } catch (error) {
+            console.error('Failed to create payment record:', error);
+          }
+
           setTopJobData(parsedTopJobData);
           setStatus('success');
+          setHasProcessedPayment(true);
           toast.success(
             `Job successfully added to top position ${parsedTopJobData.newTopJob}!`,
           );
@@ -120,7 +157,7 @@ export default function TopJobPaymentSuccessPage() {
     };
 
     processPaymentSuccess();
-  }, [searchParams, router]);
+  }, [searchParams, router, hasProcessedPayment, userData]);
 
   if (isProcessing) {
     return (
@@ -195,8 +232,8 @@ export default function TopJobPaymentSuccessPage() {
                     </Badge>
                   </div>
 
-                  {/* Duration & Expiry */}
-                  <div className="grid grid-cols-2 gap-4">
+                  {/* Duration & Expiry & Amount */}
+                  <div className="grid grid-cols-3 gap-4">
                     <div className="rounded-lg bg-white/60 p-4">
                       <div className="mb-2 flex items-center gap-2">
                         <Calendar className="h-4 w-4 text-amber-600" />
@@ -219,7 +256,18 @@ export default function TopJobPaymentSuccessPage() {
                         </span>
                       </div>
                       <div className="text-lg font-bold text-gray-900">
-                        Top #{topJobData.newTopJob}
+                        Landing page
+                      </div>
+                    </div>
+                    <div className="rounded-lg bg-white/60 p-4">
+                      <div className="mb-2 flex items-center gap-2">
+                        <CreditCard className="h-4 w-4 text-green-600" />
+                        <span className="text-sm font-medium text-gray-700">
+                          Amount Paid
+                        </span>
+                      </div>
+                      <div className="text-lg font-bold text-green-600">
+                        {topJobData.amount?.toLocaleString('vi-VN')}₫
                       </div>
                     </div>
                   </div>

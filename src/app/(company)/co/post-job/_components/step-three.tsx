@@ -29,7 +29,6 @@ import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
 import { Input } from '@/components/ui/input';
 import { couponService } from '@/services/api/coupons/coupon-api';
-import type { Coupon } from '@/services/api/coupons/coupon-api';
 import { toast } from 'react-toastify';
 
 interface DisplayPackage {
@@ -541,6 +540,9 @@ export default function Step3({
   setPackageInfo,
   deadline,
   setTotalPrice,
+  appliedCoupon,
+  setAppliedCoupon,
+  basicLimitInfo,
 }: StepProps) {
   const [selectedPackage, setSelectedPackage] = useState<PackageType>(
     packageInfo?.type || 'basic',
@@ -557,7 +559,6 @@ export default function Step3({
 
   // Add new states for coupon
   const [couponCode, setCouponCode] = useState('');
-  const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
   const [isCheckingCoupon, setIsCheckingCoupon] = useState(false);
   const [originalPrice, setOriginalPrice] = useState<number>(0);
 
@@ -682,7 +683,13 @@ export default function Step3({
       }
 
       // Apply coupon
-      setAppliedCoupon(coupon);
+      if (setAppliedCoupon) {
+        setAppliedCoupon({
+          id: coupon.id,
+          code: coupon.code,
+          discountPercentage: coupon.discountPercentage,
+        });
+      }
       setCouponCode(''); // Clear input
       toast.success(
         `Coupon applied! You got ${coupon.discountPercentage}% OFF`,
@@ -696,7 +703,9 @@ export default function Step3({
   };
 
   const removeCoupon = () => {
-    setAppliedCoupon(null);
+    if (setAppliedCoupon) {
+      setAppliedCoupon(null);
+    }
     toast.success('Coupon removed');
   };
 
@@ -849,6 +858,42 @@ export default function Step3({
                       </li>
                     ))}
                   </ul>
+
+                  {/* Basic package limit info */}
+                  {pkg.id === 'basic' && basicLimitInfo && (
+                    <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3">
+                      <div className="mb-2 flex items-center gap-2">
+                        <AlertCircle className="h-4 w-4 text-amber-600" />
+                        <span className="text-xs font-semibold text-amber-800">
+                          Daily Limit
+                        </span>
+                      </div>
+                      <div className="text-xs text-amber-700">
+                        {basicLimitInfo.allowed ? (
+                          <>
+                            <span className="font-medium">
+                              {basicLimitInfo.remaining} of 3 posts remaining
+                              today
+                            </span>
+                            <br />
+                            <span className="text-amber-600">
+                              Limit resets daily at midnight
+                            </span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="font-medium text-red-600">
+                              Daily limit reached (3/3)
+                            </span>
+                            <br />
+                            <span className="text-amber-600">
+                              Upgrade to Premium/VIP for unlimited posting
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </Label>
             </div>

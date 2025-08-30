@@ -22,6 +22,8 @@ import { toast } from 'react-toastify';
 import { payosService } from '@/services/api/payment/payos-api';
 import { jobService } from '@/services/api/jobs/job-api';
 import { Job } from '@/types/Job';
+import { paymentHistoryService } from '@/services/api/payment/payment-history-api';
+import { useUserData } from '@/services/state/userSlice';
 
 interface VisibilityPackageData {
   jobId: string;
@@ -29,11 +31,18 @@ interface VisibilityPackageData {
   durationDays: number;
   priorityPosition: number;
   vipExpired: string;
+  amount?: number;
+  coupon?: {
+    id: number;
+    code: string;
+    discountPercentage: number;
+  } | null;
 }
 
 export default function VisibilityPaymentSuccessPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const userData = useUserData();
   const [isProcessing, setIsProcessing] = useState(true);
   const [status, setStatus] = useState<'processing' | 'success' | 'error'>(
     'processing',
@@ -41,6 +50,7 @@ export default function VisibilityPaymentSuccessPage() {
   const [packageData, setPackageData] = useState<VisibilityPackageData | null>(
     null,
   );
+  const [hasProcessedPayment, setHasProcessedPayment] = useState(false);
 
   useEffect(() => {
     const process = async () => {
@@ -78,13 +88,40 @@ export default function VisibilityPaymentSuccessPage() {
 
         const data = JSON.parse(saved) as VisibilityPackageData;
 
+        // Prevent duplicate processing
+        if (hasProcessedPayment) {
+          console.log('Payment already processed, skipping...');
+          setPackageData(data);
+          setStatus('success');
+          setIsProcessing(false);
+          return;
+        }
+
         await jobService.update(data.jobId, {
           priorityPosition: data.priorityPosition,
           vipExpired: data.vipExpired,
         } as Job);
 
+        // Create payment record in database
+        try {
+          const packageType = data.packageType === 'vip' ? 3 : 4; // VIP_JOB = 3, PREMIUM_JOB = 4
+          await paymentHistoryService.createPayment({
+            userId: Number(userData?.id) || 0,
+            packageType: packageType,
+            couponId: data.coupon?.id ? Number(data.coupon.id) : undefined,
+            amount: data.amount || 0,
+            paymentMethod: 'PAYOS',
+            status: 'SUCCESS',
+            transactionId: orderCode || undefined,
+          });
+          console.log('Visibility payment record created successfully');
+        } catch (error) {
+          console.error('Failed to create payment record:', error);
+        }
+
         setPackageData(data);
         setStatus('success');
+        setHasProcessedPayment(true);
         toast.success('Visibility package applied successfully!');
         setTimeout(
           () => localStorage.removeItem('VISIBILITY_PACKAGE_DATA'),
@@ -101,7 +138,7 @@ export default function VisibilityPaymentSuccessPage() {
     };
 
     process();
-  }, [router, searchParams]);
+  }, [router, searchParams, hasProcessedPayment, userData]);
 
   if (isProcessing) {
     return (
@@ -194,8 +231,8 @@ export default function VisibilityPaymentSuccessPage() {
                     </Badge>
                   </div>
 
-                  {/* Duration & Expiry */}
-                  <div className="grid grid-cols-2 gap-4">
+                  {/* Duration & Expiry & Amount */}
+                  <div className="grid grid-cols-3 gap-4">
                     <div className="rounded-lg bg-white/60 p-4">
                       <div className="mb-2 flex items-center gap-2">
                         <Calendar className="h-4 w-4 text-green-600" />
@@ -219,6 +256,17 @@ export default function VisibilityPaymentSuccessPage() {
                       </div>
                       <div className="text-lg font-bold text-gray-900">
                         #{packageData.priorityPosition}
+                      </div>
+                    </div>
+                    <div className="rounded-lg bg-white/60 p-4">
+                      <div className="mb-2 flex items-center gap-2">
+                        <CreditCard className="h-4 w-4 text-green-600" />
+                        <span className="text-sm font-medium text-gray-700">
+                          Amount Paid
+                        </span>
+                      </div>
+                      <div className="text-lg font-bold text-green-600">
+                        {packageData.amount?.toLocaleString('vi-VN')}₫
                       </div>
                     </div>
                   </div>

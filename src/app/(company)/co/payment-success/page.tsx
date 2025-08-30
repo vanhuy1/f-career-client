@@ -24,6 +24,7 @@ import { payosService } from '@/services/api/payment/payos-api';
 import { jobService } from '@/services/api/jobs/job-api';
 import { useUser } from '@/services/state/userSlice';
 import { JobStatus } from '@/types/Job';
+import { paymentHistoryService } from '@/services/api/payment/payment-history-api';
 
 interface JobFormData {
   title: string;
@@ -39,6 +40,12 @@ interface JobFormData {
   deadline: string;
   typeOfEmployment: string;
   priorityPosition: number;
+  amount?: number;
+  coupon?: {
+    id: number;
+    code: string;
+    discountPercentage: number;
+  } | null;
 }
 
 export default function PaymentSuccessPage() {
@@ -49,6 +56,7 @@ export default function PaymentSuccessPage() {
     'processing',
   );
   const [jobData, setJobData] = useState<JobFormData | null>(null);
+  const [hasProcessedPayment, setHasProcessedPayment] = useState(false);
   const user = useUser();
 
   useEffect(() => {
@@ -145,7 +153,7 @@ export default function PaymentSuccessPage() {
             salaryMin: (formData.salaryRange || [5000, 22000])[0],
             salaryMax: (formData.salaryRange || [5000, 22000])[1],
             experienceYears: formData.experienceYears || 0,
-            isVip: formData.isVip || false,
+            isVip: (formData.priorityPosition || 3) <= 2, // VIP if priority 1 or 2
             packageInfo: formData.packageInfo,
             deadline: formData.deadline,
             typeOfEmployment: formData.typeOfEmployment || 'FULL_TIME',
@@ -154,9 +162,37 @@ export default function PaymentSuccessPage() {
             vipExpired: vipExpiredDate.toISOString(),
           };
 
+          // Prevent duplicate processing
+          if (hasProcessedPayment) {
+            console.log('Payment already processed, skipping...');
+            setJobData(formData);
+            setStatus('success');
+            setIsProcessing(false);
+            return;
+          }
+
           console.log('Creating job with data:', jobData);
           await jobService.create(jobData);
           console.log('Job created successfully!');
+
+          // Create payment record in database
+          try {
+            const packageType = formData.priorityPosition === 1 ? 3 : 4; // VIP_JOB = 3, PREMIUM_JOB = 4
+            await paymentHistoryService.createPayment({
+              userId: Number(user?.data?.id) || 0,
+              packageType: packageType,
+              couponId: formData.coupon?.id
+                ? Number(formData.coupon.id)
+                : undefined,
+              amount: formData.amount || 0,
+              paymentMethod: 'PAYOS',
+              status: 'SUCCESS',
+              transactionId: orderCode || undefined,
+            });
+            console.log('Job payment record created successfully');
+          } catch (error) {
+            console.error('Failed to create payment record:', error);
+          }
 
           // Save package info to localStorage
           if (user?.data?.companyId) {
@@ -168,6 +204,7 @@ export default function PaymentSuccessPage() {
 
           setJobData(formData);
           setStatus('success');
+          setHasProcessedPayment(true);
           toast.success('Payment successful and job posted!');
 
           // Clear form data only after successful display
@@ -190,7 +227,7 @@ export default function PaymentSuccessPage() {
     };
 
     processPaymentSuccess();
-  }, [searchParams, router, user]);
+  }, [searchParams, router, user, hasProcessedPayment]);
 
   if (isProcessing) {
     return (
@@ -214,12 +251,20 @@ export default function PaymentSuccessPage() {
   }
 
   if (status === 'success' && jobData) {
-    const isVIP = jobData.isVip;
-    const packageColor = isVIP ? 'purple' : 'blue';
-    const packageTitle = isVIP ? 'VIP Job Package' : 'Standard Job Package';
+    const isVIP = jobData.priorityPosition === 1;
+    const isPremium = jobData.priorityPosition === 2;
+
+    const packageColor = isVIP ? 'purple' : isPremium ? 'orange' : 'blue';
+    const packageTitle = isVIP
+      ? 'VIP Job Package'
+      : isPremium
+        ? 'Premium Job Package'
+        : 'Standard Job Package';
     const packageDescription = isVIP
-      ? 'Enhanced visibility and priority'
-      : 'Standard job posting';
+      ? 'Maximum visibility and priority #1'
+      : isPremium
+        ? 'Enhanced visibility and priority #2'
+        : 'Standard job posting';
 
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 p-4">
@@ -268,10 +313,12 @@ export default function PaymentSuccessPage() {
                       className={
                         isVIP
                           ? 'border-purple-300 bg-purple-50 text-purple-700'
-                          : 'border-blue-300 bg-blue-50 text-blue-700'
+                          : isPremium
+                            ? 'border-orange-300 bg-orange-50 text-orange-700'
+                            : 'border-blue-300 bg-blue-50 text-blue-700'
                       }
                     >
-                      {isVIP ? 'VIP' : 'Standard'}
+                      {isVIP ? 'VIP' : isPremium ? 'Premium' : 'Standard'}
                     </Badge>
                   </div>
 
@@ -279,10 +326,14 @@ export default function PaymentSuccessPage() {
                   <div className="flex items-center justify-between rounded-lg bg-white/60 p-4">
                     <div className="flex items-center gap-3">
                       <div
-                        className={`rounded-lg bg-gradient-to-br from-${packageColor}-100 to-${packageColor === 'purple' ? 'pink' : 'cyan'}-100 p-2`}
+                        className={`rounded-lg bg-gradient-to-br from-${packageColor}-100 to-${
+                          isVIP ? 'pink' : isPremium ? 'amber' : 'cyan'
+                        }-100 p-2`}
                       >
                         {isVIP ? (
                           <Crown className="h-5 w-5 text-purple-600" />
+                        ) : isPremium ? (
+                          <Star className="h-5 w-5 text-orange-600" />
                         ) : (
                           <Star className="h-5 w-5 text-blue-600" />
                         )}
@@ -333,31 +384,45 @@ export default function PaymentSuccessPage() {
                       <div className="flex items-center gap-2 text-sm text-gray-700">
                         <CheckCircle className="h-4 w-4 text-green-500" />
                         {isVIP
-                          ? 'Enhanced visibility and priority ranking'
-                          : 'Standard job posting visibility'}
+                          ? 'Maximum visibility and priority #1 ranking'
+                          : isPremium
+                            ? 'Enhanced visibility and priority #2 ranking'
+                            : 'Standard job posting visibility'}
                       </div>
                       <div className="flex items-center gap-2 text-sm text-gray-700">
                         <CheckCircle className="h-4 w-4 text-green-500" />
                         {isVIP
                           ? 'VIP badge and special highlighting'
-                          : 'Professional job listing appearance'}
+                          : isPremium
+                            ? 'Premium badge and enhanced highlighting'
+                            : 'Professional job listing appearance'}
                       </div>
                       <div className="flex items-center gap-2 text-sm text-gray-700">
                         <CheckCircle className="h-4 w-4 text-green-500" />
                         {isVIP
                           ? 'Top position in search results'
-                          : 'Searchable job listing'}
+                          : isPremium
+                            ? 'High position in search results'
+                            : 'Searchable job listing'}
                       </div>
                       <div className="flex items-center gap-2 text-sm text-gray-700">
                         <CheckCircle className="h-4 w-4 text-green-500" />
                         {isVIP
                           ? '24/7 priority support'
-                          : 'Standard customer support'}
+                          : isPremium
+                            ? 'Enhanced customer support'
+                            : 'Standard customer support'}
                       </div>
                       {isVIP && (
                         <div className="flex items-center gap-2 text-sm text-gray-700">
                           <CheckCircle className="h-4 w-4 text-green-500" />
                           Featured on homepage spotlight
+                        </div>
+                      )}
+                      {isPremium && (
+                        <div className="flex items-center gap-2 text-sm text-gray-700">
+                          <CheckCircle className="h-4 w-4 text-green-500" />
+                          Enhanced search visibility
                         </div>
                       )}
                     </div>

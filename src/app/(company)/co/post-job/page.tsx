@@ -76,6 +76,12 @@ interface JobFormData {
   status: JobStatus;
   priorityPosition: number;
   vip_expiration: string;
+  amount?: number;
+  coupon?: {
+    id: number;
+    code: string;
+    discountPercentage: number;
+  } | null;
 }
 
 export default function JobPostingForm() {
@@ -91,6 +97,11 @@ export default function JobPostingForm() {
   // const [isYearlyBilling, setIsYearlyBilling] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [totalPrice, setTotalPrice] = useState<number>(0);
+  const [appliedCoupon, setAppliedCoupon] = useState<{
+    id: number;
+    code: string;
+    discountPercentage: number;
+  } | null>(null);
 
   // Package information state
   const [packageInfo, setPackageInfo] = useState<PackageInfo>({
@@ -147,6 +158,69 @@ export default function JobPostingForm() {
   };
 
   const STORAGE_KEY = 'JOB_FORM_DATA';
+  const BASIC_LIMIT_KEY = 'BASIC_JOB_LIMIT';
+  const BASIC_LIMIT_PER_DAY = 3;
+
+  // Helper functions for basic package limit
+  const getBasicJobLimit = () => {
+    const companyId = user?.data?.companyId;
+    if (!companyId) return { count: 0, date: null };
+
+    const limitData = localStorage.getItem(`${BASIC_LIMIT_KEY}_${companyId}`);
+    if (!limitData) return { count: 0, date: null };
+
+    try {
+      return JSON.parse(limitData);
+    } catch {
+      return { count: 0, date: null };
+    }
+  };
+
+  const updateBasicJobLimit = () => {
+    const companyId = user?.data?.companyId;
+    if (!companyId) return;
+
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+    const currentLimit = getBasicJobLimit();
+
+    if (currentLimit.date === today) {
+      // Same day, increment count
+      const newLimit = {
+        count: currentLimit.count + 1,
+        date: today,
+      };
+      localStorage.setItem(
+        `${BASIC_LIMIT_KEY}_${companyId}`,
+        JSON.stringify(newLimit),
+      );
+    } else {
+      // New day, reset count
+      const newLimit = {
+        count: 1,
+        date: today,
+      };
+      localStorage.setItem(
+        `${BASIC_LIMIT_KEY}_${companyId}`,
+        JSON.stringify(newLimit),
+      );
+    }
+  };
+
+  const checkBasicJobLimit = () => {
+    const companyId = user?.data?.companyId;
+    if (!companyId) return { allowed: false, remaining: 0 };
+
+    const limit = getBasicJobLimit();
+    const today = new Date().toISOString().split('T')[0];
+
+    if (limit.date !== today) {
+      // New day, reset limit
+      return { allowed: true, remaining: BASIC_LIMIT_PER_DAY };
+    }
+
+    const remaining = BASIC_LIMIT_PER_DAY - limit.count;
+    return { allowed: remaining > 0, remaining: Math.max(0, remaining) };
+  };
 
   // Di chuyển các hàm xử lý localStorage vào đây
   const saveFormDataToStorage = () => {
@@ -166,6 +240,8 @@ export default function JobPostingForm() {
       status: jobStatus,
       priorityPosition: priorityPosition,
       vip_expiration: vipExpiration,
+      amount: totalPrice, // Add amount for payment history
+      coupon: appliedCoupon, // Add coupon information
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(formData));
   };
@@ -339,6 +415,21 @@ export default function JobPostingForm() {
         return;
       }
 
+      // Check basic package limit
+      const limitCheck = checkBasicJobLimit();
+      if (!limitCheck.allowed) {
+        toast.error(
+          <div>
+            <p className="mb-2 font-medium">Daily limit exceeded!</p>
+            <p className="text-sm">
+              You can only post {BASIC_LIMIT_PER_DAY} basic jobs per day. Please
+              upgrade to Premium or VIP package for unlimited posting.
+            </p>
+          </div>,
+        );
+        return;
+      }
+
       // Khôi phục data từ localStorage nếu có
       const savedData = restoreFormDataFromStorage();
 
@@ -423,6 +514,9 @@ export default function JobPostingForm() {
       };
 
       await jobService.create(jobData);
+
+      // Update basic job limit after successful creation
+      updateBasicJobLimit();
 
       if (user?.data?.companyId) {
         localStorage.setItem(
@@ -548,6 +642,10 @@ export default function JobPostingForm() {
     refreshSkills,
     selectedSkillIds,
     setSelectedSkillIds,
+    appliedCoupon,
+    setAppliedCoupon,
+    // Add basic limit info
+    basicLimitInfo: checkBasicJobLimit(),
   };
 
   return (

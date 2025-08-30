@@ -687,7 +687,7 @@ export default function TaskModal({
                 />
                 <span
                   className={cn(
-                    'flex-1 text-sm',
+                    'flex-1 text-sm text-white',
                     item.completed && 'text-stone-500 line-through',
                   )}
                 >
