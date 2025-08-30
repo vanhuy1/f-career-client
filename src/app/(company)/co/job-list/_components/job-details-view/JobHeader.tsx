@@ -1,4 +1,4 @@
-import { Edit, Star, MapPin, Copy, Calendar } from 'lucide-react';
+import { Edit, Star, MapPin, Copy, Calendar, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useUser } from '@/services/state/userSlice';
 
 interface JobHeaderProps {
   job: JobDetails;
@@ -31,15 +32,97 @@ export function JobHeader({
   onEditStatusDeadline,
 }: JobHeaderProps) {
   const router = useRouter();
+  const user = useUser();
   const [isDuplicating, setIsDuplicating] = useState(false);
   const [showDeadlineDialog, setShowDeadlineDialog] = useState(false);
   const [customDeadline, setCustomDeadline] = useState('');
+
+  // Basic package limit constants
+  const BASIC_LIMIT_KEY = 'BASIC_JOB_LIMIT';
+  const BASIC_LIMIT_PER_DAY = 3;
+
+  // Helper functions for basic package limit
+  const getBasicJobLimit = () => {
+    const companyId = user?.data?.companyId;
+    if (!companyId) return { count: 0, date: null };
+
+    const limitData = localStorage.getItem(`${BASIC_LIMIT_KEY}_${companyId}`);
+    if (!limitData) return { count: 0, date: null };
+
+    try {
+      return JSON.parse(limitData);
+    } catch {
+      return { count: 0, date: null };
+    }
+  };
+
+  const updateBasicJobLimit = () => {
+    const companyId = user?.data?.companyId;
+    if (!companyId) return;
+
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+    const currentLimit = getBasicJobLimit();
+
+    if (currentLimit.date === today) {
+      // Same day, increment count
+      const newLimit = {
+        count: currentLimit.count + 1,
+        date: today,
+      };
+      localStorage.setItem(
+        `${BASIC_LIMIT_KEY}_${companyId}`,
+        JSON.stringify(newLimit),
+      );
+    } else {
+      // New day, reset count
+      const newLimit = {
+        count: 1,
+        date: today,
+      };
+      localStorage.setItem(
+        `${BASIC_LIMIT_KEY}_${companyId}`,
+        JSON.stringify(newLimit),
+      );
+    }
+  };
+
+  const checkBasicJobLimit = () => {
+    const companyId = user?.data?.companyId;
+    if (!companyId) return { allowed: false, remaining: 0 };
+
+    const limit = getBasicJobLimit();
+    const today = new Date().toISOString().split('T')[0];
+
+    if (limit.date !== today) {
+      // New day, reset limit
+      return { allowed: true, remaining: BASIC_LIMIT_PER_DAY };
+    }
+
+    const remaining = BASIC_LIMIT_PER_DAY - limit.count;
+    return { allowed: remaining > 0, remaining: Math.max(0, remaining) };
+  };
 
   const handleConfirmDuplicate = async () => {
     if (!originalJob || !customDeadline) return;
 
     try {
       setIsDuplicating(true);
+
+      // Check basic package limit for duplicate job
+      const limitCheck = checkBasicJobLimit();
+      if (!limitCheck.allowed) {
+        toast.error(
+          <div>
+            <p className="mb-2 font-medium">Daily limit exceeded!</p>
+            <p className="text-sm">
+              You can only create {BASIC_LIMIT_PER_DAY} jobs per day (including
+              duplicates). Please upgrade to Premium or VIP package for
+              unlimited posting.
+            </p>
+          </div>,
+        );
+        return;
+      }
 
       // Validate deadline is within 30 days
       const selectedDate = new Date(customDeadline);
@@ -76,6 +159,9 @@ export function JobHeader({
 
       // Call API to create duplicate job
       const newJob = await jobService.create(duplicateJobData);
+
+      // Update basic job limit after successful duplication
+      updateBasicJobLimit();
 
       // Ensure the job status is set to CLOSED (in case BE overrides it)
       try {
@@ -151,10 +237,13 @@ export function JobHeader({
               variant="outline"
               className="border-green-500 bg-white text-green-600 shadow-sm hover:border-green-600 hover:bg-green-50"
               onClick={handleOpenDeadlineDialog}
-              disabled={!originalJob}
+              disabled={!originalJob || !checkBasicJobLimit().allowed}
             >
               <Copy className="mr-2 h-4 w-4" />
               Duplicate Job
+              {!checkBasicJobLimit().allowed && (
+                <span className="ml-1 text-xs">(Limit Reached)</span>
+              )}
             </Button>
             <Button
               variant="outline"
@@ -199,6 +288,46 @@ export function JobHeader({
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
+            {/* Basic package limit info */}
+            {(() => {
+              const limitInfo = checkBasicJobLimit();
+              return (
+                <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
+                  <div className="mb-2 flex items-center gap-2">
+                    <AlertCircle className="h-4 w-4 text-amber-600" />
+                    <span className="text-sm font-semibold text-amber-800">
+                      Daily Job Limit
+                    </span>
+                  </div>
+                  <div className="text-sm text-amber-700">
+                    {limitInfo.allowed ? (
+                      <>
+                        <span className="font-medium">
+                          {limitInfo.remaining} of {BASIC_LIMIT_PER_DAY} jobs
+                          remaining today
+                        </span>
+                        <br />
+                        <span className="text-xs text-amber-600">
+                          This includes both new jobs and duplicates
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="font-medium text-red-600">
+                          Daily limit reached ({BASIC_LIMIT_PER_DAY}/
+                          {BASIC_LIMIT_PER_DAY})
+                        </span>
+                        <br />
+                        <span className="text-xs text-amber-600">
+                          Upgrade to Premium/VIP for unlimited posting
+                        </span>
+                      </>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
+
             <div className="space-y-2">
               <Label htmlFor="deadline" className="text-sm font-medium">
                 Deadline (within 30 days)

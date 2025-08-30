@@ -535,6 +535,66 @@ export function TopJobCard({
                               </p>
                             )}
                           </div>
+
+                          {/* Coupon Section for New Top Job */}
+                          <div className="mt-4 border-t border-amber-200/50 pt-4">
+                            <div className="mb-3 flex items-center gap-2">
+                              <div className="rounded-full bg-amber-100 p-1.5">
+                                <Ticket className="h-4 w-4 text-amber-600" />
+                              </div>
+                              <span className="font-medium text-amber-800">
+                                Apply Coupon
+                              </span>
+                            </div>
+                            <div className="flex gap-2">
+                              <Input
+                                value={topJobCouponCode}
+                                onChange={(e) =>
+                                  onTopJobCouponCodeChange(e.target.value)
+                                }
+                                placeholder="Enter coupon code"
+                                className="h-10 border-amber-200 focus:border-amber-400 focus:ring-amber-400"
+                                disabled={
+                                  !!topJobAppliedCoupon || topJobCheckingCoupon
+                                }
+                              />
+                              <Button
+                                onClick={onApplyTopJobCoupon}
+                                disabled={
+                                  topJobCheckingCoupon || !!topJobAppliedCoupon
+                                }
+                                className="h-10 min-w-[100px] bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700"
+                              >
+                                {topJobCheckingCoupon ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  'Apply'
+                                )}
+                              </Button>
+                              {topJobAppliedCoupon && (
+                                <Button
+                                  variant="outline"
+                                  className="h-10 border-amber-300 text-amber-700 hover:bg-amber-50"
+                                  onClick={onRemoveTopJobCoupon}
+                                >
+                                  Remove
+                                </Button>
+                              )}
+                            </div>
+                            {topJobAppliedCoupon && (
+                              <div className="mt-2 flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 p-2">
+                                <CheckCircle className="h-4 w-4 text-amber-600" />
+                                <p className="text-sm text-amber-800">
+                                  Applied:{' '}
+                                  <span className="font-medium">
+                                    {topJobAppliedCoupon.code}
+                                  </span>{' '}
+                                  (-{topJobAppliedCoupon.discountPercentage}%
+                                  OFF)
+                                </p>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>

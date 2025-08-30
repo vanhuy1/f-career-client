@@ -14,11 +14,17 @@ import {
   Home,
   CreditCard,
 } from 'lucide-react';
-import { Coupon } from '@/services/api/coupons/coupon-api';
+import { paymentHistoryService } from '@/services/api/payment/payment-history-api';
+import { useUserData } from '@/services/state/userSlice';
 
 interface TopCompanyPaymentData {
   amountVnd: number;
-  coupon: Coupon;
+  baseAmount: number;
+  coupon: {
+    id: number;
+    code: string;
+    discountPercentage: number;
+  } | null;
   companyId: string;
   durationDays: number;
   priorityPosition: number;
@@ -32,6 +38,7 @@ interface TopCompanyPaymentData {
 export default function TopCompanyFailedPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const userData = useUserData();
   const [paymentData, setPaymentData] = useState<TopCompanyPaymentData | null>(
     null,
   );
@@ -39,10 +46,11 @@ export default function TopCompanyFailedPage() {
   const [failureReason, setFailureReason] = useState<string>(
     'Payment was not completed',
   );
+  const [hasProcessedPayment, setHasProcessedPayment] = useState(false);
 
   useEffect(() => {
     // Check PayOS payment status from URL params
-    const paymentId = searchParams?.get('paymentId');
+    const paymentId = searchParams?.get('orderCode');
     const status = searchParams?.get('status');
     const errorCode = searchParams?.get('errorCode');
     const errorMessage = searchParams?.get('errorMessage');
@@ -68,25 +76,54 @@ export default function TopCompanyFailedPage() {
       setPaymentData(data);
       console.log('Payment data loaded:', data);
 
-      // Determine failure reason
-      if (status === 'cancel') {
-        setFailureReason('Payment was cancelled by user');
-      } else if (errorCode) {
-        setFailureReason(
-          `Payment failed: ${errorMessage || `Error code: ${errorCode}`}`,
-        );
-      } else if (status === 'failed') {
-        setFailureReason('Payment processing failed');
-      } else {
-        setFailureReason('Payment was not completed');
+      // Prevent duplicate processing
+      if (hasProcessedPayment) {
+        console.log('Payment already processed, skipping...');
+        setIsLoading(false);
+        return;
       }
+
+      // Determine failure reason and create payment record
+      let failureReasonText = 'Payment was not completed';
+
+      if (status === 'cancel') {
+        failureReasonText = 'Payment was cancelled by user';
+      } else if (errorCode) {
+        failureReasonText = `Payment failed: ${errorMessage || `Error code: ${errorCode}`}`;
+      } else if (status === 'failed') {
+        failureReasonText = 'Payment processing failed';
+      }
+
+      setFailureReason(failureReasonText);
+
+      // Create payment record with FAILED status
+      const createFailedPayment = async () => {
+        try {
+          await paymentHistoryService.createPayment({
+            userId: Number(userData?.id) || 0,
+            packageType: 1, // TOP_COMPANY = 1
+            couponId: data.coupon?.id ? Number(data.coupon.id) : undefined,
+            amount: data.amountVnd,
+            paymentMethod: 'PAYOS',
+            status: 'FAILED',
+            transactionId: paymentId || undefined,
+          });
+          console.log('Failed payment record created successfully');
+        } catch (error) {
+          console.error('Failed to create payment record:', error);
+        }
+      };
+
+      // Create failed payment record
+      createFailedPayment();
+      setHasProcessedPayment(true);
     } catch (error) {
       console.error('Failed to parse payment data:', error);
       setFailureReason('Invalid payment data. Please try again.');
     } finally {
       setIsLoading(false);
     }
-  }, [searchParams]);
+  }, [searchParams, hasProcessedPayment, userData]);
 
   const handleRetryPayment = () => {
     if (paymentData) {

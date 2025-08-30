@@ -16,12 +16,17 @@ import {
 import { format } from 'date-fns';
 import { toast } from 'react-toastify';
 import { companyService } from '@/services/api/company/company-api';
-import { Coupon } from '@/services/api/coupons/coupon-api';
+import { paymentHistoryService } from '@/services/api/payment/payment-history-api';
+import { useUserData } from '@/services/state/userSlice';
 
 interface TopCompanyPaymentData {
   amountVnd: number;
   baseAmount: number;
-  coupon: Coupon | null;
+  coupon: {
+    id: number;
+    code: string;
+    discountPercentage: number;
+  } | null;
   companyId: string;
   durationDays: number;
   priorityPosition: number;
@@ -35,6 +40,7 @@ interface TopCompanyPaymentData {
 export default function TopCompanySuccessPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const userData = useUserData();
   const [paymentData, setPaymentData] = useState<TopCompanyPaymentData | null>(
     null,
   );
@@ -59,6 +65,18 @@ export default function TopCompanySuccessPage() {
           vipExpired: data.vipExpired,
         });
 
+        // Create payment record in database
+        const paymentId = searchParams?.get('orderCode');
+        await paymentHistoryService.createPayment({
+          userId: Number(userData?.id) || 0, // Use current user's ID
+          packageType: 1, // TOP_COMPANY = 1
+          couponId: data.coupon?.id ? Number(data.coupon.id) : undefined,
+          amount: data.amountVnd,
+          paymentMethod: 'PAYOS',
+          status: 'SUCCESS',
+          transactionId: paymentId || undefined,
+        });
+
         setVipUpdateStatus('success');
         toast.success(
           data.isExtension
@@ -79,7 +97,7 @@ export default function TopCompanySuccessPage() {
         setIsUpdatingVIP(false);
       }
     },
-    [],
+    [searchParams],
   );
 
   useEffect(() => {

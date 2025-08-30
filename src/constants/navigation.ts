@@ -113,6 +113,11 @@ const ROUTES = {
         path: '/ca/bookmark',
         name: 'Bookmarked Jobs',
       },
+
+      PAYMENT_HISTORY: {
+        path: '/ca/payment-history',
+        name: 'Payment History',
+      },
     },
   },
 
@@ -161,6 +166,11 @@ const ROUTES = {
       CVCHECKLISTS: {
         path: '/co/cv-checklists',
         name: 'CV Checklists',
+      },
+
+      PAYMENT_HISTORY: {
+        path: '/co/payment-history',
+        name: 'Payment History',
       },
     },
   },

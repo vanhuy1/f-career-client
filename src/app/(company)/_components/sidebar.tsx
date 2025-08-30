@@ -13,6 +13,7 @@ import {
   Bell,
   Bookmark,
   ClipboardCheck,
+  CreditCard,
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -130,6 +131,13 @@ export default function Sidebar({ onClose }: SidebarProps) {
             icon={<Bookmark />}
             label="Bookmark"
             active={pathname === ROUTES.CO.HOME.BOOKMARK.path}
+            onClick={onClose}
+          />
+          <NavItem
+            href={ROUTES.CO.HOME.PAYMENT_HISTORY.path}
+            icon={<CreditCard />}
+            label="Payment History"
+            active={pathname === ROUTES.CO.HOME.PAYMENT_HISTORY.path}
             onClick={onClose}
           />
         </ul>

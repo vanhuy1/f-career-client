@@ -7,7 +7,7 @@ import Header from './ui/Header';
 import Scenes from './scenes/Scenes';
 import Clock from './promodo/Clock';
 import PomodoroTimer from './promodo/PomodoroTimer';
-import RoomChat from './chat/RoomChat';
+// import RoomChat from './chat/RoomChat';
 import RoadmapModal from './roadmap/RoadmapModal';
 import TaskBoardModal from './tasks/TaskBoardModal';
 import { Button } from '@/components/ui/button';
@@ -255,7 +255,7 @@ export default function StudyRoom({
       </div>
 
       {showPomodoro && <PomodoroTimer onClose={togglePomodoro} />}
-      <RoomChat />
+      {/* <RoomChat /> */}
 
       <RoadmapModal
         isOpen={isRoadmapModalOpen}

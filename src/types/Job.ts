@@ -180,6 +180,22 @@ export interface StepProps {
   refreshSkills?: () => Promise<void>;
   selectedSkillIds?: string[];
   setSelectedSkillIds?: (ids: string[]) => void;
+  appliedCoupon?: {
+    id: number;
+    code: string;
+    discountPercentage: number;
+  } | null;
+  setAppliedCoupon?: (
+    coupon: {
+      id: number;
+      code: string;
+      discountPercentage: number;
+    } | null,
+  ) => void;
+  basicLimitInfo?: {
+    allowed: boolean;
+    remaining: number;
+  };
 }
 
 export interface JobCategory {

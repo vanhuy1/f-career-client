@@ -11,6 +11,7 @@ import {
   FileUser,
   Calendar,
   Bookmark,
+  CreditCard,
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -102,6 +103,12 @@ export default function Sidebar() {
             icon={<Bookmark />}
             label="Bookmarked Jobs"
             active={pathname === ROUTES.CA.HOME.BOOKMARK.path}
+          />
+          <NavItem
+            href={ROUTES.CA.HOME.PAYMENT_HISTORY.path}
+            icon={<CreditCard />}
+            label="Payment History"
+            active={pathname === ROUTES.CA.HOME.PAYMENT_HISTORY.path}
           />
         </ul>
 

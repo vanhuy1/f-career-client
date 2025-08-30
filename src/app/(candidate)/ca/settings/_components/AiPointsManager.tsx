@@ -172,6 +172,7 @@ export const AiPointsManager: React.FC = () => {
         baseAmount: previewData.baseAmount,
         coupon: previewData.coupon
           ? {
+              id: previewData.coupon.id,
               code: previewData.coupon.code,
               discountPercentage: previewData.coupon.discountPercentage,
             }

@@ -1,17 +1,20 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CheckCircle, Sparkles, ArrowLeft, Loader2 } from 'lucide-react';
 import { useAiPointsManager } from '@/hooks/use-ai-points';
 import { toast } from 'react-toastify';
+import { paymentHistoryService } from '@/services/api/payment/payment-history-api';
+import { useUserData } from '@/services/state/userSlice';
 
 interface PaymentData {
   amountVnd: number;
   baseAmount: number;
   coupon: {
+    id: number;
     code: string;
     discountPercentage: number;
   } | null;
@@ -24,10 +27,13 @@ interface PaymentData {
 
 export default function AiPointsSuccessPage() {
   const router = useRouter();
+  const userData = useUserData();
   const [isProcessing, setIsProcessing] = useState(true);
   const [paymentData, setPaymentData] = useState<PaymentData | null>(null);
   const hasProcessedRef = useRef(false);
   const { addAiPoints } = useAiPointsManager();
+  const searchParams = useSearchParams();
+  const orderCode = searchParams?.get('orderCode');
 
   useEffect(() => {
     let isMounted = true;
@@ -66,6 +72,22 @@ export default function AiPointsSuccessPage() {
 
         // Add AI points to user account (without toast from hook)
         await addAiPoints(data.points, false);
+
+        // Create payment record in database
+        try {
+          await paymentHistoryService.createPayment({
+            userId: Number(userData?.id) || 0,
+            packageType: 5, // AI_POINT = 5
+            couponId: data.coupon?.id ? Number(data.coupon.id) : undefined,
+            amount: data.amountVnd || 0,
+            paymentMethod: 'PAYOS',
+            status: 'SUCCESS',
+            transactionId: orderCode || undefined, // AI points don't have orderCode from URL
+          });
+          console.log('AI points payment record created successfully');
+        } catch (error) {
+          console.error('Failed to create payment record:', error);
+        }
 
         // Check if component is still mounted
         if (!isMounted) return;

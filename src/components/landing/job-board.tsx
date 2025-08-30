@@ -14,6 +14,7 @@ import { useEffect, useState } from 'react';
 import { jobService } from '@/services/api/jobs/job-api';
 import { Job } from '@/types/Job';
 import { Skeleton } from '@/components/ui/skeleton';
+import { formatSalaryRange } from '@/utils/formatters';
 
 // Vietnamese provinces data
 const VIETNAM_PROVINCES = [
@@ -404,8 +405,7 @@ function JobCard({ job }: { job: Job }) {
             <div className="flex items-center gap-1 text-xs font-medium text-green-600">
               <TrendingUp className="h-3 w-3" />
               <span className="truncate">
-                ${job.salaryMin.toLocaleString()} - $
-                {job.salaryMax.toLocaleString()}
+                {formatSalaryRange(job.salaryMin, job.salaryMax)}
               </span>
             </div>
           )}

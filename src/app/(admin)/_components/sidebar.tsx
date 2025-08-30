@@ -12,6 +12,7 @@ import {
   Briefcase,
   FileText,
   TicketPercent,
+  CreditCard,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -97,6 +98,11 @@ const menuItems: MenuItem[] = [
     title: 'Manage Coupons',
     url: '/ad/coupons',
     icon: TicketPercent,
+  },
+  {
+    title: 'Payment Management',
+    url: '/ad/payments',
+    icon: CreditCard,
   },
   // {
   //   title: 'Notifications',
