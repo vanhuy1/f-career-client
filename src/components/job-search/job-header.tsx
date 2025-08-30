@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Bookmark, CheckCircle2, Share2, MapPin } from 'lucide-react';
+import { Bookmark, CheckCircle2, Share2, MapPin, Flag } from 'lucide-react';
 import Image from 'next/image';
 import ApplyJobButton from '@/app/(public)/_components/apply-job-button';
 import { useUser } from '@/services/state/userSlice';
@@ -10,6 +10,11 @@ import { bookmarkJobService } from '@/services/api/bookmark/bookmark-job.api';
 import { toast } from 'react-toastify';
 import { jobService } from '@/services/api/jobs/job-api';
 import { formatEmploymentType } from '@/utils/formatters';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button';
+import { reportService } from '@/services/api/report/report-api';
 
 // Vietnamese provinces data
 const VIETNAM_PROVINCES = [
@@ -105,6 +110,10 @@ export default function JobHeader({
   const [isApplied, setIsApplied] = useState<boolean | null>(null);
   const [isAppliedLoading, setIsAppliedLoading] = useState<boolean>(false);
   const logoLetter = companyName.charAt(0).toUpperCase();
+  const [isReportOpen, setIsReportOpen] = useState(false);
+  const [reportTitle, setReportTitle] = useState('');
+  const [reportDescription, setReportDescription] = useState('');
+  const [isSubmittingReport, setIsSubmittingReport] = useState(false);
 
   const handleBookmarkToggle = async () => {
     if (!user) {
@@ -218,8 +227,41 @@ export default function JobHeader({
     // Fallback: return the last part if nothing else works
     return (
       parts[parts.length - 1]?.charAt(0).toUpperCase() +
-        parts[parts.length - 1]?.slice(1) || 'Remote'
+      parts[parts.length - 1]?.slice(1) || 'Remote'
     );
+  };
+
+  const handleSubmitReport = async () => {
+    if (!user) {
+      toast.error('Please sign in to report a job');
+      return;
+    }
+
+    const trimmedTitle = reportTitle.trim();
+    const trimmedDesc = reportDescription.trim();
+
+    if (!trimmedTitle || !trimmedDesc) {
+      toast.error('Title and description are required');
+      return;
+    }
+
+    try {
+      setIsSubmittingReport(true);
+      await reportService.create({
+        title: trimmedTitle,
+        description: trimmedDesc,
+        jobId,
+      });
+      toast.success('Report submitted. Thank you!');
+      setIsReportOpen(false);
+      setReportTitle('');
+      setReportDescription('');
+    } catch (error) {
+      console.error('Failed to submit report:', error);
+      toast.error('Failed to submit report');
+    } finally {
+      setIsSubmittingReport(false);
+    }
   };
 
   return (
@@ -269,11 +311,10 @@ export default function JobHeader({
             <button
               onClick={handleBookmarkToggle}
               disabled={isBookmarkLoading}
-              className={`rounded-full p-2 transition-colors ${
-                bookmarked
-                  ? 'bg-yellow-100 text-yellow-600 hover:bg-yellow-200'
-                  : 'text-gray-500 hover:bg-gray-100'
-              } ${isBookmarkLoading ? 'cursor-not-allowed opacity-50' : ''}`}
+              className={`rounded-full p-2 transition-colors ${bookmarked
+                ? 'bg-yellow-100 text-yellow-600 hover:bg-yellow-200'
+                : 'text-gray-500 hover:bg-gray-100'
+                } ${isBookmarkLoading ? 'cursor-not-allowed opacity-50' : ''}`}
               title={bookmarked ? 'Remove bookmark' : 'Add bookmark'}
             >
               <Bookmark
@@ -283,6 +324,55 @@ export default function JobHeader({
             <button className="rounded-full border border-gray-200 bg-white p-2 shadow-sm hover:bg-gray-100">
               <Share2 className="h-4 w-4 text-gray-500" />
             </button>
+            <Dialog open={isReportOpen} onOpenChange={setIsReportOpen}>
+              <DialogTrigger asChild>
+                <button
+                  className="rounded-full border border-gray-200 bg-white p-2 shadow-sm hover:bg-gray-100"
+                  title="Report this job"
+                >
+                  <Flag className="h-4 w-4 text-gray-500" />
+                </button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Report this job</DialogTitle>
+                  <DialogDescription>
+                    Please provide details so our team can review.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-2">
+                  <div className="grid gap-2">
+                    <label className="text-sm font-medium">Title</label>
+                    <Input
+                      placeholder="Short summary"
+                      value={reportTitle}
+                      onChange={(e) => setReportTitle(e.target.value)}
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <label className="text-sm font-medium">Description</label>
+                    <Textarea
+                      rows={5}
+                      placeholder="Describe the issue..."
+                      value={reportDescription}
+                      onChange={(e) => setReportDescription(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsReportOpen(false)}
+                    disabled={isSubmittingReport}
+                  >
+                    Cancel
+                  </Button>
+                  <Button onClick={handleSubmitReport} disabled={isSubmittingReport}>
+                    {isSubmittingReport ? 'Submitting...' : 'Submit report'}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
             {(user?.data.roles[0] === ROLES.USER || !user) &&
               (isAppliedLoading ? (
                 <button

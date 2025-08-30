@@ -13,6 +13,7 @@ import {
   FileText,
   TicketPercent,
   CreditCard,
+  AlertTriangle,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -103,6 +104,11 @@ const menuItems: MenuItem[] = [
     title: 'Payment Management',
     url: '/ad/payments',
     icon: CreditCard,
+  },
+  {
+    title: 'Reports',
+    url: '/ad/report',
+    icon: AlertTriangle,
   },
   // {
   //   title: 'Notifications',
