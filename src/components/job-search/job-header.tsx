@@ -10,7 +10,15 @@ import { bookmarkJobService } from '@/services/api/bookmark/bookmark-job.api';
 import { toast } from 'react-toastify';
 import { jobService } from '@/services/api/jobs/job-api';
 import { formatEmploymentType } from '@/utils/formatters';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
@@ -227,7 +235,7 @@ export default function JobHeader({
     // Fallback: return the last part if nothing else works
     return (
       parts[parts.length - 1]?.charAt(0).toUpperCase() +
-      parts[parts.length - 1]?.slice(1) || 'Remote'
+        parts[parts.length - 1]?.slice(1) || 'Remote'
     );
   };
 
@@ -311,10 +319,11 @@ export default function JobHeader({
             <button
               onClick={handleBookmarkToggle}
               disabled={isBookmarkLoading}
-              className={`rounded-full p-2 transition-colors ${bookmarked
-                ? 'bg-yellow-100 text-yellow-600 hover:bg-yellow-200'
-                : 'text-gray-500 hover:bg-gray-100'
-                } ${isBookmarkLoading ? 'cursor-not-allowed opacity-50' : ''}`}
+              className={`rounded-full p-2 transition-colors ${
+                bookmarked
+                  ? 'bg-yellow-100 text-yellow-600 hover:bg-yellow-200'
+                  : 'text-gray-500 hover:bg-gray-100'
+              } ${isBookmarkLoading ? 'cursor-not-allowed opacity-50' : ''}`}
               title={bookmarked ? 'Remove bookmark' : 'Add bookmark'}
             >
               <Bookmark
@@ -367,7 +376,10 @@ export default function JobHeader({
                   >
                     Cancel
                   </Button>
-                  <Button onClick={handleSubmitReport} disabled={isSubmittingReport}>
+                  <Button
+                    onClick={handleSubmitReport}
+                    disabled={isSubmittingReport}
+                  >
                     {isSubmittingReport ? 'Submitting...' : 'Submit report'}
                   </Button>
                 </DialogFooter>
