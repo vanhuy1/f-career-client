@@ -491,96 +491,119 @@ const createTextOnlyPdf = async (): Promise<Blob> => {
   return pdf.output('blob');
 };
 
-const addHiddenTextLayer = (pdf: jsPDF, rootEl: HTMLElement): void => {
-  const pdfWidthMm = pdf.internal.pageSize.getWidth();
-  const pdfHeightMm = pdf.internal.pageSize.getHeight();
+// Build a flattened text content from CV fields for a hidden, searchable text layer
+const buildHiddenCvTextContent = (cv: Cv): string => {
+  const parts: string[] = [];
+  if (cv.name) parts.push(`Name: ${cv.name}`);
+  if (cv.title) parts.push(`Title: ${cv.title}`);
+  if (cv.summary) parts.push(`Summary: ${cv.summary}`);
 
-  const rootRect = rootEl.getBoundingClientRect();
-  const rootWidthPx = rootRect.width;
-  const rootHeightPx = rootRect.height;
+  const contacts: string[] = [];
+  if (cv.email) contacts.push(`Email: ${cv.email}`);
+  if (cv.phone) contacts.push(`Phone: ${cv.phone}`);
+  if (cv.linkedin) contacts.push(`LinkedIn: ${cv.linkedin}`);
+  if (cv.github) contacts.push(`GitHub: ${cv.github}`);
+  if (contacts.length) parts.push(contacts.join(' | '));
 
-  if (rootWidthPx === 0 || rootHeightPx === 0) return;
+  if (Array.isArray(cv.skills) && cv.skills.length) {
+    parts.push(`Skills: ${cv.skills.join(', ')}`);
+  }
+  if (Array.isArray(cv.languages) && cv.languages.length) {
+    parts.push(`Languages: ${cv.languages.join(', ')}`);
+  }
 
-  const pxToMmX = (px: number) => (px * pdfWidthMm) / rootWidthPx;
-  const pxToMmY = (px: number) => (px * pdfWidthMm) / rootWidthPx; // keep aspect ratio with width scaling
-
-  // Select common text-bearing elements
-  const textNodes = rootEl.querySelectorAll(
-    'h1,h2,h3,h4,h5,h6,p,span,li,div,a,em,strong,small,label,td,th',
-  );
-
-  // Use white text so it remains invisible on white background but searchable
-  pdf.setTextColor(255, 255, 255);
-
-  textNodes.forEach((el) => {
-    const element = el as HTMLElement;
-    // Skip elements explicitly marked to ignore
-    if (element.getAttribute('data-export-text-ignore') === 'true') return;
-
-    const text = (element.innerText || '').trim();
-    if (!text) return;
-
-    const style = window.getComputedStyle(element);
-    // Ignore fully hidden elements
-    if (style.visibility === 'hidden' || style.display === 'none') return;
-
-    const rect = element.getBoundingClientRect();
-    if (!rect || rect.width === 0 || rect.height === 0) return;
-
-    const xMm = pxToMmX(rect.left - rootRect.left + 2); // slight inset to avoid clipping
-    const yTopMm = pxToMmY(rect.top - rootRect.top + 12); // approximate baseline offset
-
-    // Estimate font size from computed pixels
-    const fontSizePx = parseFloat(style.fontSize || '12');
-    const lineHeightPx = parseFloat(
-      style.lineHeight || String(fontSizePx * 1.2),
-    );
-    const fontSizeMm = pxToMmY(fontSizePx);
-    const lineHeightMm = pxToMmY(lineHeightPx);
-
-    // Basic split to avoid very long lines (keeps text searchable)
-    const lines = text.split('\n').flatMap((t) => t.split(/(?<=\.)\s+/));
-
-    let currentY = yTopMm;
-    lines.forEach((line) => {
-      if (!line.trim()) return;
-
-      // Determine the page for this line
-      let pageIndex = Math.floor(currentY / pdfHeightMm);
-      const yOnPage = currentY - pageIndex * pdfHeightMm;
-      pageIndex = Math.max(0, pageIndex);
-
-      // Ensure page exists
-      const totalPages = pdf.getNumberOfPages();
-      if (pageIndex + 1 > totalPages) {
-        while (pdf.getNumberOfPages() < pageIndex + 1) pdf.addPage();
-      }
-      pdf.setPage(pageIndex + 1);
-
-      // Apply font family weight roughly
-      const isBold = /bold|600|700|800|900/i.test(style.fontWeight || '');
-      const isItalic = /italic|oblique/i.test(style.fontStyle || '');
-      const fontStyle =
-        isBold && isItalic
-          ? 'bolditalic'
-          : isBold
-            ? 'bold'
-            : isItalic
-              ? 'italic'
-              : 'normal';
-      try {
-        pdf.setFont('helvetica', fontStyle);
-      } catch {
-        // fallback to default
-      }
-      pdf.setFontSize(Math.max(4, Math.min(14, fontSizeMm)));
-
-      // Write white text at computed position
-      pdf.text(line, xMm, Math.max(2, yOnPage));
-
-      currentY += lineHeightMm;
+  if (Array.isArray(cv.experience) && cv.experience.length) {
+    const expStrings = cv.experience.map((e) => {
+      const period = [e.startDate, e.endDate].filter(Boolean).join(' - ');
+      const header = [e.role, e.company].filter(Boolean).join(' @ ');
+      const bullets = (e.description || '')
+        .toString()
+        .split(/\n|\r|•|-/)
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .join(' | ');
+      return [header, e.location, e.employmentType, period, bullets]
+        .filter(Boolean)
+        .join(' | ');
     });
-  });
+    parts.push(`Experience: ${expStrings.join(' || ')}`);
+  }
+
+  if (Array.isArray(cv.education) && cv.education.length) {
+    const eduStrings = cv.education.map((ed) => {
+      const period = [ed.startYear, ed.endYear].filter(Boolean).join(' - ');
+      const header = [ed.degree, ed.institution].filter(Boolean).join(' @ ');
+      return [header, ed.field, period, ed.description || '']
+        .filter(Boolean)
+        .join(' | ');
+    });
+    parts.push(`Education: ${eduStrings.join(' || ')}`);
+  }
+
+  if (Array.isArray(cv.certifications) && cv.certifications.length) {
+    const certStrings = cv.certifications.map((c) =>
+      [
+        c.title,
+        c.issuer,
+        c.issueDate,
+        c.expiryDate,
+        c.credentialId,
+        c.credentialUrl,
+      ]
+        .filter(Boolean)
+        .join(' | '),
+    );
+    parts.push(`Certifications: ${certStrings.join(' || ')}`);
+  }
+
+  return parts.join(' • ');
+};
+
+// Overlay an invisible (white) text layer so the PDF is text-extractable while looking like an image
+// const overlayInvisibleTextLayer = (pdf: jsPDF, content: string) => {
+//   if (!content) return;
+//   const pageWidth = pdf.internal.pageSize.getWidth();
+//   const pageHeight = pdf.internal.pageSize.getHeight();
+//   const margin = 8; // small margin to keep text within page bounds
+
+//   // Prepare wrapped lines
+//   pdf.setFont('helvetica', 'normal');
+//   pdf.setFontSize(6); // tiny to stay unobtrusive
+//   const wrapped = pdf.splitTextToSize(content, pageWidth - margin * 2);
+
+//   // Draw on every page to ensure text is present regardless of image paging
+//   const totalPages = pdf.getNumberOfPages();
+//   for (let pageIndex = 1; pageIndex <= totalPages; pageIndex++) {
+//     pdf.setPage(pageIndex);
+//     pdf.setTextColor(255, 255, 255); // white on white background is invisible
+
+//     let y = margin + 2;
+//     for (let i = 0; i < wrapped.length; i++) {
+//       if (y > pageHeight - margin) break; // stop if we reach bottom
+//       pdf.text(wrapped[i], margin, y, { baseline: 'top' });
+//       y += 3; // line spacing for tiny font
+//     }
+//   }
+// };
+
+// Write hidden text on the CURRENT page only, so we can render it under the image per page
+const overlayInvisibleTextOnCurrentPage = (pdf: jsPDF, content: string) => {
+  if (!content) return;
+  const pageWidth = pdf.internal.pageSize.getWidth();
+  const pageHeight = pdf.internal.pageSize.getHeight();
+  const margin = 8;
+
+  pdf.setFont('helvetica', 'normal');
+  pdf.setFontSize(6);
+  pdf.setTextColor(255, 255, 255);
+  const wrapped = pdf.splitTextToSize(content, pageWidth - margin * 2);
+
+  let y = margin + 2;
+  for (let i = 0; i < wrapped.length; i++) {
+    if (y > pageHeight - margin) break;
+    pdf.text(wrapped[i], margin, y, { baseline: 'top' });
+    y += 3;
+  }
 };
 
 // Add a helper function to clean up old CV files
@@ -758,48 +781,62 @@ export default function CvBuilderPage() {
 
       try {
         // Dynamic import html-to-image
-        const { toCanvas } = await import('html-to-image');
+        let canvas: HTMLCanvasElement;
+        try {
+          // Prefer html2canvas to preserve layout fidelity
+          const { default: html2canvas } = await import('html2canvas');
+          canvas = await html2canvas(cvRef.current, {
+            scale: 2,
+            backgroundColor: '#ffffff',
+            useCORS: true,
+            allowTaint: true,
+            logging: false,
+            windowWidth: cvRef.current.scrollWidth,
+            windowHeight: cvRef.current.scrollHeight,
+          });
+        } catch (_) {
+          // Fallback to html-to-image if html2canvas fails
+          const { toCanvas } = await import('html-to-image');
+          canvas = await toCanvas(cvRef.current, {
+            width: cvRef.current.offsetWidth,
+            height: cvRef.current.offsetHeight,
+            backgroundColor: 'white',
+            skipAutoScale: true,
+            pixelRatio: 5,
+            quality: 1,
+            style: {
+              transform: 'scale(1)',
+              transformOrigin: 'top left',
+            },
+            filter: (node: Node): boolean => {
+              if (node instanceof Element) {
+                // Skip hidden elements
+                if (
+                  window.getComputedStyle(node).visibility === 'hidden' ||
+                  window.getComputedStyle(node).display === 'none'
+                ) {
+                  return false;
+                }
 
-        // Use html-to-image directly with lower quality for size reduction
-        const canvas = await toCanvas(cvRef.current, {
-          width: cvRef.current.offsetWidth,
-          height: cvRef.current.offsetHeight,
-          backgroundColor: 'white',
-          skipAutoScale: true,
-          pixelRatio: 5,
-          quality: 1,
-          style: {
-            transform: 'scale(1)',
-            transformOrigin: 'top left',
-          },
-          filter: (node: Node): boolean => {
-            if (node instanceof Element) {
-              // Skip hidden elements
-              if (
-                window.getComputedStyle(node).visibility === 'hidden' ||
-                window.getComputedStyle(node).display === 'none'
-              ) {
-                return false;
-              }
-
-              // Fix problematic styling
-              if (
-                node.hasAttribute('style') &&
-                node.getAttribute('style')?.includes('oklch')
-              ) {
-                const style = node.getAttribute('style');
-                if (style) {
-                  const safeStyle = style.replace(
-                    /oklch\([^)]+\)/g,
-                    'rgb(0,0,0)',
-                  );
-                  node.setAttribute('style', safeStyle);
+                // Fix problematic styling
+                if (
+                  node.hasAttribute('style') &&
+                  node.getAttribute('style')?.includes('oklch')
+                ) {
+                  const style = node.getAttribute('style');
+                  if (style) {
+                    const safeStyle = style.replace(
+                      /oklch\([^)]+\)/g,
+                      'rgb(0,0,0)',
+                    );
+                    node.setAttribute('style', safeStyle);
+                  }
                 }
               }
-            }
-            return true;
-          },
-        });
+              return true;
+            },
+          });
+        }
 
         // Get the image data with higher compression
         const imgData = canvas.toDataURL('image/jpeg', 0.6); // More compression
@@ -822,6 +859,14 @@ export default function CvBuilderPage() {
         let srcPos = 0;
 
         while (remainingHeight > 0) {
+          // Ensure hidden text is drawn UNDER the image on the current page
+          try {
+            const hiddenText = buildHiddenCvTextContent(updatedCv);
+            overlayInvisibleTextOnCurrentPage(pdf, hiddenText);
+          } catch (e) {
+            console.warn('Hidden text (per-page) failed:', e);
+          }
+
           // Add current portion to the PDF with maximum compression
           pdf.addImage(
             imgData,
@@ -841,11 +886,6 @@ export default function CvBuilderPage() {
           if (remainingHeight > 0) {
             pdf.addPage();
           }
-        }
-
-        // Overlay hidden searchable text layer
-        if (cvRef.current) {
-          addHiddenTextLayer(pdf, cvRef.current);
         }
 
         // Get the PDF blob
